@@ -114,7 +114,8 @@ async function loadTickerList() {
   const match = html.match(/href="([^"]+\.xlsx?)"/i);
   if (!match) throw new Error("JPXのExcelリンクが見つかりませんでした。");
 
-  const excelUrl = new URL(match[1], url).href;
+  // const excelUrl = new URL(match[1], url).href;
+  const excelUrl = "libs/data_j.xls";
   const arrayBuffer = await fetch(excelUrl).then(r => r.arrayBuffer());
   const workbook = XLSX.read(arrayBuffer);
   const sheet = workbook.Sheets[workbook.SheetNames[0]];
