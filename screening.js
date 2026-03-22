@@ -107,16 +107,32 @@ function cancelScreening() {
   }
 }
 
+// async function loadTickerList() {
+//   const url = "https://www.jpx.co.jp/markets/statistics-equities/misc/01.html";
+//   const html = await fetch(url).then(r => r.text());
+
+//   const match = html.match(/href="([^"]+\.xlsx?)"/i);
+//   if (!match) throw new Error("JPXのExcelリンクが見つかりませんでした。");
+
+//   const excelUrl = new URL(match[1], url).href;
+//   const arrayBuffer = await fetch(excelUrl).then(r => r.arrayBuffer());
+//   const workbook = XLSX.read(arrayBuffer);
+//   const sheet = workbook.Sheets[workbook.SheetNames[0]];
+//   const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+//   const map = {};
+//   for (let i = 1; i < rows.length; i++) {
+//     const code = rows[i][1];
+//     const name = rows[i][2];
+//     if (typeof code === "string" && /^\d{4}$/.test(code) && name) {
+//       map[code.trim()] = String(name).trim();
+//     }
+//   }
+//   return map;
+// }
+
 async function loadTickerList() {
-  const url = "https://www.jpx.co.jp/markets/statistics-equities/misc/01.html";
-  const html = await fetch(url).then(r => r.text());
-
-  const match = html.match(/href="([^"]+\.xlsx?)"/i);
-  if (!match) throw new Error("JPXのExcelリンクが見つかりませんでした。");
-
-  // const excelUrl = new URL(match[1], url).href;
-  const excelUrl = "libs/data_j.xls";
-  const arrayBuffer = await fetch(excelUrl).then(r => r.arrayBuffer());
+  const arrayBuffer = await fetch("libs/data_j.xls").then(r => r.arrayBuffer());
   const workbook = XLSX.read(arrayBuffer);
   const sheet = workbook.Sheets[workbook.SheetNames[0]];
   const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
@@ -131,6 +147,7 @@ async function loadTickerList() {
   }
   return map;
 }
+
 
 async function fetchTickerDaily(ticker, signal) {
   const url = `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}.T?interval=1d&range=6d`;
