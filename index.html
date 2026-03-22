@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>出来高＆上髭スクリーニング</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="style.css">
+
+  <script src="libs/xlsx.full.min.js"></script>
+  <script src="libs/chart.js"></script>
+  <script src="libs/chartjs-chart-financial.js"></script>
+
+  <script defer src="screening.js"></script>
+  <script defer src="chart.js"></script>
+</head>
+<body>
+  <div class="app-container">
+    <header class="app-header">
+      <h1>出来高＆上髭スクリーニング</h1>
+      <p>JPX銘柄 × Yahoo Finance 日足データ</p>
+    </header>
+
+    <section class="card controls-card">
+      <h2>条件設定</h2>
+      <div class="controls-grid">
+        <div class="control-group">
+          <label for="volumeRatio">出来高倍率以上</label>
+          <input id="volumeRatio" type="number" value="5" step="0.1">
+        </div>
+        <div class="control-group">
+          <label for="shadowRatio">上髭実体比以上</label>
+          <input id="shadowRatio" type="number" value="5" step="0.1">
+        </div>
+        <div class="control-group">
+          <label for="maxConcurrency">並列数</label>
+          <input id="maxConcurrency" type="number" value="20" min="1" max="40">
+        </div>
+      </div>
+
+      <div class="buttons-row">
+        <button id="startBtn" class="btn primary">スクリーニング開始</button>
+        <button id="cancelBtn" class="btn secondary" disabled>キャンセル</button>
+      </div>
+
+      <div id="progressArea" class="progress-area">
+        <div id="progressText" class="progress-text">待機中</div>
+        <progress id="progressBar" value="0" max="100"></progress>
+      </div>
+    </section>
+
+    <section class="card table-card">
+      <h2>スクリーニング結果</h2>
+      <div class="table-wrapper">
+        <table id="resultTable">
+          <thead>
+            <tr>
+              <th>コード</th>
+              <th>銘柄名</th>
+              <th>出来高倍率</th>
+              <th>上髭実体比</th>
+              <th>出来高</th>
+              <th>上髭</th>
+              <th>実体</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+        <p class="hint">行をタップ／クリックするとチャートを表示します。</p>
+      </div>
+    </section>
+  </div>
+
+  <!-- チャートモーダル -->
+  <div id="chartModal" class="modal hidden">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="chartTitle">チャート</h3>
+        <button id="closeChart" class="btn ghost">✕</button>
+      </div>
+      <div class="modal-body">
+        <canvas id="chartCanvas"></canvas>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
