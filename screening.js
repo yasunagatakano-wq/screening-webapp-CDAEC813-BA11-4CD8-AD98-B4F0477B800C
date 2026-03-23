@@ -107,30 +107,6 @@ function cancelScreening() {
   }
 }
 
-// async function loadTickerList() {
-//   const url = "https://www.jpx.co.jp/markets/statistics-equities/misc/01.html";
-//   const html = await fetch(url).then(r => r.text());
-
-//   const match = html.match(/href="([^"]+\.xlsx?)"/i);
-//   if (!match) throw new Error("JPXのExcelリンクが見つかりませんでした。");
-
-//   const excelUrl = new URL(match[1], url).href;
-//   const arrayBuffer = await fetch(excelUrl).then(r => r.arrayBuffer());
-//   const workbook = XLSX.read(arrayBuffer);
-//   const sheet = workbook.Sheets[workbook.SheetNames[0]];
-//   const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-
-//   const map = {};
-//   for (let i = 1; i < rows.length; i++) {
-//     const code = rows[i][1];
-//     const name = rows[i][2];
-//     if (typeof code === "string" && /^\d{4}$/.test(code) && name) {
-//       map[code.trim()] = String(name).trim();
-//     }
-//   }
-//   return map;
-// }
-
 async function loadTickerList() {
   const arrayBuffer = await fetch("libs/data_j.xlsx").then(r => r.arrayBuffer());
   const workbook = XLSX.read(arrayBuffer);
@@ -143,31 +119,75 @@ async function loadTickerList() {
     const row = rows[i];
     if (!row) continue;
 
-    // B列（index 1）がコード列と確定
-    const rawCode = row[1];
-    const rawName = row[2];
+    const rawCode = row[1];  // B列：証券コード
+    const rawName = row[2];  // C列：銘柄名
 
     if (!rawCode || !rawName) continue;
 
-    const codeStr = String(rawCode).trim();
-
-    // 4桁数字のみ許可（市場列などを完全排除）
-    if (!/^\d{4}$/.test(codeStr)) continue;
-
+    const codeStr = String(rawCode).trim().toUpperCase();
     map[codeStr] = String(rawName).trim();
   }
 
   return map;
 }
 
+// Kabutan から過去6日分の株価データを取得し、Yahoo形式に変換
 async function fetchTickerDaily(ticker, signal) {
-  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}.T?interval=1d&range=6d`;
+  const url = `https://kabutan.jp/stock/kabuka?code=${ticker}&ashi=day`;
+
   const res = await fetch(url, { signal });
-  const json = await res.json();
-  if (!json.chart || !json.chart.result || !json.chart.result[0]) {
-    throw new Error("invalid chart data");
+  if (!res.ok) throw new Error("Kabutan fetch error");
+
+  const html = await res.text();
+
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, "text/html");
+
+  // 株価テーブル（過去データ）
+  const table = doc.querySelector(".stock_kabuka0 table");
+  if (!table) throw new Error("Kabutan table not found");
+
+  const rows = [...table.querySelectorAll("tr")];
+
+  const data = [];
+
+  // 1行目はヘッダー想定、2行目以降から6行分
+  for (let i = 1; i <= 6 && i < rows.length; i++) {
+    const cols = rows[i].querySelectorAll("td");
+    if (!cols || cols.length < 7) continue;
+
+    const open = parseFloat(cols[2].textContent.replace(/,/g, ""));
+    const high = parseFloat(cols[3].textContent.replace(/,/g, ""));
+    const low = parseFloat(cols[4].textContent.replace(/,/g, ""));
+    const close = parseFloat(cols[5].textContent.replace(/,/g, ""));
+    const volume = parseInt(cols[6].textContent.replace(/,/g, ""), 10);
+
+    if (
+      Number.isNaN(open) ||
+      Number.isNaN(high) ||
+      Number.isNaN(low) ||
+      Number.isNaN(close) ||
+      Number.isNaN(volume)
+    ) {
+      continue;
+    }
+
+    data.push({ open, high, low, close, volume });
   }
-  return json.chart.result[0];
+
+  if (data.length < 2) throw new Error("Not enough data");
+
+  return {
+    indicators: {
+      quote: [{
+        open: data.map(d => d.open),
+        high: data.map(d => d.high),
+        low: data.map(d => d.low),
+        close: data.map(d => d.close),
+        volume: data.map(d => d.volume)
+      }]
+    }
+  };
 }
 
 function screenTicker(ticker, map, data, volumeRatio, shadowRatio) {
