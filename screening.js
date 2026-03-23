@@ -138,16 +138,21 @@ async function loadTickerList() {
   const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
 
   const map = {};
+
   for (let i = 1; i < rows.length; i++) {
-    const code = rows[i][1];
-    const name = rows[i][2];
-    if (typeof code === "string" && /^\d{4}$/.test(code) && name) {
-      map[code.trim()] = String(name).trim();
-    }
+    const code = rows[i][1];  // B列（銘柄コード）
+    const name = rows[i][2];  // C列（銘柄名）
+
+    if (!code || !name) continue;
+
+    // 数字の場合は4桁に整形
+    const codeStr = String(code).padStart(4, "0");
+
+    map[codeStr] = String(name).trim();
   }
+
   return map;
 }
-
 
 async function fetchTickerDaily(ticker, signal) {
   const url = `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}.T?interval=1d&range=6d`;
