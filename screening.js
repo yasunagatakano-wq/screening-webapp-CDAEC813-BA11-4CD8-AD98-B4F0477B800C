@@ -132,7 +132,7 @@ function cancelScreening() {
 // }
 
 async function loadTickerList() {
-  const arrayBuffer = await fetch("libs/data_j.xls").then(r => r.arrayBuffer());
+  const arrayBuffer = await fetch("libs/data_j.xlsx").then(r => r.arrayBuffer());
   const workbook = XLSX.read(arrayBuffer);
   const sheet = workbook.Sheets[workbook.SheetNames[0]];
   const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
