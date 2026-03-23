@@ -140,15 +140,19 @@ async function loadTickerList() {
   const map = {};
 
   for (let i = 1; i < rows.length; i++) {
-    const code = rows[i][1];  // B列（銘柄コード）
-    const name = rows[i][2];  // C列（銘柄名）
+    const row = rows[i];
+    if (!row) continue;
 
-    if (!code || !name) continue;
+    // 行の中から「4桁の数字」を探す（コード列を自動検出）
+    const code = row.find(v => /^\d{4}$/.test(String(v)));
+    const nameIndex = row.indexOf(code) + 1; // コードの右隣が銘柄名
 
-    // 数字の場合は4桁に整形
+    if (!code || !row[nameIndex]) continue;
+
     const codeStr = String(code).padStart(4, "0");
+    const name = String(row[nameIndex]).trim();
 
-    map[codeStr] = String(name).trim();
+    map[codeStr] = name;
   }
 
   return map;
