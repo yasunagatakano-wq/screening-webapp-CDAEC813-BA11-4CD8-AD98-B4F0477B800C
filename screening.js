@@ -119,8 +119,8 @@ async function loadTickerList() {
     const row = rows[i];
     if (!row) continue;
 
-    const rawCode = row[1];  // B列：証券コード
-    const rawName = row[2];  // C列：銘柄名
+    const rawCode = row[1];
+    const rawName = row[2];
 
     if (!rawCode || !rawName) continue;
 
@@ -131,63 +131,18 @@ async function loadTickerList() {
   return map;
 }
 
-// Kabutan から過去6日分の株価データを取得し、Yahoo形式に変換
+/* ★★★ ここが Yahoo Finance Worker 版 ★★★ */
 async function fetchTickerDaily(ticker, signal) {
-  const url = `https://kabutan.jp/stock/kabuka?code=${ticker}&ashi=day`;
+  const url = `https://fetch-yahoo-finance.yasunaga-takano.workers.dev/?symbol=${ticker}.T`;
 
   const res = await fetch(url, { signal });
-  if (!res.ok) throw new Error("Kabutan fetch error");
+  const json = await res.json();
 
-  const html = await res.text();
-
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(html, "text/html");
-
-  // 株価テーブル（過去データ）
-  const table = doc.querySelector(".stock_kabuka0 table");
-  if (!table) throw new Error("Kabutan table not found");
-
-  const rows = [...table.querySelectorAll("tr")];
-
-  const data = [];
-
-  // 1行目はヘッダー想定、2行目以降から6行分
-  for (let i = 1; i <= 6 && i < rows.length; i++) {
-    const cols = rows[i].querySelectorAll("td");
-    if (!cols || cols.length < 7) continue;
-
-    const open = parseFloat(cols[2].textContent.replace(/,/g, ""));
-    const high = parseFloat(cols[3].textContent.replace(/,/g, ""));
-    const low = parseFloat(cols[4].textContent.replace(/,/g, ""));
-    const close = parseFloat(cols[5].textContent.replace(/,/g, ""));
-    const volume = parseInt(cols[6].textContent.replace(/,/g, ""), 10);
-
-    if (
-      Number.isNaN(open) ||
-      Number.isNaN(high) ||
-      Number.isNaN(low) ||
-      Number.isNaN(close) ||
-      Number.isNaN(volume)
-    ) {
-      continue;
-    }
-
-    data.push({ open, high, low, close, volume });
+  if (!json.chart || !json.chart.result || !json.chart.result[0]) {
+    throw new Error("invalid chart data");
   }
 
-  if (data.length < 2) throw new Error("Not enough data");
-
-  return {
-    indicators: {
-      quote: [{
-        open: data.map(d => d.open),
-        high: data.map(d => d.high),
-        low: data.map(d => d.low),
-        close: data.map(d => d.close),
-        volume: data.map(d => d.volume)
-      }]
-    }
-  };
+  return json.chart.result[0];
 }
 
 function screenTicker(ticker, map, data, volumeRatio, shadowRatio) {
