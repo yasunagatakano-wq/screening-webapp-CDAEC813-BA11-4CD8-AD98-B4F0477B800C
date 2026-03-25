@@ -131,18 +131,10 @@ async function loadTickerList() {
   return map;
 }
 
-/* ★★★ ここが Yahoo Finance Worker 版 ★★★ */
 async function fetchTickerDaily(ticker, signal) {
-  const url = `https://fetch-yahoo-finance.yasunaga-takano.workers.dev/?symbol=${ticker}.T`;
-
+  const url = `https://yfinance-api-fe86988c-d3b4-f1c6-640d.onrender.com/chart?symbol=${ticker}.T`;
   const res = await fetch(url, { signal });
-  const json = await res.json();
-
-  if (!json.chart || !json.chart.result || !json.chart.result[0]) {
-    throw new Error("invalid chart data");
-  }
-
-  return json.chart.result[0];
+  return await res.json();
 }
 
 function screenTicker(ticker, map, data, volumeRatio, shadowRatio) {
