@@ -80,7 +80,8 @@ async function startScreening() {
     }
 
     const waitFinish = setInterval(() => {
-      if (running === 0 && index >= tickers.length) {
+//      if (running === 0 && index >= tickers.length) {
+      if (running === 0 && index >= 50) {
         clearInterval(waitFinish);
         showResults(results);
         startBtn.disabled = false;
