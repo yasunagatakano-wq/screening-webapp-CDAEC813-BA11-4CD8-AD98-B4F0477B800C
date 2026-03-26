@@ -137,26 +137,28 @@ async function fetchTickerDaily(ticker, signal) {
   return await res.json();
 }
 
+/* ---------------------------------------------------------
+   ★ yfinance JSON に完全対応した新しい screenTicker()
+--------------------------------------------------------- */
 function screenTicker(ticker, map, data, volumeRatio, shadowRatio) {
-  const q = data.indicators.quote[0];
-  const opens = q.open;
-  const highs = q.high;
-  const closes = q.close;
-  const volumes = q.volume;
+  if (!data || !data.Close) return null;
 
-  const count = opens.length;
-  if (count < 2) return null;
+  const dates = Object.keys(data.Close);
+  if (dates.length < 2) return null;
 
-  const idx = count - 1;
-  const yidx = count - 2;
+  const latest = dates[dates.length - 1];
+  const prev = dates[dates.length - 2];
 
-  const open = opens[idx];
-  const close = closes[idx];
-  const high = highs[idx];
-  const volToday = volumes[idx];
-  const volYest = volumes[yidx];
+  const open = data.Open[latest];
+  const close = data.Close[latest];
+  const high = data.High[latest];
+  const volToday = data.Volume[latest];
+  const volYest = data.Volume[prev];
 
-  if (open == null || close == null || high == null || volToday == null || volYest == null) {
+  if (
+    open == null || close == null || high == null ||
+    volToday == null || volYest == null
+  ) {
     return null;
   }
 
@@ -176,6 +178,7 @@ function screenTicker(ticker, map, data, volumeRatio, shadowRatio) {
       実体: realBody.toFixed(2)
     };
   }
+
   return null;
 }
 
