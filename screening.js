@@ -30,7 +30,9 @@ async function startScreening() {
   try {
     const tickerMap = tickerMapCache || await loadTickerList();
     tickerMapCache = tickerMap;
-    const tickers = Object.keys(tickerMap);
+
+    // ★ ここで 40 件に制限する
+    const tickers = Object.keys(tickerMap).slice(0, 40);
 
     progressBar.max = tickers.length;
     progressBar.value = 0;
@@ -80,8 +82,7 @@ async function startScreening() {
     }
 
     const waitFinish = setInterval(() => {
-//      if (running === 0 && index >= tickers.length) {
-      if (running === 0 && index >= 50) {
+      if (running === 0 && index >= tickers.length) {
         clearInterval(waitFinish);
         showResults(results);
         startBtn.disabled = false;
@@ -139,7 +140,7 @@ async function fetchTickerDaily(ticker, signal) {
 }
 
 /* ---------------------------------------------------------
-   ★ yfinance JSON に完全対応した新しい screenTicker()
+   ★ yfinance JSON に完全対応した screenTicker()
 --------------------------------------------------------- */
 function screenTicker(ticker, map, data, volumeRatio, shadowRatio) {
   if (!data || !data.Close) return null;
