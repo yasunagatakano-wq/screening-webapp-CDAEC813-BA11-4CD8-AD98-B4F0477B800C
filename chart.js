@@ -91,7 +91,9 @@ async function drawChart(ticker) {
   // 移動平均計算
   function calcMA(period) {
     return chartData.map((d, i) => {
-      if (i < period) return null;
+      if (i < period) {
+        return { x: d.t, y: null };  // ★ null を安全に扱う
+      }
       const slice = chartData.slice(i - period, i);
       const avg = slice.reduce((s, x) => s + x.c, 0) / period;
       return { x: d.t, y: avg };
