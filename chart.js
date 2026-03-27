@@ -79,8 +79,13 @@ async function drawChart(ticker) {
 
   const dates = Object.keys(json.Close);
 
+  function parseDate(d) {
+    // "2024-03-01" → "2024/03/01" に変換
+    return new Date(d.replace(/-/g, "/"));
+  }
+  
   const chartData = dates.map(d => ({
-    t: new Date(d),
+    t: parseDate(d),
     o: json.Open[d],
     h: json.High[d],
     l: json.Low[d],
