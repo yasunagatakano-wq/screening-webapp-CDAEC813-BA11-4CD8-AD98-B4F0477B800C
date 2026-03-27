@@ -7,11 +7,12 @@ let chartInstance = null;
 let currentIndex = 0;
 let screeningResults = [];
 
-// スクリーニング結果を chart.js に渡すための関数
-export function setScreeningResults(results) {
+// screening.js から結果を受け取る
+window.setScreeningResults = function(results) {
   screeningResults = results;
-}
+};
 
+// モーダルを閉じる
 closeBtn.addEventListener("click", () => {
   modal.style.display = "none";
   if (chartInstance) {
@@ -21,30 +22,30 @@ closeBtn.addEventListener("click", () => {
 });
 
 // モーダルを開く
-export function openChartModal(ticker, name, index) {
+window.openChartModal = function(ticker, name, index) {
   currentIndex = index;
   modalTitle.textContent = `${ticker} ${name}`;
   modal.style.display = "block";
   drawChart(ticker);
-}
+};
 
 // 前へ
-export function showPrev() {
+window.showPrev = function() {
   if (currentIndex > 0) {
     currentIndex--;
     const r = screeningResults[currentIndex];
-    openChartModal(r.コード, r.銘柄名, currentIndex);
+    window.openChartModal(r.コード, r.銘柄名, currentIndex);
   }
-}
+};
 
 // 次へ
-export function showNext() {
+window.showNext = function() {
   if (currentIndex < screeningResults.length - 1) {
     currentIndex++;
     const r = screeningResults[currentIndex];
-    openChartModal(r.コード, r.銘柄名, currentIndex);
+    window.openChartModal(r.コード, r.銘柄名, currentIndex);
   }
-}
+};
 
 // スマホのフリック操作
 let touchStartX = 0;
@@ -54,8 +55,8 @@ modal.addEventListener("touchstart", (e) => {
 
 modal.addEventListener("touchend", (e) => {
   const diff = e.changedTouches[0].clientX - touchStartX;
-  if (diff > 80) showPrev();     // 右フリック → 前へ
-  if (diff < -80) showNext();    // 左フリック → 次へ
+  if (diff > 80) window.showPrev();     // 右フリック → 前へ
+  if (diff < -80) window.showNext();    // 左フリック → 次へ
 });
 
 // チャート描画
