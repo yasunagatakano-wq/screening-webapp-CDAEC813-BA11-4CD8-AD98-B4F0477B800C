@@ -7,10 +7,12 @@
   <link rel="icon" href="assets/favicon.ico">
   <link rel="stylesheet" href="style.css">
 
+  <!-- ライブラリ -->
   <script src="libs/xlsx.full.min.js"></script>
   <script src="libs/chart.js"></script>
   <script src="libs/chartjs-chart-financial.js"></script>
 
+  <!-- アプリ本体 -->
   <script defer src="screening.js"></script>
   <script defer src="chart.js"></script>
 </head>
@@ -26,15 +28,17 @@
       <div class="controls-grid">
         <div class="control-group">
           <label for="volumeRatio">出来高倍率以上</label>
-          <input id="volumeRatio" type="number" value="5" step="0.1">
+          <!-- <input id="volumeRatio" type="number" value="5" step="0.1"> -->
+          <input id="volumeRatio" type="number" value="1" step="0.1">
         </div>
         <div class="control-group">
           <label for="shadowRatio">上髭実体比以上</label>
-          <input id="shadowRatio" type="number" value="5" step="0.1">
+          <!-- <input id="shadowRatio" type="number" value="5" step="0.1"> -->
+          <input id="shadowRatio" type="number" value="1" step="0.1">
         </div>
         <div class="control-group">
           <label for="maxConcurrency">並列数</label>
-          <input id="maxConcurrency" type="number" value="20" min="1" max="40">
+          <input id="maxConcurrency" type="number" value="40" min="1" max="40">
         </div>
       </div>
 
@@ -72,12 +76,13 @@
   </div>
 
   <!-- チャートモーダル -->
-  <div id="chartModal" class="modal hidden">
+  <div id="chartModal" class="modal">
     <div class="modal-backdrop"></div>
     <div class="modal-content">
       <div class="modal-header">
-        <h3 id="chartTitle">チャート</h3>
-        <button id="closeChart" class="btn ghost">✕</button>
+        <!-- ★ chart.js が期待する ID に修正済み -->
+        <h3 id="chartModalTitle">チャート</h3>
+        <button id="closeChartBtn" class="btn ghost">✕</button>
       </div>
       <div class="modal-body">
         <canvas id="chartCanvas"></canvas>
