@@ -79,12 +79,12 @@ async function drawChart(ticker) {
 
   const dates = Object.keys(json.Close);
 
-  // ★ UNIXミリ秒 → Date に変換（今回の最重要ポイント）
+  // ★ UNIXミリ秒 → Date に変換
   function parseDate(d) {
     return new Date(Number(d));
   }
 
-  // ★ t → x に修正（Chart.js Financial の正しい形式）
+  // ★ Chart.js Financial の正しい形式（x, o, h, l, c）
   const chartData = dates.map(d => ({
     x: parseDate(d),
     o: json.Open[d],
@@ -121,6 +121,7 @@ async function drawChart(ticker) {
         {
           label: "ローソク足",
           data: chartData,
+          yAxisID: "price",   // ★ 価格軸に乗せる
           borderColor: {
             up: "blue",
             down: "red",
@@ -136,15 +137,15 @@ async function drawChart(ticker) {
           label: "出来高",
           type: "bar",
           data: chartData.map(d => ({ x: d.x, y: d.v })),
-          yAxisID: "volume",
+          yAxisID: "volume",  // ★ 出来高は volume 軸へ
           backgroundColor: "rgba(128,128,128,0.4)",
           barThickness: 4
         },
-        { label: "MA5", data: ma5, borderColor: "green", type: "line", pointRadius: 0 },
-        { label: "MA25", data: ma25, borderColor: "orange", type: "line", pointRadius: 0 },
-        { label: "MA50", data: ma50, borderColor: "brown", type: "line", pointRadius: 0 },
-        { label: "MA75", data: ma75, borderColor: "purple", type: "line", pointRadius: 0 },
-        { label: "MA100", data: ma100, borderColor: "#0099cc", type: "line", pointRadius: 0 }
+        { label: "MA5", data: ma5, borderColor: "green", type: "line", pointRadius: 0, yAxisID: "price" },
+        { label: "MA25", data: ma25, borderColor: "orange", type: "line", pointRadius: 0, yAxisID: "price" },
+        { label: "MA50", data: ma50, borderColor: "brown", type: "line", pointRadius: 0, yAxisID: "price" },
+        { label: "MA75", data: ma75, borderColor: "purple", type: "line", pointRadius: 0, yAxisID: "price" },
+        { label: "MA100", data: ma100, borderColor: "#0099cc", type: "line", pointRadius: 0, yAxisID: "price" }
       ]
     },
     options: {
@@ -154,13 +155,18 @@ async function drawChart(ticker) {
           type: "time",
           time: { unit: "day", tooltipFormat: "yyyy-MM-dd" }
         },
-        y: {
+        price: {               // ★ 価格専用のY軸
           position: "right"
         },
-        volume: {
+        volume: {              // ★ 出来高専用のY軸
           position: "left",
           beginAtZero: true,
           grid: { display: false }
+        }
+      },
+      elements: {
+        candlestick: {
+          barThickness: 6     // ★ ローソク足の太さ
         }
       }
     }
