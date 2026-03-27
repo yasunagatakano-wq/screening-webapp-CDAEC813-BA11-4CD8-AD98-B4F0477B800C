@@ -121,7 +121,7 @@ async function drawChart(ticker) {
         {
           label: "ローソク足",
           data: chartData,
-          yAxisID: "price",   // ★ 価格軸に乗せる
+          yAxisID: "price",
           borderColor: {
             up: "blue",
             down: "red",
@@ -137,7 +137,7 @@ async function drawChart(ticker) {
           label: "出来高",
           type: "bar",
           data: chartData.map(d => ({ x: d.x, y: d.v })),
-          yAxisID: "volume",  // ★ 出来高は volume 軸へ
+          yAxisID: "volume",
           backgroundColor: "rgba(128,128,128,0.4)",
           barThickness: 4
         },
@@ -155,18 +155,20 @@ async function drawChart(ticker) {
           type: "time",
           time: { unit: "day", tooltipFormat: "yyyy-MM-dd" }
         },
-        price: {               // ★ 価格専用のY軸
-          position: "right"
+        price: {
+          position: "right",
+          title: { display: true, text: "Price" }
         },
-        volume: {              // ★ 出来高専用のY軸
+        volume: {
           position: "left",
           beginAtZero: true,
-          grid: { display: false }
+          grid: { display: false },
+          title: { display: true, text: "Volume" }
         }
       },
       elements: {
         candlestick: {
-          barThickness: 6     // ★ ローソク足の太さ
+          barThickness: 6   // ★ ローソク足の太さ
         }
       }
     }
