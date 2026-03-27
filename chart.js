@@ -80,12 +80,12 @@ async function drawChart(ticker) {
   const dates = Object.keys(json.Close);
 
   function parseDate(d) {
-    // "2024-03-01" → "2024/03/01" に変換
     return new Date(d.replace(/-/g, "/"));
   }
-  
+
+  // ★ t → x に修正（最重要）
   const chartData = dates.map(d => ({
-    t: parseDate(d),
+    x: parseDate(d),
     o: json.Open[d],
     h: json.High[d],
     l: json.Low[d],
@@ -97,11 +97,11 @@ async function drawChart(ticker) {
   function calcMA(period) {
     return chartData.map((d, i) => {
       if (i < period) {
-        return { x: d.t, y: null };  // ★ null を安全に扱う
+        return { x: d.x, y: null };
       }
       const slice = chartData.slice(i - period, i);
       const avg = slice.reduce((s, x) => s + x.c, 0) / period;
-      return { x: d.t, y: avg };
+      return { x: d.x, y: avg };
     });
   }
 
@@ -134,7 +134,7 @@ async function drawChart(ticker) {
         {
           label: "出来高",
           type: "bar",
-          data: chartData.map(d => ({ x: d.t, y: d.v })),
+          data: chartData.map(d => ({ x: d.x, y: d.v })),
           yAxisID: "volume",
           backgroundColor: "rgba(128,128,128,0.4)",
           barThickness: 4
