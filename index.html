@@ -28,12 +28,10 @@
       <div class="controls-grid">
         <div class="control-group">
           <label for="volumeRatio">出来高倍率以上</label>
-          <!-- <input id="volumeRatio" type="number" value="5" step="0.1"> -->
           <input id="volumeRatio" type="number" value="1" step="0.1">
         </div>
         <div class="control-group">
           <label for="shadowRatio">上髭実体比以上</label>
-          <!-- <input id="shadowRatio" type="number" value="5" step="0.1"> -->
           <input id="shadowRatio" type="number" value="1" step="0.1">
         </div>
         <div class="control-group">
@@ -78,14 +76,21 @@
   <!-- チャートモーダル -->
   <div id="chartModal" class="modal">
     <div class="modal-backdrop"></div>
+
     <div class="modal-content">
       <div class="modal-header">
-        <!-- ★ chart.js が期待する ID に修正済み -->
         <h3 id="chartModalTitle">チャート</h3>
         <button id="closeChartBtn" class="btn ghost">✕</button>
       </div>
+
       <div class="modal-body">
         <canvas id="chartCanvas"></canvas>
+      </div>
+
+      <!-- 前へ / 次へ ナビゲーション -->
+      <div class="chart-nav">
+        <button id="prevChartBtn" onclick="showPrev()">前へ</button>
+        <button id="nextChartBtn" onclick="showNext()">次へ</button>
       </div>
     </div>
   </div>
