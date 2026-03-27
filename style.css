@@ -9,90 +9,90 @@
     --text-sub: #6b7280;
     --shadow-soft: 0 10px 25px rgba(15, 23, 42, 0.08);
     --radius: 12px;
-  }
-  
-  * {
+}
+
+* {
     box-sizing: border-box;
-  }
-  
-  body {
+}
+
+body {
     margin: 0;
     padding: 16px;
     font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     background: radial-gradient(circle at top, #e0f2fe, #f3f4f6);
     color: var(--text-main);
-  }
-  
-  .app-container {
+}
+
+.app-container {
     max-width: 1000px;
     margin: 0 auto;
-  }
-  
-  .app-header {
+}
+
+.app-header {
     text-align: center;
     margin-bottom: 16px;
-  }
-  
-  .app-header h1 {
+}
+
+.app-header h1 {
     margin: 0;
     font-size: 1.6rem;
-  }
-  
-  .app-header p {
+}
+
+.app-header p {
     margin: 4px 0 0;
     color: var(--text-sub);
     font-size: 0.9rem;
-  }
-  
-  .card {
+}
+
+.card {
     background: var(--card-bg);
     border-radius: var(--radius);
     box-shadow: var(--shadow-soft);
     padding: 16px 18px;
     margin-bottom: 16px;
-  }
-  
-  .controls-card h2,
-  .table-card h2 {
+}
+
+.controls-card h2,
+.table-card h2 {
     margin-top: 0;
     font-size: 1.1rem;
-  }
-  
-  .controls-grid {
+}
+
+.controls-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
     gap: 12px;
     margin-top: 8px;
-  }
-  
-  .control-group {
+}
+
+.control-group {
     display: flex;
     flex-direction: column;
     gap: 4px;
-  }
-  
-  .control-group label {
+}
+
+.control-group label {
     font-size: 0.85rem;
     color: var(--text-sub);
-  }
-  
-  .control-group input {
+}
+
+.control-group input {
     padding: 6px 8px;
     border-radius: 8px;
     border: 1px solid var(--border);
     font-size: 0.9rem;
-  }
-  
-  /* Buttons */
-  
-  .buttons-row {
+}
+
+/* Buttons */
+
+.buttons-row {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
     margin-top: 12px;
-  }
-  
-  .btn {
+}
+
+.btn {
     border-radius: 999px;
     padding: 6px 14px;
     font-size: 0.9rem;
@@ -103,114 +103,115 @@
     justify-content: center;
     gap: 4px;
     transition: background 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
-  }
-  
-  .btn:disabled {
+}
+
+.btn:disabled {
     opacity: 0.5;
     cursor: default;
     box-shadow: none;
     transform: none;
-  }
-  
-  .btn.primary {
+}
+
+.btn.primary {
     background: var(--primary);
     color: white;
     box-shadow: 0 6px 16px rgba(37, 99, 235, 0.35);
-  }
-  
-  .btn.primary:hover:not(:disabled) {
+}
+
+.btn.primary:hover:not(:disabled) {
     background: var(--primary-dark);
     transform: translateY(-1px);
-  }
-  
-  .btn.secondary {
+}
+
+.btn.secondary {
     background: #e5e7eb;
     color: var(--text-main);
-  }
-  
-  .btn.ghost {
+}
+
+.btn.ghost {
     background: transparent;
     color: var(--text-sub);
-  }
-  
-  /* Progress */
-  
-  .progress-area {
+}
+
+/* Progress */
+
+.progress-area {
     margin-top: 10px;
-  }
-  
-  .progress-text {
+}
+
+.progress-text {
     font-size: 0.85rem;
     color: var(--text-sub);
     margin-bottom: 4px;
-  }
-  
-  progress {
+}
+
+progress {
     width: 100%;
-  }
-  
-  /* Table */
-  
-  .table-wrapper {
+}
+
+/* Table */
+
+.table-wrapper {
     width: 100%;
     overflow-x: auto;
-  }
-  
-  #resultTable {
+}
+
+#resultTable {
     width: 100%;
     border-collapse: collapse;
     font-size: 0.85rem;
-  }
-  
-  #resultTable thead {
+}
+
+#resultTable thead {
     background: #eff6ff;
-  }
-  
-  #resultTable th,
-  #resultTable td {
+}
+
+#resultTable th,
+#resultTable td {
     border: 1px solid var(--border);
     padding: 6px 8px;
     text-align: center;
     white-space: nowrap;
-  }
-  
-  #resultTable tbody tr:nth-child(even) {
+}
+
+#resultTable tbody tr:nth-child(even) {
     background: #f9fafb;
-  }
-  
-  #resultTable tbody tr:hover {
+}
+
+#resultTable tbody tr:hover {
     background: #e0f2fe;
     cursor: pointer;
-  }
-  
-  .hint {
+}
+
+.hint {
     margin-top: 6px;
     font-size: 0.8rem;
     color: var(--text-sub);
-  }
-  
-  /* Modal */
-  
-  .modal {
+}
+
+/* Modal */
+
+.modal {
     position: fixed;
     inset: 0;
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 50;
-  }
-  
-  .modal.hidden {
+}
+
+/* ★ 初期非表示にする（今回追加した部分） */
+#chartModal {
     display: none;
-  }
-  
-  .modal-backdrop {
+}
+
+.modal-backdrop {
     position: absolute;
     inset: 0;
     background: rgba(15, 23, 42, 0.45);
-  }
-  
-  .modal-content {
+}
+
+.modal-content {
     position: relative;
     background: var(--card-bg);
     border-radius: var(--radius);
@@ -220,38 +221,38 @@
     max-height: 90vh;
     display: flex;
     flex-direction: column;
-  }
-  
-  .modal-header {
+}
+
+.modal-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 6px;
-  }
-  
-  .modal-header h3 {
+}
+
+.modal-header h3 {
     margin: 0;
     font-size: 1rem;
-  }
-  
-  .modal-body {
+}
+
+.modal-body {
     flex: 1;
     min-height: 260px;
-  }
-  
-  /* Responsive tweaks */
-  
-  @media (max-width: 600px) {
+}
+
+/* Responsive tweaks */
+
+@media (max-width: 600px) {
     body {
-      padding: 10px;
+        padding: 10px;
     }
-  
+
     .card {
-      padding: 12px 12px;
+        padding: 12px 12px;
     }
-  
+
     #resultTable th,
     #resultTable td {
-      padding: 4px 6px;
+        padding: 4px 6px;
     }
-  }
+}
