@@ -55,8 +55,8 @@ modal.addEventListener("touchstart", (e) => {
 
 modal.addEventListener("touchend", (e) => {
   const diff = e.changedTouches[0].clientX - touchStartX;
-  if (diff > 80) window.showPrev();     // 右フリック → 前へ
-  if (diff < -80) window.showNext();    // 左フリック → 次へ
+  if (diff > 80) window.showPrev();
+  if (diff < -80) window.showNext();
 });
 
 // チャート描画
@@ -67,9 +67,6 @@ async function drawChart(ticker) {
   try {
     const res = await fetch(url);
     json = await res.json();
-    
-    console.log("API response:", json);
-    console.log("Close keys:", Object.keys(json.Close || {}));
   } catch (e) {
     alert("チャートの取得に失敗しました。");
     return;
@@ -82,11 +79,12 @@ async function drawChart(ticker) {
 
   const dates = Object.keys(json.Close);
 
+  // ★ UNIXミリ秒 → Date に変換（今回の最重要ポイント）
   function parseDate(d) {
-    return new Date(d.replace(/-/g, "/"));
+    return new Date(Number(d));
   }
 
-  // ★ t → x に修正（最重要）
+  // ★ t → x に修正（Chart.js Financial の正しい形式）
   const chartData = dates.map(d => ({
     x: parseDate(d),
     o: json.Open[d],
