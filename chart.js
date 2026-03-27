@@ -67,6 +67,9 @@ async function drawChart(ticker) {
   try {
     const res = await fetch(url);
     json = await res.json();
+    
+    console.log("API response:", json);
+    console.log("Close keys:", Object.keys(json.Close || {}));
   } catch (e) {
     alert("チャートの取得に失敗しました。");
     return;
