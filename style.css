@@ -9,6 +9,13 @@
     --text-sub: #6b7280;
     --shadow-soft: 0 10px 25px rgba(15, 23, 42, 0.08);
     --radius: 12px;
+
+    /* チャート用カラー */
+    --ma5: green;
+    --ma25: orange;
+    --ma50: brown;
+    --ma75: purple;
+    --ma100: #0099cc;
 }
 
 * {
@@ -194,21 +201,16 @@ progress {
 .modal {
     position: fixed;
     inset: 0;
-    display: flex;
+    display: none; /* 初期非表示 */
     align-items: center;
     justify-content: center;
     z-index: 50;
 }
 
-/* ★ 初期非表示にする（今回追加した部分） */
-#chartModal {
-    display: none;
-}
-
 .modal-backdrop {
     position: absolute;
     inset: 0;
-    background: rgba(15, 23, 42, 0.45);
+    background: rgba(15, 23, 42, 0.55); /* 少し濃くして視認性UP */
 }
 
 .modal-content {
@@ -216,11 +218,12 @@ progress {
     background: var(--card-bg);
     border-radius: var(--radius);
     box-shadow: var(--shadow-soft);
-    padding: 10px;
-    width: min(95vw, 700px);
+    padding: 12px;
+    width: min(95vw, 760px);
     max-height: 90vh;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
 }
 
 .modal-header {
@@ -232,12 +235,32 @@ progress {
 
 .modal-header h3 {
     margin: 0;
-    font-size: 1rem;
+    font-size: 1.1rem;
+    font-weight: bold;
 }
 
 .modal-body {
     flex: 1;
-    min-height: 260px;
+    min-height: 300px;
+}
+
+/* 前へ / 次へ ボタン */
+.chart-nav {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 6px;
+}
+
+.chart-nav button {
+    padding: 6px 12px;
+    border-radius: 6px;
+    background: #e5e7eb;
+    border: 1px solid var(--border);
+    cursor: pointer;
+}
+
+.chart-nav button:hover {
+    background: #d1d5db;
 }
 
 /* Responsive tweaks */
@@ -254,5 +277,10 @@ progress {
     #resultTable th,
     #resultTable td {
         padding: 4px 6px;
+    }
+
+    .modal-content {
+        width: 95vw;
+        padding: 8px;
     }
 }
