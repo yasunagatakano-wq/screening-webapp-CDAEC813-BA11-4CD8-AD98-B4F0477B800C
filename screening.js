@@ -31,8 +31,8 @@ async function startScreening() {
     const tickerMap = tickerMapCache || await loadTickerList();
     tickerMapCache = tickerMap;
 
-    // ★ ここで 100 件に制限する
-    const tickers = Object.keys(tickerMap).slice(0, 100);
+    // ★ ここで 40 件に制限する
+    const tickers = Object.keys(tickerMap).slice(0, 40);
 
     progressBar.max = tickers.length;
     progressBar.value = 0;
