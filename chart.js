@@ -29,12 +29,16 @@ closeBtn.addEventListener("click", () => {
   }
 });
 
-// モーダルを開く
+// モーダルを開く（1フレーム待って drawChart）
 window.openChartModal = function(ticker, name, index) {
   currentIndex = index;
   modalTitle.textContent = `${ticker} ${name}`;
   modal.style.display = "block";
-  drawChart(ticker);
+
+  // レイアウト確定を待つ
+  requestAnimationFrame(() => {
+    drawChart(ticker);
+  });
 };
 
 // 前へ
@@ -96,6 +100,7 @@ async function drawChart(ticker) {
     volume: json.Volume[d]
   }));
 
+  // 移動平均計算
   function calcMA(period) {
     const result = [];
     for (let i = 0; i < candleData.length; i++) {
@@ -118,16 +123,24 @@ async function drawChart(ticker) {
   const ma75 = calcMA(75);
   const ma100 = calcMA(100);
 
+  // 既存チャート破棄
   if (tvChart) {
     tvChart.remove();
     tvChart = null;
   }
 
+  // chartContainer の高さが 0 の場合はリトライ
   const rect = chartContainer.getBoundingClientRect();
+  if (rect.height === 0) {
+    console.warn("chartContainer height is 0. Retrying...");
+    setTimeout(() => drawChart(ticker), 50);
+    return;
+  }
 
+  // チャート生成
   tvChart = LightweightCharts.createChart(chartContainer, {
-    width: rect.width || 600,
-    height: rect.height || 400,
+    width: rect.width,
+    height: rect.height,
     layout: {
       background: { color: '#ffffff' },
       textColor: '#333',
@@ -144,6 +157,7 @@ async function drawChart(ticker) {
     },
   });
 
+  // ローソク足
   candleSeries = tvChart.addCandlestickSeries({
     upColor: 'red',
     downColor: 'blue',
@@ -154,6 +168,7 @@ async function drawChart(ticker) {
   });
   candleSeries.setData(candleData);
 
+  // 出来高
   volumeSeries = tvChart.addHistogramSeries({
     priceFormat: { type: 'volume' },
     priceScaleId: 'volume',
@@ -167,12 +182,14 @@ async function drawChart(ticker) {
     }))
   );
 
+  // 価格スケール調整
   candleSeries.priceScale().applyOptions({
     scaleMargins: { top: 0.05, bottom: 0.25 },
   });
 
-  function addMA(seriesColor, data) {
-    const s = tvChart.addLineSeries({ color: seriesColor, lineWidth: 1 });
+  // MA シリーズ
+  function addMA(color, data) {
+    const s = tvChart.addLineSeries({ color, lineWidth: 1 });
     s.setData(data.filter(p => p.value !== null));
     return s;
   }
@@ -183,6 +200,7 @@ async function drawChart(ticker) {
   ma75Series = addMA('purple', ma75);
   ma100Series = addMA('#0099cc', ma100);
 
+  // リサイズ対応
   window.addEventListener('resize', () => {
     if (!tvChart) return;
     const r = chartContainer.getBoundingClientRect();
