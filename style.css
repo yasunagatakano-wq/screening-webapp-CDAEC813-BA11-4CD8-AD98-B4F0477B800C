@@ -163,6 +163,10 @@ tr:hover {
   margin-top: 8px;
 }
 
+#chartModal {
+    display: flex !important;
+}
+
 /* ------------------------------
    スマホ対応
 ------------------------------ */
