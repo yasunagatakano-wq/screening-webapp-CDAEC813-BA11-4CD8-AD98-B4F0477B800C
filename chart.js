@@ -43,12 +43,14 @@ function waitForHeight(callback) {
 window.openChartModal = function(ticker, name, index) {
   currentIndex = index;
   modalTitle.textContent = `${ticker} ${name}`;
-  modal.style.display = "block";
+  modal.style.display = "flex";
 
-  // モーダル描画が完全に終わるまで待つ
-  setTimeout(() => {
-    waitForHeight(() => drawChart(ticker));
-  }, 50);
+  // レイアウト確定を2フレーム待つ（最重要）
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      waitForHeight(() => drawChart(ticker));
+    });
+  });
 };
 
 // 前へ
@@ -143,6 +145,7 @@ async function drawChart(ticker) {
 
   console.log("createChart 実行");
 
+  // ★ 正しい LightweightCharts の createChart を呼ぶ
   tvChart = LightweightCharts.createChart(chartContainer, {
     width: rect.width,
     height: rect.height,
