@@ -1,6 +1,3 @@
-// ※ 前提：HTML にチャート用コンテナがあること
-// <div id="chartContainer" style="width:100%;height:400px;"></div>
-
 const modal = document.getElementById("chartModal");
 const modalTitle = document.getElementById("chartModalTitle");
 const closeBtn = document.getElementById("closeChartBtn");
@@ -29,13 +26,6 @@ closeBtn.addEventListener("click", () => {
   if (tvChart) {
     tvChart.remove();
     tvChart = null;
-    candleSeries = null;
-    volumeSeries = null;
-    ma5Series = null;
-    ma25Series = null;
-    ma50Series = null;
-    ma75Series = null;
-    ma100Series = null;
   }
 });
 
@@ -97,22 +87,15 @@ async function drawChart(ticker) {
 
   const dates = Object.keys(json.Close).sort((a, b) => Number(a) - Number(b));
 
-  function toDate(ms) {
-    return new Date(Number(ms));
-  }
-
-  // TradingView 用データ（time は秒）
   const candleData = dates.map(d => ({
     time: Math.floor(Number(d) / 1000),
     open: json.Open[d],
     high: json.High[d],
     low: json.Low[d],
     close: json.Close[d],
-    volume: json.Volume[d],
-    _date: toDate(d)
+    volume: json.Volume[d]
   }));
 
-  // 移動平均計算
   function calcMA(period) {
     const result = [];
     for (let i = 0; i < candleData.length; i++) {
@@ -135,26 +118,21 @@ async function drawChart(ticker) {
   const ma75 = calcMA(75);
   const ma100 = calcMA(100);
 
-  // 既存チャート破棄
   if (tvChart) {
     tvChart.remove();
     tvChart = null;
   }
 
-  // コンテナサイズ取得
   const rect = chartContainer.getBoundingClientRect();
 
-  // チャート生成
   tvChart = LightweightCharts.createChart(chartContainer, {
-    width: rect.width,
-    height: rect.height,
+    width: rect.width || 600,
+    height: rect.height || 400,
     layout: {
       background: { color: '#ffffff' },
       textColor: '#333',
     },
-    rightPriceScale: {
-      borderVisible: false,
-    },
+    rightPriceScale: { borderVisible: false },
     timeScale: {
       borderVisible: false,
       timeVisible: true,
@@ -166,7 +144,6 @@ async function drawChart(ticker) {
     },
   });
 
-  // ローソク足
   candleSeries = tvChart.addCandlestickSeries({
     upColor: 'red',
     downColor: 'blue',
@@ -177,15 +154,10 @@ async function drawChart(ticker) {
   });
   candleSeries.setData(candleData);
 
-  // 出来高（下部）
   volumeSeries = tvChart.addHistogramSeries({
     priceFormat: { type: 'volume' },
     priceScaleId: 'volume',
-    color: 'rgba(128,128,128,0.6)',
-    scaleMargins: {
-      top: 0.8,
-      bottom: 0,
-    },
+    scaleMargins: { top: 0.8, bottom: 0 },
   });
   volumeSeries.setData(
     candleData.map(c => ({
@@ -195,49 +167,27 @@ async function drawChart(ticker) {
     }))
   );
 
-  // 価格スケール側のマージン調整（上部）
   candleSeries.priceScale().applyOptions({
-    scaleMargins: {
-      top: 0.05,
-      bottom: 0.25,
-    },
+    scaleMargins: { top: 0.05, bottom: 0.25 },
   });
 
-  // MA シリーズ
-  ma5Series = tvChart.addLineSeries({
-    color: 'green',
-    lineWidth: 1,
-  });
-  ma5Series.setData(ma5.filter(p => p.value !== null));
+  function addMA(seriesColor, data) {
+    const s = tvChart.addLineSeries({ color: seriesColor, lineWidth: 1 });
+    s.setData(data.filter(p => p.value !== null));
+    return s;
+  }
 
-  ma25Series = tvChart.addLineSeries({
-    color: 'orange',
-    lineWidth: 1,
-  });
-  ma25Series.setData(ma25.filter(p => p.value !== null));
+  ma5Series = addMA('green', ma5);
+  ma25Series = addMA('orange', ma25);
+  ma50Series = addMA('brown', ma50);
+  ma75Series = addMA('purple', ma75);
+  ma100Series = addMA('#0099cc', ma100);
 
-  ma50Series = tvChart.addLineSeries({
-    color: 'brown',
-    lineWidth: 1,
-  });
-  ma50Series.setData(ma50.filter(p => p.value !== null));
-
-  ma75Series = tvChart.addLineSeries({
-    color: 'purple',
-    lineWidth: 1,
-  });
-  ma75Series.setData(ma75.filter(p => p.value !== null));
-
-  ma100Series = tvChart.addLineSeries({
-    color: '#0099cc',
-    lineWidth: 1,
-  });
-  ma100Series.setData(ma100.filter(p => p.value !== null));
-
-  // リサイズ対応（モーダルサイズ変更時など）
   window.addEventListener('resize', () => {
     if (!tvChart) return;
     const r = chartContainer.getBoundingClientRect();
     tvChart.applyOptions({ width: r.width, height: r.height });
   });
+
+  tvChart.timeScale().fitContent();
 }
