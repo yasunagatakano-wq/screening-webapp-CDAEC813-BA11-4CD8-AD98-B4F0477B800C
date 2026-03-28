@@ -7,12 +7,10 @@ let chartInstance = null;
 let currentIndex = 0;
 let screeningResults = [];
 
-// screening.js から結果を受け取る
 window.setScreeningResults = function(results) {
   screeningResults = results;
 };
 
-// モーダルを閉じる
 closeBtn.addEventListener("click", () => {
   modal.style.display = "none";
   if (chartInstance) {
@@ -21,7 +19,6 @@ closeBtn.addEventListener("click", () => {
   }
 });
 
-// モーダルを開く
 window.openChartModal = function(ticker, name, index) {
   currentIndex = index;
   modalTitle.textContent = `${ticker} ${name}`;
@@ -29,7 +26,6 @@ window.openChartModal = function(ticker, name, index) {
   drawChart(ticker);
 };
 
-// 前へ
 window.showPrev = function() {
   if (currentIndex > 0) {
     currentIndex--;
@@ -38,7 +34,6 @@ window.showPrev = function() {
   }
 };
 
-// 次へ
 window.showNext = function() {
   if (currentIndex < screeningResults.length - 1) {
     currentIndex++;
@@ -47,7 +42,6 @@ window.showNext = function() {
   }
 };
 
-// スマホのフリック操作
 let touchStartX = 0;
 modal.addEventListener("touchstart", (e) => {
   touchStartX = e.changedTouches[0].clientX;
@@ -59,7 +53,6 @@ modal.addEventListener("touchend", (e) => {
   if (diff < -80) window.showNext();
 });
 
-// チャート描画
 async function drawChart(ticker) {
   const url = `https://yfinance-api-fe86988c-d3b4-f1c6-640d.onrender.com/chart_full?symbol=${ticker}.T`;
 
@@ -79,14 +72,13 @@ async function drawChart(ticker) {
 
   const dates = Object.keys(json.Close);
 
-  // ★ UNIXミリ秒 → Date に変換
   function parseDate(d) {
     return new Date(Number(d));
   }
 
-  // ★ Chart.js Financial の正しい形式（x, o, h, l, c）
   const chartData = dates.map(d => ({
-    x: parseDate(d),
+    x: d,                 // ★ category 軸用に「文字列のまま」使う
+    date: parseDate(d),   // tooltip 用
     o: json.Open[d],
     h: json.High[d],
     l: json.Low[d],
@@ -94,12 +86,9 @@ async function drawChart(ticker) {
     v: json.Volume[d]
   }));
 
-  // 移動平均計算
   function calcMA(period) {
     return chartData.map((d, i) => {
-      if (i < period) {
-        return { x: d.x, y: null };
-      }
+      if (i < period) return { x: d.x, y: null };
       const slice = chartData.slice(i - period, i);
       const avg = slice.reduce((s, x) => s + x.c, 0) / period;
       return { x: d.x, y: avg };
@@ -117,13 +106,12 @@ async function drawChart(ticker) {
   chartInstance = new Chart(canvas, {
     type: "candlestick",
     data: {
+      labels: dates,   // ★ category 軸に必要
       datasets: [
         {
           label: "ローソク足",
           data: chartData,
           yAxisID: "price",
-
-          // ★ 日本式ローソク足（陽線＝赤、陰線＝青）
           borderColor: {
             up: "red",
             down: "blue",
@@ -134,10 +122,6 @@ async function drawChart(ticker) {
             down: "blue",
             unchanged: "gray"
           },
-
-          // ★ ローソク足の幅を適正化
-          barPercentage: 0.8,
-          categoryPercentage: 0.8,
           candleThickness: 6
         },
         {
@@ -159,26 +143,22 @@ async function drawChart(ticker) {
       responsive: true,
       scales: {
         x: {
-          type: "time",
-          time: { unit: "day", tooltipFormat: "yyyy-MM-dd" },
-
-          // ★ 日付ラベルを必ず表示
+          type: "category",   // ★ これがローソク足幅問題の決定的解決
           ticks: {
-            source: "data",
             autoSkip: true,
             maxRotation: 0,
-            minRotation: 0
+            minRotation: 0,
+            callback: (v, i) => {
+              const d = chartData[i].date;
+              return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;
+            }
           }
         },
-
-        // ★ 上段（ローソク足＋MA）
         price: {
           position: "right",
           weight: 3,
           title: { display: true, text: "Price" }
         },
-
-        // ★ 下段（出来高）
         volume: {
           position: "left",
           weight: 1,
