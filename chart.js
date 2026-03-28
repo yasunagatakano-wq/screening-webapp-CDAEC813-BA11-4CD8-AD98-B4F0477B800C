@@ -29,16 +29,24 @@ closeBtn.addEventListener("click", () => {
   }
 });
 
-// モーダルを開く（1フレーム待って drawChart）
+// ★ レイアウトが完全に確定するまで待つ関数
+function waitForHeight(callback) {
+  const h = chartContainer.getBoundingClientRect().height;
+  if (h > 0) {
+    callback();
+  } else {
+    setTimeout(() => waitForHeight(callback), 30);
+  }
+}
+
+// モーダルを開く（レイアウト確定後に drawChart）
 window.openChartModal = function(ticker, name, index) {
   currentIndex = index;
   modalTitle.textContent = `${ticker} ${name}`;
   modal.style.display = "block";
 
-  // レイアウト確定を待つ
-  requestAnimationFrame(() => {
-    drawChart(ticker);
-  });
+  // ★ モーダル描画が完全に終わるまで待つ
+  waitForHeight(() => drawChart(ticker));
 };
 
 // 前へ
@@ -71,7 +79,7 @@ modal.addEventListener("touchend", (e) => {
   if (diff < -80) window.showNext();
 });
 
-// チャート描画（TradingView Lightweight Charts版）
+// チャート描画
 async function drawChart(ticker) {
   const url = `https://yfinance-api-fe86988c-d3b4-f1c6-640d.onrender.com/chart_full?symbol=${ticker}.T`;
 
@@ -129,15 +137,9 @@ async function drawChart(ticker) {
     tvChart = null;
   }
 
-  // chartContainer の高さが 0 の場合はリトライ
+  // ★ 高さが確実に入っている状態で描画
   const rect = chartContainer.getBoundingClientRect();
-  if (rect.height === 0) {
-    console.warn("chartContainer height is 0. Retrying...");
-    setTimeout(() => drawChart(ticker), 50);
-    return;
-  }
 
-  // チャート生成
   console.log("createChart 実行");
 
   tvChart = LightweightCharts.createChart(chartContainer, {
