@@ -23,8 +23,6 @@ window.setScreeningResults = function(results) {
 // モーダルを閉じる
 closeBtn.addEventListener("click", () => {
   modal.style.display = "none";
-
-  // ★ LightweightCharts には remove() が存在しないため削除
   chartContainer.innerHTML = "";
   tvChart = null;
 });
@@ -45,7 +43,6 @@ window.openChartModal = function(ticker, name, index) {
   modalTitle.textContent = `${ticker} ${name}`;
   modal.style.display = "flex";
 
-  // レイアウト確定を2フレーム待つ（最重要）
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
       waitForHeight(() => drawChart(ticker));
@@ -135,7 +132,7 @@ async function drawChart(ticker) {
   const ma75 = calcMA(75);
   const ma100 = calcMA(100);
 
-  // 既存チャート破棄（remove() は使わない）
+  // 既存チャート破棄
   chartContainer.innerHTML = "";
   tvChart = null;
 
@@ -143,7 +140,7 @@ async function drawChart(ticker) {
 
   console.log("createChart 実行");
 
-  // ★ 正しい LightweightCharts の createChart を呼ぶ
+  // ★ LightweightCharts の createChart を呼ぶ
   tvChart = LightweightCharts.createChart(chartContainer, {
     width: rect.width,
     height: rect.height,
@@ -162,6 +159,9 @@ async function drawChart(ticker) {
       horzLines: { color: '#eee' },
     },
   });
+
+  // ★★★ ここが今回追加したログ ★★★
+  console.log('tvChart 実体', tvChart, typeof tvChart, Object.keys(tvChart || {}));
 
   // ローソク足
   candleSeries = tvChart.addCandlestickSeries({
@@ -188,12 +188,10 @@ async function drawChart(ticker) {
     }))
   );
 
-  // 価格スケール調整
   candleSeries.priceScale().applyOptions({
     scaleMargins: { top: 0.05, bottom: 0.25 },
   });
 
-  // MA シリーズ
   function addMA(color, data) {
     const s = tvChart.addLineSeries({ color, lineWidth: 1 });
     s.setData(data.filter(p => p.value !== null));
@@ -206,7 +204,6 @@ async function drawChart(ticker) {
   ma75Series = addMA('purple', ma75);
   ma100Series = addMA('#0099cc', ma100);
 
-  // リサイズ対応
   window.addEventListener('resize', () => {
     if (!tvChart) return;
     const r = chartContainer.getBoundingClientRect();
