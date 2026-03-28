@@ -77,8 +77,8 @@ async function drawChart(ticker) {
   }
 
   const chartData = dates.map(d => ({
-    x: d,                 // ★ category 軸用に「文字列のまま」使う
-    date: parseDate(d),   // tooltip 用
+    x: d,
+    date: parseDate(d),
     o: json.Open[d],
     h: json.High[d],
     l: json.Low[d],
@@ -106,7 +106,7 @@ async function drawChart(ticker) {
   chartInstance = new Chart(canvas, {
     type: "candlestick",
     data: {
-      labels: dates,   // ★ category 軸に必要
+      labels: dates,
       datasets: [
         {
           label: "ローソク足",
@@ -122,7 +122,9 @@ async function drawChart(ticker) {
             down: "blue",
             unchanged: "gray"
           },
-          candleThickness: 6
+
+          // ★ ローソク足を細くする決定的設定
+          minBarLength: 1
         },
         {
           label: "出来高",
@@ -143,14 +145,13 @@ async function drawChart(ticker) {
       responsive: true,
       scales: {
         x: {
-          type: "category",   // ★ これがローソク足幅問題の決定的解決
+          type: "category",
           ticks: {
             autoSkip: true,
-            maxRotation: 0,
-            minRotation: 0,
+            maxTicksLimit: 10,
             callback: (v, i) => {
               const d = chartData[i].date;
-              return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;
+              return `${d.getMonth()+1}/${d.getDate()}`;
             }
           }
         },
