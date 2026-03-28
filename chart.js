@@ -29,7 +29,7 @@ closeBtn.addEventListener("click", () => {
   }
 });
 
-// ★ レイアウトが完全に確定するまで待つ関数
+// ★ chartContainer の高さが入るまで待つ
 function waitForHeight(callback) {
   const h = chartContainer.getBoundingClientRect().height;
   if (h > 0) {
@@ -39,14 +39,16 @@ function waitForHeight(callback) {
   }
 }
 
-// モーダルを開く（レイアウト確定後に drawChart）
+// ★ モーダルを開く（レイアウト確定後に描画）
 window.openChartModal = function(ticker, name, index) {
   currentIndex = index;
   modalTitle.textContent = `${ticker} ${name}`;
   modal.style.display = "block";
 
-  // ★ モーダル描画が完全に終わるまで待つ
-  waitForHeight(() => drawChart(ticker));
+  // モーダル描画が完全に終わるまで待つ
+  setTimeout(() => {
+    waitForHeight(() => drawChart(ticker));
+  }, 50);
 };
 
 // 前へ
@@ -137,7 +139,6 @@ async function drawChart(ticker) {
     tvChart = null;
   }
 
-  // ★ 高さが確実に入っている状態で描画
   const rect = chartContainer.getBoundingClientRect();
 
   console.log("createChart 実行");
