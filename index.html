@@ -9,9 +9,9 @@
 
   <!-- ライブラリ -->
   <script src="libs/xlsx.full.min.js"></script>
-  <script src="libs/chart.js"></script>
-  <script src="libs/chartjs-chart-financial.js"></script>
-  <script src="libs/chartjs-adapter-date-fns.bundle.min.js"></script>
+
+  <!-- TradingView Lightweight Charts -->
+  <script src="libs/lightweight-charts.standalone.production.js"></script>
 
   <!-- アプリ本体 -->
   <script defer src="screening.js"></script>
@@ -85,10 +85,10 @@
       </div>
 
       <div class="modal-body">
-        <canvas id="chartCanvas"></canvas>
+        <!-- TradingView 用コンテナ -->
+        <div id="chartContainer"></div>
       </div>
 
-      <!-- 前へ / 次へ ナビゲーション -->
       <div class="chart-nav">
         <button id="prevChartBtn" onclick="showPrev()">前へ</button>
         <button id="nextChartBtn" onclick="showNext()">次へ</button>
