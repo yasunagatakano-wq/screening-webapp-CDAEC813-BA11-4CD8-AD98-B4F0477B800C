@@ -201,7 +201,7 @@ progress {
 .modal {
     position: fixed;
     inset: 0;
-    display: none; /* 初期非表示 */
+    display: none;
     align-items: center;
     justify-content: center;
     z-index: 50;
@@ -210,7 +210,7 @@ progress {
 .modal-backdrop {
     position: absolute;
     inset: 0;
-    background: rgba(15, 23, 42, 0.55); /* 少し濃くして視認性UP */
+    background: rgba(15, 23, 42, 0.55);
 }
 
 .modal-content {
@@ -283,4 +283,10 @@ progress {
         width: 95vw;
         padding: 8px;
     }
+}
+
+/* ▼▼▼ TradingView チャート用（追加） ▼▼▼ */
+#chartContainer {
+    width: 100%;
+    height: 100%;
 }
