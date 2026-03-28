@@ -188,7 +188,7 @@ function showResults(results) {
   tbody.innerHTML = "";
   results.sort((a, b) => parseFloat(b.出来高倍率) - parseFloat(a.出来高倍率));
 
-  for (const r of results) {
+  results.forEach((r, index) => {
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td>${r.コード}</td>
@@ -199,7 +199,12 @@ function showResults(results) {
       <td>${r.上髭}</td>
       <td>${r.実体}</td>
     `;
-    tr.addEventListener("click", () => openChartModal(r.コード, r.銘柄名));
+
+    tr.addEventListener("click", () => {
+      console.log("行クリック", r.コード, r.銘柄名, index);
+      openChartModal(r.コード, r.銘柄名, index);
+    });
+
     tbody.appendChild(tr);
-  }
+  });
 }
