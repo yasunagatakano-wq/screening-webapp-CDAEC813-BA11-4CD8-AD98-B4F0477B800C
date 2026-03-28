@@ -135,7 +135,9 @@ async function drawChart(ticker) {
             unchanged: "gray"
           },
 
-          // ★ ローソク足の太さ
+          // ★ ローソク足の幅を適正化
+          barPercentage: 0.8,
+          categoryPercentage: 0.8,
           candleThickness: 6
         },
         {
@@ -158,7 +160,15 @@ async function drawChart(ticker) {
       scales: {
         x: {
           type: "time",
-          time: { unit: "day", tooltipFormat: "yyyy-MM-dd" }
+          time: { unit: "day", tooltipFormat: "yyyy-MM-dd" },
+
+          // ★ 日付ラベルを必ず表示
+          ticks: {
+            source: "data",
+            autoSkip: true,
+            maxRotation: 0,
+            minRotation: 0
+          }
         },
 
         // ★ 上段（ローソク足＋MA）
