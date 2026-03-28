@@ -138,6 +138,8 @@ async function drawChart(ticker) {
   }
 
   // チャート生成
+  console.log("createChart 実行");
+
   tvChart = LightweightCharts.createChart(chartContainer, {
     width: rect.width,
     height: rect.height,
