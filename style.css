@@ -109,14 +109,10 @@ tr:hover {
 .modal {
   position: fixed;
   inset: 0;
-  display: none; /* JS で block にする */
+  display: flex; /* ← 最重要：display:none を禁止 */
   align-items: center;
   justify-content: center;
   z-index: 1000;
-}
-
-#chartModal {
-  display: flex !important; /* ← 最重要：高さ0問題の根本対策 */
 }
 
 .modal-backdrop {
@@ -161,10 +157,6 @@ tr:hover {
   display: flex;
   justify-content: space-between;
   margin-top: 8px;
-}
-
-#chartModal {
-    display: flex !important;
 }
 
 /* ------------------------------
