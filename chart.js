@@ -23,10 +23,10 @@ window.setScreeningResults = function(results) {
 // モーダルを閉じる
 closeBtn.addEventListener("click", () => {
   modal.style.display = "none";
-  if (tvChart) {
-    tvChart.remove();
-    tvChart = null;
-  }
+
+  // ★ LightweightCharts には remove() が存在しないため削除
+  chartContainer.innerHTML = "";
+  tvChart = null;
 });
 
 // ★ chartContainer の高さが入るまで待つ
@@ -135,11 +135,9 @@ async function drawChart(ticker) {
   const ma75 = calcMA(75);
   const ma100 = calcMA(100);
 
-  // 既存チャート破棄
-  if (tvChart) {
-    tvChart.remove();
-    tvChart = null;
-  }
+  // 既存チャート破棄（remove() は使わない）
+  chartContainer.innerHTML = "";
+  tvChart = null;
 
   const rect = chartContainer.getBoundingClientRect();
 
