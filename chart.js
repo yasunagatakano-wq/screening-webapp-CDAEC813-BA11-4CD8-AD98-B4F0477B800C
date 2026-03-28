@@ -1,24 +1,45 @@
+// ※ 前提：HTML にチャート用コンテナがあること
+// <div id="chartContainer" style="width:100%;height:400px;"></div>
+
 const modal = document.getElementById("chartModal");
 const modalTitle = document.getElementById("chartModalTitle");
 const closeBtn = document.getElementById("closeChartBtn");
-const canvas = document.getElementById("chartCanvas");
+const chartContainer = document.getElementById("chartContainer");
 
-let chartInstance = null;
+let tvChart = null;
+let candleSeries = null;
+let volumeSeries = null;
+let ma5Series = null;
+let ma25Series = null;
+let ma50Series = null;
+let ma75Series = null;
+let ma100Series = null;
+
 let currentIndex = 0;
 let screeningResults = [];
 
+// screening.js から結果を受け取る
 window.setScreeningResults = function(results) {
   screeningResults = results;
 };
 
+// モーダルを閉じる
 closeBtn.addEventListener("click", () => {
   modal.style.display = "none";
-  if (chartInstance) {
-    chartInstance.destroy();
-    chartInstance = null;
+  if (tvChart) {
+    tvChart.remove();
+    tvChart = null;
+    candleSeries = null;
+    volumeSeries = null;
+    ma5Series = null;
+    ma25Series = null;
+    ma50Series = null;
+    ma75Series = null;
+    ma100Series = null;
   }
 });
 
+// モーダルを開く
 window.openChartModal = function(ticker, name, index) {
   currentIndex = index;
   modalTitle.textContent = `${ticker} ${name}`;
@@ -26,6 +47,7 @@ window.openChartModal = function(ticker, name, index) {
   drawChart(ticker);
 };
 
+// 前へ
 window.showPrev = function() {
   if (currentIndex > 0) {
     currentIndex--;
@@ -34,6 +56,7 @@ window.showPrev = function() {
   }
 };
 
+// 次へ
 window.showNext = function() {
   if (currentIndex < screeningResults.length - 1) {
     currentIndex++;
@@ -42,6 +65,7 @@ window.showNext = function() {
   }
 };
 
+// スマホのフリック操作
 let touchStartX = 0;
 modal.addEventListener("touchstart", (e) => {
   touchStartX = e.changedTouches[0].clientX;
@@ -53,6 +77,7 @@ modal.addEventListener("touchend", (e) => {
   if (diff < -80) window.showNext();
 });
 
+// チャート描画（TradingView Lightweight Charts版）
 async function drawChart(ticker) {
   const url = `https://yfinance-api-fe86988c-d3b4-f1c6-640d.onrender.com/chart_full?symbol=${ticker}.T`;
 
@@ -70,29 +95,38 @@ async function drawChart(ticker) {
     return;
   }
 
-  const dates = Object.keys(json.Close);
+  const dates = Object.keys(json.Close).sort((a, b) => Number(a) - Number(b));
 
-  function parseDate(d) {
-    return new Date(Number(d));
+  function toDate(ms) {
+    return new Date(Number(ms));
   }
 
-  const chartData = dates.map(d => ({
-    x: d,
-    date: parseDate(d),
-    o: json.Open[d],
-    h: json.High[d],
-    l: json.Low[d],
-    c: json.Close[d],
-    v: json.Volume[d]
+  // TradingView 用データ（time は秒）
+  const candleData = dates.map(d => ({
+    time: Math.floor(Number(d) / 1000),
+    open: json.Open[d],
+    high: json.High[d],
+    low: json.Low[d],
+    close: json.Close[d],
+    volume: json.Volume[d],
+    _date: toDate(d)
   }));
 
+  // 移動平均計算
   function calcMA(period) {
-    return chartData.map((d, i) => {
-      if (i < period) return { x: d.x, y: null };
-      const slice = chartData.slice(i - period, i);
-      const avg = slice.reduce((s, x) => s + x.c, 0) / period;
-      return { x: d.x, y: avg };
-    });
+    const result = [];
+    for (let i = 0; i < candleData.length; i++) {
+      if (i < period) {
+        result.push({ time: candleData[i].time, value: null });
+        continue;
+      }
+      let sum = 0;
+      for (let j = i - period + 1; j <= i; j++) {
+        sum += candleData[j].close;
+      }
+      result.push({ time: candleData[i].time, value: sum / period });
+    }
+    return result;
   }
 
   const ma5 = calcMA(5);
@@ -101,73 +135,109 @@ async function drawChart(ticker) {
   const ma75 = calcMA(75);
   const ma100 = calcMA(100);
 
-  if (chartInstance) chartInstance.destroy();
+  // 既存チャート破棄
+  if (tvChart) {
+    tvChart.remove();
+    tvChart = null;
+  }
 
-  chartInstance = new Chart(canvas, {
-    type: "candlestick",
-    data: {
-      labels: dates,
-      datasets: [
-        {
-          label: "ローソク足",
-          data: chartData,
-          yAxisID: "price",
-          borderColor: {
-            up: "red",
-            down: "blue",
-            unchanged: "gray"
-          },
-          color: {
-            up: "red",
-            down: "blue",
-            unchanged: "gray"
-          },
+  // コンテナサイズ取得
+  const rect = chartContainer.getBoundingClientRect();
 
-          // ★ ローソク足を細くする決定的設定
-          minBarLength: 1
-        },
-        {
-          label: "出来高",
-          type: "bar",
-          data: chartData.map(d => ({ x: d.x, y: d.v })),
-          yAxisID: "volume",
-          backgroundColor: "rgba(128,128,128,0.4)",
-          barThickness: 4
-        },
-        { label: "MA5", data: ma5, borderColor: "green", type: "line", pointRadius: 0, yAxisID: "price" },
-        { label: "MA25", data: ma25, borderColor: "orange", type: "line", pointRadius: 0, yAxisID: "price" },
-        { label: "MA50", data: ma50, borderColor: "brown", type: "line", pointRadius: 0, yAxisID: "price" },
-        { label: "MA75", data: ma75, borderColor: "purple", type: "line", pointRadius: 0, yAxisID: "price" },
-        { label: "MA100", data: ma100, borderColor: "#0099cc", type: "line", pointRadius: 0, yAxisID: "price" }
-      ]
+  // チャート生成
+  tvChart = LightweightCharts.createChart(chartContainer, {
+    width: rect.width,
+    height: rect.height,
+    layout: {
+      background: { color: '#ffffff' },
+      textColor: '#333',
     },
-    options: {
-      responsive: true,
-      scales: {
-        x: {
-          type: "category",
-          ticks: {
-            autoSkip: true,
-            maxTicksLimit: 10,
-            callback: (v, i) => {
-              const d = chartData[i].date;
-              return `${d.getMonth()+1}/${d.getDate()}`;
-            }
-          }
-        },
-        price: {
-          position: "right",
-          weight: 3,
-          title: { display: true, text: "Price" }
-        },
-        volume: {
-          position: "left",
-          weight: 1,
-          beginAtZero: true,
-          grid: { display: false },
-          title: { display: true, text: "Volume" }
-        }
-      }
-    }
+    rightPriceScale: {
+      borderVisible: false,
+    },
+    timeScale: {
+      borderVisible: false,
+      timeVisible: true,
+      secondsVisible: false,
+    },
+    grid: {
+      vertLines: { color: '#eee' },
+      horzLines: { color: '#eee' },
+    },
+  });
+
+  // ローソク足
+  candleSeries = tvChart.addCandlestickSeries({
+    upColor: 'red',
+    downColor: 'blue',
+    borderUpColor: 'red',
+    borderDownColor: 'blue',
+    wickUpColor: 'red',
+    wickDownColor: 'blue',
+  });
+  candleSeries.setData(candleData);
+
+  // 出来高（下部）
+  volumeSeries = tvChart.addHistogramSeries({
+    priceFormat: { type: 'volume' },
+    priceScaleId: 'volume',
+    color: 'rgba(128,128,128,0.6)',
+    scaleMargins: {
+      top: 0.8,
+      bottom: 0,
+    },
+  });
+  volumeSeries.setData(
+    candleData.map(c => ({
+      time: c.time,
+      value: c.volume,
+      color: 'rgba(128,128,128,0.6)',
+    }))
+  );
+
+  // 価格スケール側のマージン調整（上部）
+  candleSeries.priceScale().applyOptions({
+    scaleMargins: {
+      top: 0.05,
+      bottom: 0.25,
+    },
+  });
+
+  // MA シリーズ
+  ma5Series = tvChart.addLineSeries({
+    color: 'green',
+    lineWidth: 1,
+  });
+  ma5Series.setData(ma5.filter(p => p.value !== null));
+
+  ma25Series = tvChart.addLineSeries({
+    color: 'orange',
+    lineWidth: 1,
+  });
+  ma25Series.setData(ma25.filter(p => p.value !== null));
+
+  ma50Series = tvChart.addLineSeries({
+    color: 'brown',
+    lineWidth: 1,
+  });
+  ma50Series.setData(ma50.filter(p => p.value !== null));
+
+  ma75Series = tvChart.addLineSeries({
+    color: 'purple',
+    lineWidth: 1,
+  });
+  ma75Series.setData(ma75.filter(p => p.value !== null));
+
+  ma100Series = tvChart.addLineSeries({
+    color: '#0099cc',
+    lineWidth: 1,
+  });
+  ma100Series.setData(ma100.filter(p => p.value !== null));
+
+  // リサイズ対応（モーダルサイズ変更時など）
+  window.addEventListener('resize', () => {
+    if (!tvChart) return;
+    const r = chartContainer.getBoundingClientRect();
+    tvChart.applyOptions({ width: r.width, height: r.height });
   });
 }
