@@ -122,16 +122,21 @@ async function drawChart(ticker) {
           label: "ローソク足",
           data: chartData,
           yAxisID: "price",
+
+          // ★ 日本式ローソク足（陽線＝赤、陰線＝青）
           borderColor: {
-            up: "blue",
-            down: "red",
+            up: "red",
+            down: "blue",
             unchanged: "gray"
           },
           color: {
-            up: "blue",
-            down: "red",
+            up: "red",
+            down: "blue",
             unchanged: "gray"
-          }
+          },
+
+          // ★ ローソク足の太さ
+          candleThickness: 6
         },
         {
           label: "出来高",
@@ -155,20 +160,21 @@ async function drawChart(ticker) {
           type: "time",
           time: { unit: "day", tooltipFormat: "yyyy-MM-dd" }
         },
+
+        // ★ 上段（ローソク足＋MA）
         price: {
           position: "right",
+          weight: 3,
           title: { display: true, text: "Price" }
         },
+
+        // ★ 下段（出来高）
         volume: {
           position: "left",
+          weight: 1,
           beginAtZero: true,
           grid: { display: false },
           title: { display: true, text: "Volume" }
-        }
-      },
-      elements: {
-        candlestick: {
-          barThickness: 6   // ★ ローソク足の太さ
         }
       }
     }
