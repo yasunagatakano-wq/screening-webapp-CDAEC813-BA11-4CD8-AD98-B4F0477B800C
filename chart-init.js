@@ -8,7 +8,7 @@ window.addEventListener("DOMContentLoaded", () => {
       background: { color: '#ffffff' },
       textColor: '#333',
     },
-    rightPriceScale: { borderVisible: true },
+    rightPriceScale: { visible: false }, // ← デフォルトスケールは使わない
     timeScale: {
       borderVisible: false,
       timeVisible: true,
@@ -21,7 +21,7 @@ window.addEventListener("DOMContentLoaded", () => {
   });
 
   // -----------------------------
-  // ① ローソク足（上 70%）
+  // ① ローソク足（右側）
   // -----------------------------
   const candleSeries = chart.addSeries(LightweightCharts.CandlestickSeries, {
     priceScaleId: 'candles',
@@ -34,17 +34,18 @@ window.addEventListener("DOMContentLoaded", () => {
   });
 
   chart.priceScale('candles').applyOptions({
+    position: 'right',     // ★ 右側に表示
+    visible: true,
+    borderVisible: true,
+    mode: LightweightCharts.PriceScaleMode.Normal,
     scaleMargins: {
       top: 0.05,
       bottom: 0.35,
     },
-    visible: true,
-    borderVisible: true,
-    mode: LightweightCharts.PriceScaleMode.Normal,   // ★ これが重要
   });
 
   // -----------------------------
-  // ② 出来高（下 30%）
+  // ② 出来高（左側）
   // -----------------------------
   const volumeSeries = chart.addSeries(LightweightCharts.HistogramSeries, {
     priceScaleId: 'volume',
@@ -53,13 +54,14 @@ window.addEventListener("DOMContentLoaded", () => {
   });
 
   chart.priceScale('volume').applyOptions({
+    position: 'left',      // ★ 左側に表示（これで重ならない）
+    visible: true,
+    borderVisible: true,
+    mode: LightweightCharts.PriceScaleMode.Normal,
     scaleMargins: {
       top: 0.70,
       bottom: 0,
     },
-    visible: true,
-    borderVisible: true,
-    mode: LightweightCharts.PriceScaleMode.Normal,   // ★ これが重要
   });
 
   // -----------------------------
