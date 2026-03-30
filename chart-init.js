@@ -1,7 +1,6 @@
 window.addEventListener("DOMContentLoaded", () => {
   const chartContainer = document.getElementById("chartContainer");
 
-  // チャート作成
   const chart = LightweightCharts.createChart(chartContainer, {
     width: chartContainer.clientWidth,
     height: chartContainer.clientHeight,
@@ -21,8 +20,8 @@ window.addEventListener("DOMContentLoaded", () => {
     },
   });
 
-  // ローソク足シリーズ
-  const candleSeries = chart.addCandlestickSeries({
+  // ★ ここを「addSeries + CandlestickSeries」に変更
+  const candleSeries = chart.addSeries(LightweightCharts.CandlestickSeries, {
     upColor: 'red',
     downColor: 'blue',
     borderUpColor: 'red',
@@ -31,7 +30,6 @@ window.addEventListener("DOMContentLoaded", () => {
     wickDownColor: 'blue',
   });
 
-  // 1605 のデータ取得
   fetch("https://yfinance-api-fe86988c-d3b4-f1c6-640d.onrender.com/chart_full?symbol=1605.T")
     .then(res => res.json())
     .then(json => {
