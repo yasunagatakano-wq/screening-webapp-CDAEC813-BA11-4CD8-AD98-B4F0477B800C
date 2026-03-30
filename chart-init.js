@@ -8,7 +8,7 @@ window.addEventListener("DOMContentLoaded", () => {
       background: { color: '#ffffff' },
       textColor: '#333',
     },
-    rightPriceScale: { visible: false }, // ← デフォルトスケールは使わない
+    rightPriceScale: { visible: true },  // ★ ここが重要（false にすると全部消える）
     timeScale: {
       borderVisible: false,
       timeVisible: true,
@@ -34,7 +34,7 @@ window.addEventListener("DOMContentLoaded", () => {
   });
 
   chart.priceScale('candles').applyOptions({
-    position: 'right',     // ★ 右側に表示
+    position: 'right',
     visible: true,
     borderVisible: true,
     mode: LightweightCharts.PriceScaleMode.Normal,
@@ -54,7 +54,7 @@ window.addEventListener("DOMContentLoaded", () => {
   });
 
   chart.priceScale('volume').applyOptions({
-    position: 'left',      // ★ 左側に表示（これで重ならない）
+    position: 'left',
     visible: true,
     borderVisible: true,
     mode: LightweightCharts.PriceScaleMode.Normal,
