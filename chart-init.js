@@ -20,7 +20,7 @@ window.addEventListener("DOMContentLoaded", () => {
     },
   });
 
-  // ★ ここを「addSeries + CandlestickSeries」に変更
+  // ローソク足
   const candleSeries = chart.addSeries(LightweightCharts.CandlestickSeries, {
     upColor: 'red',
     downColor: 'blue',
@@ -28,6 +28,25 @@ window.addEventListener("DOMContentLoaded", () => {
     borderDownColor: 'blue',
     wickUpColor: 'red',
     wickDownColor: 'blue',
+  });
+
+  // 出来高（下部に表示するヒストグラム）
+  const volumeSeries = chart.addSeries(LightweightCharts.HistogramSeries, {
+    priceFormat: { type: 'volume' },
+    priceScaleId: 'volume',
+    scaleMargins: {
+      top: 0.8,   // 上 80% をローソク足用
+      bottom: 0,  // 下 20% を出来高用
+    },
+    color: 'rgba(128,128,128,0.6)',
+  });
+
+  // ローソク足側のスケールマージン調整
+  candleSeries.priceScale().applyOptions({
+    scaleMargins: {
+      top: 0.05,
+      bottom: 0.25, // 下 25% を空けて出来高と重ならないようにする
+    },
   });
 
   fetch("https://yfinance-api-fe86988c-d3b4-f1c6-640d.onrender.com/chart_full?symbol=1605.T")
@@ -41,9 +60,18 @@ window.addEventListener("DOMContentLoaded", () => {
         high: json.High[d],
         low: json.Low[d],
         close: json.Close[d],
+        volume: json.Volume[d],
       }));
 
       candleSeries.setData(candleData);
+
+      // 出来高データをヒストグラムに設定
+      const volumeData = candleData.map(c => ({
+        time: c.time,
+        value: c.volume,
+      }));
+      volumeSeries.setData(volumeData);
+
       chart.timeScale().fitContent();
     })
     .catch(err => {
