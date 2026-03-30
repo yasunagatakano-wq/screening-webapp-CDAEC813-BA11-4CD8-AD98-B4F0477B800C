@@ -8,7 +8,8 @@ window.addEventListener("DOMContentLoaded", () => {
       background: { color: '#ffffff' },
       textColor: '#333',
     },
-    rightPriceScale: { visible: true },  // ★ ここが重要（false にすると全部消える）
+    // ★ デフォルトスケールは使わない
+    rightPriceScale: { visible: false },
     timeScale: {
       borderVisible: false,
       timeVisible: true,
@@ -18,6 +19,23 @@ window.addEventListener("DOMContentLoaded", () => {
       vertLines: { color: '#eee' },
       horzLines: { color: '#eee' },
     },
+    // ★ ここで “candles” スケールを chart に登録する
+    priceScale: {
+      candles: {
+        position: 'right',
+        visible: true,
+        borderVisible: true,
+        mode: LightweightCharts.PriceScaleMode.Normal,
+        scaleMargins: { top: 0.05, bottom: 0.35 },
+      },
+      volume: {
+        position: 'left',
+        visible: true,
+        borderVisible: true,
+        mode: LightweightCharts.PriceScaleMode.Normal,
+        scaleMargins: { top: 0.70, bottom: 0 },
+      }
+    }
   });
 
   // -----------------------------
@@ -33,17 +51,6 @@ window.addEventListener("DOMContentLoaded", () => {
     wickDownColor: 'blue',
   });
 
-  chart.priceScale('candles').applyOptions({
-    position: 'right',
-    visible: true,
-    borderVisible: true,
-    mode: LightweightCharts.PriceScaleMode.Normal,
-    scaleMargins: {
-      top: 0.05,
-      bottom: 0.35,
-    },
-  });
-
   // -----------------------------
   // ② 出来高（左側）
   // -----------------------------
@@ -51,17 +58,6 @@ window.addEventListener("DOMContentLoaded", () => {
     priceScaleId: 'volume',
     priceFormat: { type: 'volume' },
     color: 'rgba(128,128,128,0.6)',
-  });
-
-  chart.priceScale('volume').applyOptions({
-    position: 'left',
-    visible: true,
-    borderVisible: true,
-    mode: LightweightCharts.PriceScaleMode.Normal,
-    scaleMargins: {
-      top: 0.70,
-      bottom: 0,
-    },
   });
 
   // -----------------------------
