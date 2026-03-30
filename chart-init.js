@@ -8,8 +8,7 @@ window.addEventListener("DOMContentLoaded", () => {
       background: { color: '#ffffff' },
       textColor: '#333',
     },
-    // ★ デフォルトスケールは使わない
-    rightPriceScale: { visible: false },
+    rightPriceScale: { visible: true },
     timeScale: {
       borderVisible: false,
       timeVisible: true,
@@ -19,27 +18,10 @@ window.addEventListener("DOMContentLoaded", () => {
       vertLines: { color: '#eee' },
       horzLines: { color: '#eee' },
     },
-    // ★ ここで “candles” スケールを chart に登録する
-    priceScale: {
-      candles: {
-        position: 'right',
-        visible: true,
-        borderVisible: true,
-        mode: LightweightCharts.PriceScaleMode.Normal,
-        scaleMargins: { top: 0.05, bottom: 0.35 },
-      },
-      volume: {
-        position: 'left',
-        visible: true,
-        borderVisible: true,
-        mode: LightweightCharts.PriceScaleMode.Normal,
-        scaleMargins: { top: 0.70, bottom: 0 },
-      }
-    }
   });
 
   // -----------------------------
-  // ① ローソク足（右側）
+  // ① ローソク足（上 70%）
   // -----------------------------
   const candleSeries = chart.addSeries(LightweightCharts.CandlestickSeries, {
     priceScaleId: 'candles',
@@ -51,13 +33,33 @@ window.addEventListener("DOMContentLoaded", () => {
     wickDownColor: 'blue',
   });
 
+  chart.priceScale('candles').applyOptions({
+    position: 'right',
+    visible: true,
+    borderVisible: true,
+    scaleMargins: {
+      top: 0.05,
+      bottom: 0.30,   // ← 0.35 → 0.30 に変更（合計 1.0 以下にする）
+    },
+  });
+
   // -----------------------------
-  // ② 出来高（左側）
+  // ② 出来高（下 30%）
   // -----------------------------
   const volumeSeries = chart.addSeries(LightweightCharts.HistogramSeries, {
     priceScaleId: 'volume',
     priceFormat: { type: 'volume' },
     color: 'rgba(128,128,128,0.6)',
+  });
+
+  chart.priceScale('volume').applyOptions({
+    position: 'right',     // ← 右側に統一（左右分割は v5 で不安定）
+    visible: true,
+    borderVisible: true,
+    scaleMargins: {
+      top: 0.70,   // ← ローソク足の bottom と一致させる
+      bottom: 0,
+    },
   });
 
   // -----------------------------
