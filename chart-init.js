@@ -36,10 +36,11 @@ window.addEventListener("DOMContentLoaded", () => {
   chart.priceScale('candles').applyOptions({
     scaleMargins: {
       top: 0.05,
-      bottom: 0.35,   // ← ローソク足の下に十分なスペース
+      bottom: 0.35,
     },
-    visible: true,        // ← 目盛りを表示
-    borderVisible: true,  // ← スケール境界線を表示
+    visible: true,
+    borderVisible: true,
+    mode: LightweightCharts.PriceScaleMode.Normal,   // ★ これが重要
   });
 
   // -----------------------------
@@ -53,11 +54,12 @@ window.addEventListener("DOMContentLoaded", () => {
 
   chart.priceScale('volume').applyOptions({
     scaleMargins: {
-      top: 0.70,   // ← 上 70% をローソク足に割り当てる
+      top: 0.70,
       bottom: 0,
     },
-    visible: true,        // ← 目盛りを表示
-    borderVisible: true,  // ← スケール境界線を表示
+    visible: true,
+    borderVisible: true,
+    mode: LightweightCharts.PriceScaleMode.Normal,   // ★ これが重要
   });
 
   // -----------------------------
