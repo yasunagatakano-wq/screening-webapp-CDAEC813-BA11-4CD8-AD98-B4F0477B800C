@@ -8,7 +8,7 @@ window.addEventListener("DOMContentLoaded", () => {
       background: { color: '#ffffff' },
       textColor: '#333',
     },
-    rightPriceScale: { borderVisible: false },
+    rightPriceScale: { borderVisible: true },
     timeScale: {
       borderVisible: false,
       timeVisible: true,
@@ -36,8 +36,10 @@ window.addEventListener("DOMContentLoaded", () => {
   chart.priceScale('candles').applyOptions({
     scaleMargins: {
       top: 0.05,
-      bottom: 0.35,   // ← ローソク足の下に 35% のスペースを確保
+      bottom: 0.35,   // ← ローソク足の下に十分なスペース
     },
+    visible: true,        // ← 目盛りを表示
+    borderVisible: true,  // ← スケール境界線を表示
   });
 
   // -----------------------------
@@ -54,6 +56,8 @@ window.addEventListener("DOMContentLoaded", () => {
       top: 0.70,   // ← 上 70% をローソク足に割り当てる
       bottom: 0,
     },
+    visible: true,        // ← 目盛りを表示
+    borderVisible: true,  // ← スケール境界線を表示
   });
 
   // -----------------------------
