@@ -20,8 +20,11 @@ window.addEventListener("DOMContentLoaded", () => {
     },
   });
 
-  // ローソク足
+  // -----------------------------
+  // ① ローソク足（上 70%）
+  // -----------------------------
   const candleSeries = chart.addSeries(LightweightCharts.CandlestickSeries, {
+    priceScaleId: 'candles',
     upColor: 'red',
     downColor: 'blue',
     borderUpColor: 'red',
@@ -30,25 +33,32 @@ window.addEventListener("DOMContentLoaded", () => {
     wickDownColor: 'blue',
   });
 
-  // ★ ローソク足の下側に余白を増やす
-  candleSeries.priceScale().applyOptions({
+  chart.priceScale('candles').applyOptions({
     scaleMargins: {
       top: 0.05,
-      bottom: 0.30,   // ← ここを増やすと重なりが解消される
+      bottom: 0.35,   // ← ローソク足の下に 35% のスペースを確保
     },
   });
 
-  // 出来高
+  // -----------------------------
+  // ② 出来高（下 30%）
+  // -----------------------------
   const volumeSeries = chart.addSeries(LightweightCharts.HistogramSeries, {
-    priceFormat: { type: 'volume' },
     priceScaleId: 'volume',
-    scaleMargins: {
-      top: 0.75,   // ← 上側の余白を少し減らす
-      bottom: 0,
-    },
+    priceFormat: { type: 'volume' },
     color: 'rgba(128,128,128,0.6)',
   });
 
+  chart.priceScale('volume').applyOptions({
+    scaleMargins: {
+      top: 0.70,   // ← 上 70% をローソク足に割り当てる
+      bottom: 0,
+    },
+  });
+
+  // -----------------------------
+  // ③ データ取得
+  // -----------------------------
   fetch("https://yfinance-api-fe86988c-d3b4-f1c6-640d.onrender.com/chart_full?symbol=1605.T")
     .then(res => res.json())
     .then(json => {
