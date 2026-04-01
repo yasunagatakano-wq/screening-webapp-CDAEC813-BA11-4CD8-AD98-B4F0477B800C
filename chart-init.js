@@ -23,6 +23,9 @@ window.addEventListener("DOMContentLoaded", () => {
     },
   });
 
+  // -----------------------------
+  // ① ローソク足（メインチャート）
+  // -----------------------------
   const candleSeries = chart.addSeries(LightweightCharts.CandlestickSeries, {
     upColor: 'red',
     downColor: 'blue',
@@ -32,6 +35,22 @@ window.addEventListener("DOMContentLoaded", () => {
     wickDownColor: 'blue',
   });
 
+  // -----------------------------
+  // ② 出来高（オーバーレイ）
+  // -----------------------------
+  const volumeSeries = chart.addSeries(LightweightCharts.HistogramSeries, {
+    priceFormat: { type: 'volume' },
+    priceScaleId: '',   // ← ★ これが重要：メインチャートと同じスケールを使う
+    color: 'rgba(128,128,128,0.6)',
+    scaleMargins: {
+      top: 0.8,   // 上 80% をローソク足に
+      bottom: 0,  // 下 20% を出来高に
+    },
+  });
+
+  // -----------------------------
+  // ③ データ取得
+  // -----------------------------
   fetch("https://yfinance-api-fe86988c-d3b4-f1c6-640d.onrender.com/chart_full?symbol=1605.T")
     .then(res => res.json())
     .then(json => {
@@ -43,9 +62,17 @@ window.addEventListener("DOMContentLoaded", () => {
         high: json.High[d],
         low: json.Low[d],
         close: json.Close[d],
+        volume: json.Volume[d],
       }));
 
       candleSeries.setData(candleData);
+
+      const volumeData = candleData.map(c => ({
+        time: c.time,
+        value: c.volume,
+      }));
+      volumeSeries.setData(volumeData);
+
       chart.timeScale().fitContent();
     })
     .catch(err => {
