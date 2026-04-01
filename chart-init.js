@@ -26,14 +26,12 @@ window.addEventListener("DOMContentLoaded", () => {
     },
   });
 
-  // ★ ホバー時の日付を「2026/03/08」形式にする
   chart.applyOptions({
     localization: {
       dateFormat: 'yyyy/MM/dd',
     },
   });
 
-  // ★ X軸の目盛を「MM/DD」形式にする
   chart.timeScale().applyOptions({
     tickMarkFormatter: (time) => {
       const date = new Date(time * 1000);
@@ -44,7 +42,7 @@ window.addEventListener("DOMContentLoaded", () => {
   });
 
   // -----------------------------
-  // ① ローソク足（メインチャート）
+  // ローソク足
   // -----------------------------
   const candleSeries = chart.addSeries(LightweightCharts.CandlestickSeries, {
     upColor: 'red',
@@ -56,7 +54,7 @@ window.addEventListener("DOMContentLoaded", () => {
   });
 
   // -----------------------------
-  // ② 出来高（オーバーレイ）
+  // 出来高
   // -----------------------------
   const volumeSeries = chart.addSeries(LightweightCharts.HistogramSeries, {
     priceFormat: { type: 'volume' },
@@ -69,7 +67,7 @@ window.addEventListener("DOMContentLoaded", () => {
   });
 
   // -----------------------------
-  // ★ 移動平均線（5・25・50・75・100）
+  // 移動平均線
   // -----------------------------
   const ma5   = chart.addSeries(LightweightCharts.LineSeries, { color: '#ff0000', lineWidth: 2 });
   const ma25  = chart.addSeries(LightweightCharts.LineSeries, { color: '#00aa00', lineWidth: 2 });
@@ -77,7 +75,6 @@ window.addEventListener("DOMContentLoaded", () => {
   const ma75  = chart.addSeries(LightweightCharts.LineSeries, { color: '#aa00aa', lineWidth: 2 });
   const ma100 = chart.addSeries(LightweightCharts.LineSeries, { color: '#ffaa00', lineWidth: 2 });
 
-  // ★ null を渡さない MA 計算
   function calcMA(data, period) {
     const result = [];
     for (let i = period - 1; i < data.length; i++) {
@@ -89,22 +86,21 @@ window.addEventListener("DOMContentLoaded", () => {
   }
 
   // -----------------------------
-  // ③ データ取得（200d）※ onrender の API を使用
+  // データ取得（200d）
   // -----------------------------
-  fetch("https://yfinance-api-fe86988c-d3b4-f1c6-640d.onrender.com/chart_full?symbol=1605.T&range=200d")
+  fetch("https://yfinance-api-fe86988c-d3b4-f1c6-640d.onrender.com/chart_full?symbol=1605.T")
     .then(res => res.json())
     .then(json => {
-      // json は { Open: {ts: value}, High: {...}, ... } 形式
       const dates = Object.keys(json.Close).sort((a, b) => Number(a) - Number(b));
 
-      // ★ fullData（200d）: MA 計算用の全期間
+      // ★ fullData（200d）
       const fullData = dates.map(d => {
-        const original = new Date(Number(d)); // JST 00:00 相当
+        const original = new Date(Number(d));
         const utc = Date.UTC(
           original.getFullYear(),
           original.getMonth(),
           original.getDate()
-        ); // UTC 00:00 に変換
+        );
 
         return {
           time: Math.floor(utc / 1000),
@@ -116,19 +112,17 @@ window.addEventListener("DOMContentLoaded", () => {
         };
       });
 
-      // ★ 表示するローソク足は 90d 相当（末尾から本数で制御）
+      // ★ 表示は 90d
       const DISPLAY_COUNT = 90;
       const candleData = fullData.slice(-DISPLAY_COUNT);
 
       candleSeries.setData(candleData);
 
-      const volumeData = candleData.map(c => ({
-        time: c.time,
-        value: c.volume,
-      }));
-      volumeSeries.setData(volumeData);
+      volumeSeries.setData(
+        candleData.map(c => ({ time: c.time, value: c.volume }))
+      );
 
-      // ★ MA は fullData（200d）で計算し、表示期間に合わせて末尾だけ切り出す
+      // ★ MA は fullData（200d）で計算し、90d に切り出す
       ma5.setData(calcMA(fullData, 5).slice(-DISPLAY_COUNT));
       ma25.setData(calcMA(fullData, 25).slice(-DISPLAY_COUNT));
       ma50.setData(calcMA(fullData, 50).slice(-DISPLAY_COUNT));
@@ -143,7 +137,7 @@ window.addEventListener("DOMContentLoaded", () => {
     });
 
   // -----------------------------
-  // ④ ホバー時に OHLCV を表示（カンマ付き）
+  // ホバー時の OHLCV 表示
   // -----------------------------
   const tooltip = document.createElement('div');
   tooltip.style.position = 'absolute';
