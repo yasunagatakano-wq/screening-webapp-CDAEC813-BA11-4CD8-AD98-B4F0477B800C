@@ -137,7 +137,7 @@ window.addEventListener("DOMContentLoaded", () => {
     });
 
   // -----------------------------
-  // ホバー時の OHLCV 表示
+  // ホバー時の OHLCV + MA 表示
   // -----------------------------
   const tooltip = document.createElement('div');
   tooltip.style.position = 'absolute';
@@ -160,6 +160,13 @@ window.addEventListener("DOMContentLoaded", () => {
 
     const candle = param.seriesData.get(candleSeries);
     const volume = param.seriesData.get(volumeSeries);
+
+    // ★ MA の値
+    const v5   = param.seriesData.get(ma5);
+    const v25  = param.seriesData.get(ma25);
+    const v50  = param.seriesData.get(ma50);
+    const v75  = param.seriesData.get(ma75);
+    const v100 = param.seriesData.get(ma100);
 
     if (!candle) {
       tooltip.style.display = 'none';
@@ -184,6 +191,12 @@ window.addEventListener("DOMContentLoaded", () => {
       <div>安値: ${candle.low.toLocaleString()}</div>
       <div>終値: ${candle.close.toLocaleString()}</div>
       <div>出来高: ${volume ? volume.value.toLocaleString() : ''}</div>
+      <hr>
+      <div>5MA: ${v5   && v5.value   ? v5.value.toFixed(2)   : '-'}</div>
+      <div>25MA: ${v25 && v25.value  ? v25.value.toFixed(2)  : '-'}</div>
+      <div>50MA: ${v50 && v50.value  ? v50.value.toFixed(2)  : '-'}</div>
+      <div>75MA: ${v75 && v75.value  ? v75.value.toFixed(2)  : '-'}</div>
+      <div>100MA: ${v100 && v100.value ? v100.value.toFixed(2) : '-'}</div>
     `;
   });
 });
