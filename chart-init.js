@@ -66,11 +66,11 @@ window.addEventListener("DOMContentLoaded", () => {
   const ma75  = chart.addSeries(LightweightCharts.LineSeries, { color: '#aa00aa', lineWidth: 2 });
   const ma100 = chart.addSeries(LightweightCharts.LineSeries, { color: '#ffaa00', lineWidth: 2 });
 
-  // ★ 楽天証券方式：当日を含む MA（従来の正しい方式）
+  // ★ MA（当日を含む）
   function calcMA(data, period) {
     const result = [];
     for (let i = period - 1; i < data.length; i++) {
-      const slice = data.slice(i - period + 1, i + 1); // 当日を含む
+      const slice = data.slice(i - period + 1, i + 1);
       const avg = slice.reduce((sum, d) => sum + d.close, 0) / period;
       result.push({ time: data[i].time, value: avg });
     }
@@ -90,17 +90,20 @@ window.addEventListener("DOMContentLoaded", () => {
           original.getDate()
         );
 
-        // ★ 楽天証券方式：小数第3位で四捨五入 → 小数第2位に整形
+        // ★ 丸め前の終値をコンソールへ出力
         const closeRaw = json.Close[d];
-        const closeRounded3 = Math.round(closeRaw * 1000) / 1000; // 小数第3位で四捨五入
-        const closeForMa = Number(closeRounded3.toFixed(2));      // 小数第2位に整形
+        console.log("RAW CLOSE", d, closeRaw);
+
+        // ★ 現状の丸め処理（後で調整する）
+        const closeRounded3 = Math.round(closeRaw * 1000) / 1000;
+        const closeForMa = Number(closeRounded3.toFixed(2));
 
         return {
           time: Math.floor(utc / 1000),
           open: json.Open[d],
           high: json.High[d],
           low: json.Low[d],
-          close: closeForMa,   // ★ MA 計算に使う終値
+          close: closeForMa,
           volume: json.Volume[d],
         };
       });
@@ -114,7 +117,6 @@ window.addEventListener("DOMContentLoaded", () => {
         candleData.map(c => ({ time: c.time, value: c.volume }))
       );
 
-      // ★ 楽天証券方式 MA（当日を含む）
       ma5.setData(calcMA(fullData, 5).slice(-DISPLAY_COUNT));
       ma25.setData(calcMA(fullData, 25).slice(-DISPLAY_COUNT));
       ma50.setData(calcMA(fullData, 50).slice(-DISPLAY_COUNT));
