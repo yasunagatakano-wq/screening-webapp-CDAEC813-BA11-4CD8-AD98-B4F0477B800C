@@ -23,11 +23,17 @@ window.addEventListener("DOMContentLoaded", () => {
     },
   });
 
+  // ★ ホバー時の日付を「2026/03/08」形式にする
+  chart.applyOptions({
+    localization: {
+      dateFormat: 'yyyy/MM/dd',
+    },
+  });
+
   // -----------------------------
-  // ① ローソク足（右側・上 85%）
+  // ① ローソク足（メインチャート）
   // -----------------------------
   const candleSeries = chart.addSeries(LightweightCharts.CandlestickSeries, {
-    priceScaleId: 'candles',
     upColor: 'red',
     downColor: 'blue',
     borderUpColor: 'red',
@@ -36,32 +42,15 @@ window.addEventListener("DOMContentLoaded", () => {
     wickDownColor: 'blue',
   });
 
-  chart.priceScale('candles').applyOptions({
-    position: 'right',
-    visible: true,
-    borderVisible: true,
-    scaleMargins: {
-      top: 0.05,
-      bottom: 0.15,   // ← ★ ここを 0.15 に変更（85%）
-    },
-  });
-
   // -----------------------------
-  // ② 出来高（左側・下 15%）
+  // ② 出来高（TradingView方式：同じスケール上で下に寄せる）
   // -----------------------------
   const volumeSeries = chart.addSeries(LightweightCharts.HistogramSeries, {
-    priceScaleId: 'volume',
     priceFormat: { type: 'volume' },
     color: 'rgba(128,128,128,0.6)',
-  });
-
-  chart.priceScale('volume').applyOptions({
-    position: 'left',
-    visible: true,
-    borderVisible: true,
     scaleMargins: {
-      top: 0.85,   // ← ★ ローソク足の bottom と完全一致
-      bottom: 0,
+      top: 0.8,   // 上 80% をローソク足に
+      bottom: 0,  // 下 20% を出来高に
     },
   });
 
