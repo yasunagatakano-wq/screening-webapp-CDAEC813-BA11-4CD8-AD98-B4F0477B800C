@@ -8,10 +8,7 @@ window.addEventListener("DOMContentLoaded", () => {
       background: { color: '#ffffff' },
       textColor: '#333',
     },
-    rightPriceScale: {
-      visible: true,
-      borderVisible: true,
-    },
+    rightPriceScale: { visible: true },
     timeScale: {
       borderVisible: true,
       timeVisible: true,
@@ -24,9 +21,10 @@ window.addEventListener("DOMContentLoaded", () => {
   });
 
   // -----------------------------
-  // ① ローソク足（メインチャート）
+  // ① ローソク足（上 75%）
   // -----------------------------
   const candleSeries = chart.addSeries(LightweightCharts.CandlestickSeries, {
+    priceScaleId: 'candles',
     upColor: 'red',
     downColor: 'blue',
     borderUpColor: 'red',
@@ -35,16 +33,32 @@ window.addEventListener("DOMContentLoaded", () => {
     wickDownColor: 'blue',
   });
 
+  chart.priceScale('candles').applyOptions({
+    position: 'right',
+    visible: true,
+    borderVisible: true,
+    scaleMargins: {
+      top: 0.05,
+      bottom: 0.25,   // ← ★ 境界を 0.25 に統一
+    },
+  });
+
   // -----------------------------
-  // ② 出来高（オーバーレイ）
+  // ② 出来高（下 25%）
   // -----------------------------
   const volumeSeries = chart.addSeries(LightweightCharts.HistogramSeries, {
+    priceScaleId: 'volume',
     priceFormat: { type: 'volume' },
-    priceScaleId: '',   // ← ★ これが重要：メインチャートと同じスケールを使う
     color: 'rgba(128,128,128,0.6)',
+  });
+
+  chart.priceScale('volume').applyOptions({
+    position: 'right',
+    visible: true,
+    borderVisible: true,
     scaleMargins: {
-      top: 0.8,   // 上 80% をローソク足に
-      bottom: 0,  // 下 20% を出来高に
+      top: 0.25,   // ← ★ ローソク足の bottom と完全一致
+      bottom: 0,
     },
   });
 
@@ -74,9 +88,5 @@ window.addEventListener("DOMContentLoaded", () => {
       volumeSeries.setData(volumeData);
 
       chart.timeScale().fitContent();
-    })
-    .catch(err => {
-      console.error("チャート取得エラー:", err);
-      alert("チャートの取得に失敗しました。");
     });
 });
