@@ -41,9 +41,6 @@ window.addEventListener("DOMContentLoaded", () => {
     },
   });
 
-  // -----------------------------
-  // ローソク足
-  // -----------------------------
   const candleSeries = chart.addSeries(LightweightCharts.CandlestickSeries, {
     upColor: 'red',
     downColor: 'blue',
@@ -53,9 +50,6 @@ window.addEventListener("DOMContentLoaded", () => {
     wickDownColor: 'blue',
   });
 
-  // -----------------------------
-  // 出来高
-  // -----------------------------
   const volumeSeries = chart.addSeries(LightweightCharts.HistogramSeries, {
     priceFormat: { type: 'volume' },
     priceScaleId: '',
@@ -66,37 +60,28 @@ window.addEventListener("DOMContentLoaded", () => {
     },
   });
 
-  // -----------------------------
-  // 移動平均線
-  // -----------------------------
   const ma5   = chart.addSeries(LightweightCharts.LineSeries, { color: '#ff0000', lineWidth: 2 });
   const ma25  = chart.addSeries(LightweightCharts.LineSeries, { color: '#00aa00', lineWidth: 2 });
   const ma50  = chart.addSeries(LightweightCharts.LineSeries, { color: '#0000ff', lineWidth: 2 });
   const ma75  = chart.addSeries(LightweightCharts.LineSeries, { color: '#aa00aa', lineWidth: 2 });
   const ma100 = chart.addSeries(LightweightCharts.LineSeries, { color: '#ffaa00', lineWidth: 2 });
 
-  // -----------------------------
-  // MA 計算
-  // -----------------------------
+  // ★ 楽天証券方式：当日を含まない MA
   function calcMA(data, period) {
     const result = [];
-    for (let i = period - 1; i < data.length; i++) {
-      const slice = data.slice(i - period + 1, i + 1);
+    for (let i = period; i < data.length; i++) {
+      const slice = data.slice(i - period, i); // 当日を含めない
       const avg = slice.reduce((sum, d) => sum + d.close, 0) / period;
       result.push({ time: data[i].time, value: avg });
     }
     return result;
   }
 
-  // -----------------------------
-  // データ取得（200d）
-  // -----------------------------
   fetch("https://yfinance-api-fe86988c-d3b4-f1c6-640d.onrender.com/chart_full?symbol=1605.T")
     .then(res => res.json())
     .then(json => {
       const dates = Object.keys(json.Close).sort((a, b) => Number(a) - Number(b));
 
-      // ★ fullData（200d）
       const fullData = dates.map(d => {
         const original = new Date(Number(d));
         const utc = Date.UTC(
@@ -105,21 +90,19 @@ window.addEventListener("DOMContentLoaded", () => {
           original.getDate()
         );
 
-        // ★ 終値を小数第2位で丸める（楽天証券と一致させる）
         const closeRaw = json.Close[d];
-        const closeForMa = Number(closeRaw.toFixed(2));
+        const closeRounded = Number(closeRaw.toFixed(2)); // 小数第2位で丸める
 
         return {
           time: Math.floor(utc / 1000),
           open: json.Open[d],
           high: json.High[d],
           low: json.Low[d],
-          close: closeForMa,   // ★ MA 計算に使う終値
+          close: closeRounded,
           volume: json.Volume[d],
         };
       });
 
-      // ★ 表示は 90d
       const DISPLAY_COUNT = 90;
       const candleData = fullData.slice(-DISPLAY_COUNT);
 
@@ -129,7 +112,7 @@ window.addEventListener("DOMContentLoaded", () => {
         candleData.map(c => ({ time: c.time, value: c.volume }))
       );
 
-      // ★ MA は fullData（200d）で計算し、90d に切り出す
+      // ★ 楽天方式 MA（当日を含まない）
       ma5.setData(calcMA(fullData, 5).slice(-DISPLAY_COUNT));
       ma25.setData(calcMA(fullData, 25).slice(-DISPLAY_COUNT));
       ma50.setData(calcMA(fullData, 50).slice(-DISPLAY_COUNT));
@@ -137,15 +120,8 @@ window.addEventListener("DOMContentLoaded", () => {
       ma100.setData(calcMA(fullData, 100).slice(-DISPLAY_COUNT));
 
       chart.timeScale().fitContent();
-    })
-    .catch(err => {
-      console.error("チャート取得エラー:", err);
-      alert("チャートの取得に失敗しました。");
     });
 
-  // -----------------------------
-  // ホバー時の OHLCV + MA 表示
-  // -----------------------------
   const tooltip = document.createElement('div');
   tooltip.style.position = 'absolute';
   tooltip.style.display = 'none';
