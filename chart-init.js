@@ -75,6 +75,9 @@ window.addEventListener("DOMContentLoaded", () => {
   const ma75  = chart.addSeries(LightweightCharts.LineSeries, { color: '#aa00aa', lineWidth: 2 });
   const ma100 = chart.addSeries(LightweightCharts.LineSeries, { color: '#ffaa00', lineWidth: 2 });
 
+  // ★ MA に使う終値を選択（楽天証券に合わせるなら false）
+  const USE_ADJ_CLOSE_FOR_MA = false;
+
   function calcMA(data, period) {
     const result = [];
     for (let i = period - 1; i < data.length; i++) {
@@ -102,12 +105,21 @@ window.addEventListener("DOMContentLoaded", () => {
           original.getDate()
         );
 
+        // ★ Close / Adj Close を選択
+        const closeRaw = json.Close[d];
+        const closeAdj = json["Adj Close"] ? json["Adj Close"][d] : null;
+
+        const closeForMa =
+          USE_ADJ_CLOSE_FOR_MA && closeAdj != null
+            ? closeAdj
+            : closeRaw;
+
         return {
           time: Math.floor(utc / 1000),
           open: json.Open[d],
           high: json.High[d],
           low: json.Low[d],
-          close: json.Close[d],
+          close: closeForMa,   // ★ MA 計算に使う終値
           volume: json.Volume[d],
         };
       });
@@ -161,7 +173,6 @@ window.addEventListener("DOMContentLoaded", () => {
     const candle = param.seriesData.get(candleSeries);
     const volume = param.seriesData.get(volumeSeries);
 
-    // ★ MA の値
     const v5   = param.seriesData.get(ma5);
     const v25  = param.seriesData.get(ma25);
     const v50  = param.seriesData.get(ma50);
