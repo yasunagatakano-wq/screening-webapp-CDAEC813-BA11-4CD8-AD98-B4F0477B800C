@@ -71,20 +71,16 @@ window.addEventListener("DOMContentLoaded", () => {
   // -----------------------------
   // ★ 移動平均線（5・25・50・75・100）
   // -----------------------------
-  const ma5  = chart.addSeries(LightweightCharts.LineSeries,  { color: '#ff0000', lineWidth: 2 });
-  const ma25 = chart.addSeries(LightweightCharts.LineSeries,  { color: '#00aa00', lineWidth: 2 });
-  const ma50 = chart.addSeries(LightweightCharts.LineSeries,  { color: '#0000ff', lineWidth: 2 });
-  const ma75 = chart.addSeries(LightweightCharts.LineSeries,  { color: '#aa00aa', lineWidth: 2 });
-  const ma100= chart.addSeries(LightweightCharts.LineSeries,  { color: '#ffaa00', lineWidth: 2 });
+  const ma5   = chart.addSeries(LightweightCharts.LineSeries, { color: '#ff0000', lineWidth: 2 });
+  const ma25  = chart.addSeries(LightweightCharts.LineSeries, { color: '#00aa00', lineWidth: 2 });
+  const ma50  = chart.addSeries(LightweightCharts.LineSeries, { color: '#0000ff', lineWidth: 2 });
+  const ma75  = chart.addSeries(LightweightCharts.LineSeries, { color: '#aa00aa', lineWidth: 2 });
+  const ma100 = chart.addSeries(LightweightCharts.LineSeries, { color: '#ffaa00', lineWidth: 2 });
 
-  // 移動平均を計算する関数
+  // ★ null を渡さない MA 計算
   function calcMA(data, period) {
     const result = [];
-    for (let i = 0; i < data.length; i++) {
-      if (i < period - 1) {
-        result.push({ time: data[i].time, value: null });
-        continue;
-      }
+    for (let i = period - 1; i < data.length; i++) {
       const slice = data.slice(i - period + 1, i + 1);
       const avg = slice.reduce((sum, d) => sum + d.close, 0) / period;
       result.push({ time: data[i].time, value: avg });
@@ -126,7 +122,7 @@ window.addEventListener("DOMContentLoaded", () => {
       }));
       volumeSeries.setData(volumeData);
 
-      // ★ 移動平均線のセット
+      // ★ 移動平均線のセット（null を渡さない）
       ma5.setData(calcMA(candleData, 5));
       ma25.setData(calcMA(candleData, 25));
       ma50.setData(calcMA(candleData, 50));
