@@ -23,6 +23,13 @@ window.addEventListener("DOMContentLoaded", () => {
     },
   });
 
+  // ★ ホバー時の日付を「2026/03/08」形式にする
+  chart.applyOptions({
+    localization: {
+      dateFormat: 'yyyy/MM/dd',
+    },
+  });
+
   // -----------------------------
   // ① ローソク足（メインチャート）
   // -----------------------------
