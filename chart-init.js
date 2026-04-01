@@ -16,8 +16,6 @@ window.addEventListener("DOMContentLoaded", () => {
       borderVisible: true,
       timeVisible: false,
       secondsVisible: false,
-
-      // ★ 可能な限り毎日表示
       fixLeftEdge: true,
       fixRightEdge: true,
       tickMarkSpacing: 50,
@@ -71,6 +69,30 @@ window.addEventListener("DOMContentLoaded", () => {
   });
 
   // -----------------------------
+  // ★ 移動平均線（5・25・50・75・100）
+  // -----------------------------
+  const ma5  = chart.addSeries(LightweightCharts.LineSeries,  { color: '#ff0000', lineWidth: 2 });
+  const ma25 = chart.addSeries(LightweightCharts.LineSeries,  { color: '#00aa00', lineWidth: 2 });
+  const ma50 = chart.addSeries(LightweightCharts.LineSeries,  { color: '#0000ff', lineWidth: 2 });
+  const ma75 = chart.addSeries(LightweightCharts.LineSeries,  { color: '#aa00aa', lineWidth: 2 });
+  const ma100= chart.addSeries(LightweightCharts.LineSeries,  { color: '#ffaa00', lineWidth: 2 });
+
+  // 移動平均を計算する関数
+  function calcMA(data, period) {
+    const result = [];
+    for (let i = 0; i < data.length; i++) {
+      if (i < period - 1) {
+        result.push({ time: data[i].time, value: null });
+        continue;
+      }
+      const slice = data.slice(i - period + 1, i + 1);
+      const avg = slice.reduce((sum, d) => sum + d.close, 0) / period;
+      result.push({ time: data[i].time, value: avg });
+    }
+    return result;
+  }
+
+  // -----------------------------
   // ③ データ取得
   // -----------------------------
   fetch("https://yfinance-api-fe86988c-d3b4-f1c6-640d.onrender.com/chart_full?symbol=1605.T")
@@ -103,6 +125,13 @@ window.addEventListener("DOMContentLoaded", () => {
         value: c.volume,
       }));
       volumeSeries.setData(volumeData);
+
+      // ★ 移動平均線のセット
+      ma5.setData(calcMA(candleData, 5));
+      ma25.setData(calcMA(candleData, 25));
+      ma50.setData(calcMA(candleData, 50));
+      ma75.setData(calcMA(candleData, 75));
+      ma100.setData(calcMA(candleData, 100));
 
       chart.timeScale().fitContent();
     })
@@ -141,7 +170,6 @@ window.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    // ★ param.time は UTC 00:00 なので、そのまま JST に補正
     const JST_OFFSET = 9 * 60 * 60 * 1000;
     const date = new Date(param.time * 1000 + JST_OFFSET);
 
