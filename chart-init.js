@@ -47,7 +47,7 @@ window.addEventListener("DOMContentLoaded", () => {
   // -----------------------------
   const volumeSeries = chart.addSeries(LightweightCharts.HistogramSeries, {
     priceFormat: { type: 'volume' },
-    priceScaleId: '',   // ← ★ これが重要：メインチャートと同じスケールを使う
+    priceScaleId: '',   // メインチャートと同じスケール
     color: 'rgba(128,128,128,0.6)',
     scaleMargins: {
       top: 0.8,   // 上 80% をローソク足に
@@ -86,4 +86,54 @@ window.addEventListener("DOMContentLoaded", () => {
       console.error("チャート取得エラー:", err);
       alert("チャートの取得に失敗しました。");
     });
+
+  // -----------------------------
+  // ④ ホバー時に OHLCV を表示
+  // -----------------------------
+  const tooltip = document.createElement('div');
+  tooltip.style.position = 'absolute';
+  tooltip.style.display = 'none';
+  tooltip.style.padding = '8px';
+  tooltip.style.background = 'rgba(255,255,255,0.9)';
+  tooltip.style.border = '1px solid #ccc';
+  tooltip.style.borderRadius = '4px';
+  tooltip.style.fontSize = '12px';
+  tooltip.style.pointerEvents = 'none';
+  tooltip.style.zIndex = '1000';
+  chartContainer.style.position = 'relative';
+  chartContainer.appendChild(tooltip);
+
+  chart.subscribeCrosshairMove(param => {
+    if (!param.time || !param.seriesData.size || !param.point) {
+      tooltip.style.display = 'none';
+      return;
+    }
+
+    const candle = param.seriesData.get(candleSeries);
+    const volume = param.seriesData.get(volumeSeries);
+
+    if (!candle) {
+      tooltip.style.display = 'none';
+      return;
+    }
+
+    // time は UTCTimestamp（秒）なので Date に変換
+    const date = new Date((param.time) * 1000);
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+
+    tooltip.style.display = 'block';
+    tooltip.style.left = param.point.x + 20 + 'px';
+    tooltip.style.top = param.point.y + 20 + 'px';
+
+    tooltip.innerHTML = `
+      <div>日付: ${y}/${m}/${d}</div>
+      <div>始値: ${candle.open}</div>
+      <div>高値: ${candle.high}</div>
+      <div>安値: ${candle.low}</div>
+      <div>終値: ${candle.close}</div>
+      <div>出来高: ${volume ? volume.value : ''}</div>
+    `;
+  });
 });
