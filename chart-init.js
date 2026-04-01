@@ -23,13 +23,6 @@ window.addEventListener("DOMContentLoaded", () => {
     },
   });
 
-  // ★ ホバー時の日付を「2026/03/08」形式にする
-  chart.applyOptions({
-    localization: {
-      dateFormat: 'yyyy/MM/dd',
-    },
-  });
-
   // -----------------------------
   // ① ローソク足（メインチャート）
   // -----------------------------
@@ -43,10 +36,11 @@ window.addEventListener("DOMContentLoaded", () => {
   });
 
   // -----------------------------
-  // ② 出来高（TradingView方式：同じスケール上で下に寄せる）
+  // ② 出来高（オーバーレイ）
   // -----------------------------
   const volumeSeries = chart.addSeries(LightweightCharts.HistogramSeries, {
     priceFormat: { type: 'volume' },
+    priceScaleId: '',   // ← ★ これが重要：メインチャートと同じスケールを使う
     color: 'rgba(128,128,128,0.6)',
     scaleMargins: {
       top: 0.8,   // 上 80% をローソク足に
