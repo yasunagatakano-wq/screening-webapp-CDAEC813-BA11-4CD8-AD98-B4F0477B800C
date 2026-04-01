@@ -78,14 +78,23 @@ window.addEventListener("DOMContentLoaded", () => {
     .then(json => {
       const dates = Object.keys(json.Close).sort((a, b) => Number(a) - Number(b));
 
-      const candleData = dates.map(d => ({
-        time: Math.floor(Number(d) / 1000),
-        open: json.Open[d],
-        high: json.High[d],
-        low: json.Low[d],
-        close: json.Close[d],
-        volume: json.Volume[d],
-      }));
+      const candleData = dates.map(d => {
+        const original = new Date(Number(d)); // JST 00:00
+        const utc = Date.UTC(
+          original.getFullYear(),
+          original.getMonth(),
+          original.getDate()
+        ); // UTC 00:00 に変換
+
+        return {
+          time: Math.floor(utc / 1000),
+          open: json.Open[d],
+          high: json.High[d],
+          low: json.Low[d],
+          close: json.Close[d],
+          volume: json.Volume[d],
+        };
+      });
 
       candleSeries.setData(candleData);
 
@@ -103,7 +112,7 @@ window.addEventListener("DOMContentLoaded", () => {
     });
 
   // -----------------------------
-  // ④ ホバー時に OHLCV を表示（JST補正 + カンマ付き）
+  // ④ ホバー時に OHLCV を表示（カンマ付き）
   // -----------------------------
   const tooltip = document.createElement('div');
   tooltip.style.position = 'absolute';
@@ -132,7 +141,7 @@ window.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    // ★ JST（日本時間）に補正
+    // ★ param.time は UTC 00:00 なので、そのまま JST に補正
     const JST_OFFSET = 9 * 60 * 60 * 1000;
     const date = new Date(param.time * 1000 + JST_OFFSET);
 
