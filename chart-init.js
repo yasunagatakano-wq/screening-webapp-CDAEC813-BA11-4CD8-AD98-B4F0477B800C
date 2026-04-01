@@ -75,9 +75,9 @@ window.addEventListener("DOMContentLoaded", () => {
   const ma75  = chart.addSeries(LightweightCharts.LineSeries, { color: '#aa00aa', lineWidth: 2 });
   const ma100 = chart.addSeries(LightweightCharts.LineSeries, { color: '#ffaa00', lineWidth: 2 });
 
-  // ★ MA に使う終値を選択（楽天証券に合わせるなら false）
-  const USE_ADJ_CLOSE_FOR_MA = false;
-
+  // -----------------------------
+  // MA 計算
+  // -----------------------------
   function calcMA(data, period) {
     const result = [];
     for (let i = period - 1; i < data.length; i++) {
@@ -105,14 +105,9 @@ window.addEventListener("DOMContentLoaded", () => {
           original.getDate()
         );
 
-        // ★ Close / Adj Close を選択
+        // ★ 終値を小数第2位で丸める（楽天証券と一致させる）
         const closeRaw = json.Close[d];
-        const closeAdj = json["Adj Close"] ? json["Adj Close"][d] : null;
-
-        const closeForMa =
-          USE_ADJ_CLOSE_FOR_MA && closeAdj != null
-            ? closeAdj
-            : closeRaw;
+        const closeForMa = Number(closeRaw.toFixed(2));
 
         return {
           time: Math.floor(utc / 1000),
