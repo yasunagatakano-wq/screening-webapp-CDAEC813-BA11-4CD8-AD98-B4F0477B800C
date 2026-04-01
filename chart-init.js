@@ -14,7 +14,7 @@ window.addEventListener("DOMContentLoaded", () => {
     },
     timeScale: {
       borderVisible: true,
-      timeVisible: true,
+      timeVisible: false,
       secondsVisible: false,
     },
     grid: {
