@@ -1,6 +1,40 @@
 window.addEventListener("DOMContentLoaded", () => {
   const chartContainer = document.getElementById("chartContainer");
 
+  // ★ 銘柄情報を表示する要素を追加
+  const infoBox = document.createElement("div");
+  infoBox.style.position = "absolute";
+  infoBox.style.top = "5px";
+  infoBox.style.left = "10px";
+  infoBox.style.fontSize = "16px";
+  infoBox.style.fontWeight = "bold";
+  infoBox.style.zIndex = "2000";
+  infoBox.style.background = "rgba(255,255,255,0.8)";
+  infoBox.style.padding = "4px 8px";
+  infoBox.style.borderRadius = "4px";
+  infoBox.innerText = "1605  INPEX";
+  chartContainer.appendChild(infoBox);
+
+  // ★ 凡例を追加
+  const legend = document.createElement("div");
+  legend.style.position = "absolute";
+  legend.style.top = "5px";
+  legend.style.right = "10px";
+  legend.style.fontSize = "12px";
+  legend.style.zIndex = "2000";
+  legend.style.background = "rgba(255,255,255,0.8)";
+  legend.style.padding = "6px 8px";
+  legend.style.borderRadius = "4px";
+  legend.innerHTML = `
+    <div><span style="color:#ff0000;">■</span> 5MA</div>
+    <div><span style="color:#00aa00;">■</span> 25MA</div>
+    <div><span style="color:#0000ff;">■</span> 50MA</div>
+    <div><span style="color:#aa00aa;">■</span> 75MA</div>
+    <div><span style="color:#ffaa00;">■</span> 100MA</div>
+  `;
+  chartContainer.appendChild(legend);
+
+  // ★ チャート本体
   const chart = LightweightCharts.createChart(chartContainer, {
     width: chartContainer.clientWidth,
     height: chartContainer.clientHeight,
@@ -66,7 +100,6 @@ window.addEventListener("DOMContentLoaded", () => {
   const ma75  = chart.addSeries(LightweightCharts.LineSeries, { color: '#aa00aa', lineWidth: 2 });
   const ma100 = chart.addSeries(LightweightCharts.LineSeries, { color: '#ffaa00', lineWidth: 2 });
 
-  // ★ 標準的な移動平均（当日を含む）
   function calcMA(data, period) {
     const result = [];
     for (let i = period - 1; i < data.length; i++) {
@@ -90,7 +123,6 @@ window.addEventListener("DOMContentLoaded", () => {
           original.getDate()
         );
 
-        // ★ yfinance の Close をそのまま使用（丸めなし）
         const closeRaw = json.Close[d];
 
         return {
@@ -112,7 +144,6 @@ window.addEventListener("DOMContentLoaded", () => {
         candleData.map(c => ({ time: c.time, value: c.volume }))
       );
 
-      // ★ 標準 MA（当日を含む）
       ma5.setData(calcMA(fullData, 5).slice(-DISPLAY_COUNT));
       ma25.setData(calcMA(fullData, 25).slice(-DISPLAY_COUNT));
       ma50.setData(calcMA(fullData, 50).slice(-DISPLAY_COUNT));
