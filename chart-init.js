@@ -17,10 +17,10 @@ window.addEventListener("DOMContentLoaded", () => {
       timeVisible: false,
       secondsVisible: false,
 
-      // ★ 可能な限り毎日表示するための設定
+      // ★ 可能な限り毎日表示
       fixLeftEdge: true,
       fixRightEdge: true,
-      tickMarkSpacing: 50, // 小さいほど密になる
+      tickMarkSpacing: 50,
     },
     grid: {
       vertLines: { color: '#eee' },
@@ -103,7 +103,7 @@ window.addEventListener("DOMContentLoaded", () => {
     });
 
   // -----------------------------
-  // ④ ホバー時に OHLCV を表示（カンマ付き）
+  // ④ ホバー時に OHLCV を表示（JST補正 + カンマ付き）
   // -----------------------------
   const tooltip = document.createElement('div');
   tooltip.style.position = 'absolute';
@@ -132,7 +132,10 @@ window.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    const date = new Date(param.time * 1000);
+    // ★ JST（日本時間）に補正
+    const JST_OFFSET = 9 * 60 * 60 * 1000;
+    const date = new Date(param.time * 1000 + JST_OFFSET);
+
     const y = date.getFullYear();
     const m = String(date.getMonth() + 1).padStart(2, '0');
     const d = String(date.getDate()).padStart(2, '0');
