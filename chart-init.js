@@ -66,7 +66,7 @@ window.addEventListener("DOMContentLoaded", () => {
   const ma75  = chart.addSeries(LightweightCharts.LineSeries, { color: '#aa00aa', lineWidth: 2 });
   const ma100 = chart.addSeries(LightweightCharts.LineSeries, { color: '#ffaa00', lineWidth: 2 });
 
-  // ★ MA（当日を含む）
+  // ★ 標準的な移動平均（当日を含む）
   function calcMA(data, period) {
     const result = [];
     for (let i = period - 1; i < data.length; i++) {
@@ -90,20 +90,15 @@ window.addEventListener("DOMContentLoaded", () => {
           original.getDate()
         );
 
-        // ★ 丸め前の終値をコンソールへ出力
+        // ★ yfinance の Close をそのまま使用（丸めなし）
         const closeRaw = json.Close[d];
-        console.log("RAW CLOSE", d, closeRaw);
-
-        // ★ 現状の丸め処理（後で調整する）
-        const closeRounded3 = Math.round(closeRaw * 1000) / 1000;
-        const closeForMa = Number(closeRounded3.toFixed(2));
 
         return {
           time: Math.floor(utc / 1000),
           open: json.Open[d],
           high: json.High[d],
           low: json.Low[d],
-          close: closeForMa,
+          close: closeRaw,
           volume: json.Volume[d],
         };
       });
@@ -117,6 +112,7 @@ window.addEventListener("DOMContentLoaded", () => {
         candleData.map(c => ({ time: c.time, value: c.volume }))
       );
 
+      // ★ 標準 MA（当日を含む）
       ma5.setData(calcMA(fullData, 5).slice(-DISPLAY_COUNT));
       ma25.setData(calcMA(fullData, 25).slice(-DISPLAY_COUNT));
       ma50.setData(calcMA(fullData, 50).slice(-DISPLAY_COUNT));
