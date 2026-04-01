@@ -129,11 +129,11 @@ window.addEventListener("DOMContentLoaded", () => {
 
     tooltip.innerHTML = `
       <div>日付: ${y}/${m}/${d}</div>
-      <div>始値: ${candle.open}</div>
-      <div>高値: ${candle.high}</div>
-      <div>安値: ${candle.low}</div>
-      <div>終値: ${candle.close}</div>
-      <div>出来高: ${volume ? volume.value : ''}</div>
+      <div>始値: ${candle.open.toLocaleString()}</div>
+      <div>高値: ${candle.high.toLocaleString()}</div>
+      <div>安値: ${candle.low.toLocaleString()}</div>
+      <div>終値: ${candle.close.toLocaleString()}</div>
+      <div>出来高: ${volume ? volume.value.toLocaleString() : ''}</div>
     `;
   });
 });
