@@ -24,7 +24,7 @@ window.addEventListener("DOMContentLoaded", () => {
   });
 
   // -----------------------------
-  // ① ローソク足（右側・上 75%）
+  // ① ローソク足（右側・上 85%）
   // -----------------------------
   const candleSeries = chart.addSeries(LightweightCharts.CandlestickSeries, {
     priceScaleId: 'candles',
@@ -37,17 +37,17 @@ window.addEventListener("DOMContentLoaded", () => {
   });
 
   chart.priceScale('candles').applyOptions({
-    position: 'right',     // ← ローソク足は右側
+    position: 'right',
     visible: true,
     borderVisible: true,
     scaleMargins: {
       top: 0.05,
-      bottom: 0.25,        // ← 下 25% を出来高に割り当てる
+      bottom: 0.15,   // ← ★ ここを 0.15 に変更（85%）
     },
   });
 
   // -----------------------------
-  // ② 出来高（左側・下 25%）
+  // ② 出来高（左側・下 15%）
   // -----------------------------
   const volumeSeries = chart.addSeries(LightweightCharts.HistogramSeries, {
     priceScaleId: 'volume',
@@ -56,11 +56,11 @@ window.addEventListener("DOMContentLoaded", () => {
   });
 
   chart.priceScale('volume').applyOptions({
-    position: 'left',      // ← 出来高は左側（これが安定の鍵）
+    position: 'left',
     visible: true,
     borderVisible: true,
     scaleMargins: {
-      top: 0.75,           // ← ローソク足の bottom と完全一致
+      top: 0.85,   // ← ★ ローソク足の bottom と完全一致
       bottom: 0,
     },
   });
