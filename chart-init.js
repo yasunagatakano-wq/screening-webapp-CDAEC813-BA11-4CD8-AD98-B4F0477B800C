@@ -89,18 +89,17 @@ window.addEventListener("DOMContentLoaded", () => {
   }
 
   // -----------------------------
-  // ③ データ取得（200d）
+  // ③ データ取得（200d）※ onrender の API を使用
   // -----------------------------
-  fetch("https://query1.finance.yahoo.com/v8/finance/chart/1605.T?interval=1d&range=200d")
+  fetch("https://yfinance-api-fe86988c-d3b4-f1c6-640d.onrender.com/chart_full?symbol=1605.T&range=200d")
     .then(res => res.json())
     .then(json => {
-      const result = json.chart.result[0];
-      const timestamps = result.timestamp;
-      const indicators = result.indicators.quote[0];
+      // json は { Open: {ts: value}, High: {...}, ... } 形式
+      const dates = Object.keys(json.Close).sort((a, b) => Number(a) - Number(b));
 
-      // ★ fullData（200d）
-      const fullData = timestamps.map((t, i) => {
-        const original = new Date(t * 1000); // JST 00:00
+      // ★ fullData（200d）: MA 計算用の全期間
+      const fullData = dates.map(d => {
+        const original = new Date(Number(d)); // JST 00:00 相当
         const utc = Date.UTC(
           original.getFullYear(),
           original.getMonth(),
@@ -109,15 +108,15 @@ window.addEventListener("DOMContentLoaded", () => {
 
         return {
           time: Math.floor(utc / 1000),
-          open: indicators.open[i],
-          high: indicators.high[i],
-          low: indicators.low[i],
-          close: indicators.close[i],
-          volume: indicators.volume[i],
+          open: json.Open[d],
+          high: json.High[d],
+          low: json.Low[d],
+          close: json.Close[d],
+          volume: json.Volume[d],
         };
       });
 
-      // ★ 表示するローソク足は 90d
+      // ★ 表示するローソク足は 90d 相当（末尾から本数で制御）
       const DISPLAY_COUNT = 90;
       const candleData = fullData.slice(-DISPLAY_COUNT);
 
@@ -129,7 +128,7 @@ window.addEventListener("DOMContentLoaded", () => {
       }));
       volumeSeries.setData(volumeData);
 
-      // ★ MA は fullData（200d）で計算し、90d に切り出す
+      // ★ MA は fullData（200d）で計算し、表示期間に合わせて末尾だけ切り出す
       ma5.setData(calcMA(fullData, 5).slice(-DISPLAY_COUNT));
       ma25.setData(calcMA(fullData, 25).slice(-DISPLAY_COUNT));
       ma50.setData(calcMA(fullData, 50).slice(-DISPLAY_COUNT));
