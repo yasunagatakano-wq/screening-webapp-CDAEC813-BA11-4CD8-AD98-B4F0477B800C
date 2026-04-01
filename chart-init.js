@@ -16,6 +16,11 @@ window.addEventListener("DOMContentLoaded", () => {
       borderVisible: true,
       timeVisible: false,
       secondsVisible: false,
+
+      // ★ 可能な限り毎日表示するための設定
+      fixLeftEdge: true,
+      fixRightEdge: true,
+      tickMarkSpacing: 50, // 小さいほど密になる
     },
     grid: {
       vertLines: { color: '#eee' },
@@ -27,6 +32,16 @@ window.addEventListener("DOMContentLoaded", () => {
   chart.applyOptions({
     localization: {
       dateFormat: 'yyyy/MM/dd',
+    },
+  });
+
+  // ★ X軸の目盛を「MM/DD」形式にする
+  chart.timeScale().applyOptions({
+    tickMarkFormatter: (time) => {
+      const date = new Date(time * 1000);
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      const d = String(date.getDate()).padStart(2, '0');
+      return `${m}/${d}`;
     },
   });
 
@@ -47,11 +62,11 @@ window.addEventListener("DOMContentLoaded", () => {
   // -----------------------------
   const volumeSeries = chart.addSeries(LightweightCharts.HistogramSeries, {
     priceFormat: { type: 'volume' },
-    priceScaleId: '',   // メインチャートと同じスケール
+    priceScaleId: '',
     color: 'rgba(128,128,128,0.6)',
     scaleMargins: {
-      top: 0.8,   // 上 80% をローソク足に
-      bottom: 0,  // 下 20% を出来高に
+      top: 0.8,
+      bottom: 0,
     },
   });
 
@@ -88,7 +103,7 @@ window.addEventListener("DOMContentLoaded", () => {
     });
 
   // -----------------------------
-  // ④ ホバー時に OHLCV を表示
+  // ④ ホバー時に OHLCV を表示（カンマ付き）
   // -----------------------------
   const tooltip = document.createElement('div');
   tooltip.style.position = 'absolute';
@@ -117,8 +132,7 @@ window.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    // time は UTCTimestamp（秒）なので Date に変換
-    const date = new Date((param.time) * 1000);
+    const date = new Date(param.time * 1000);
     const y = date.getFullYear();
     const m = String(date.getMonth() + 1).padStart(2, '0');
     const d = String(date.getDate()).padStart(2, '0');
