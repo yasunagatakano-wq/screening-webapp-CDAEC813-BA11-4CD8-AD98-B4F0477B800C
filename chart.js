@@ -25,15 +25,21 @@ window.setScreeningResults = function(results) {
   screeningResults = results;
 };
 
-// モーダルを閉じる
-closeBtn.addEventListener("click", () => {
+// モーダルを閉じる共通関数
+function closeModal() {
   modal.style.display = "none";
   if (tvChart) {
     tvChart.remove();
     tvChart = null;
   }
   chartContainer.innerHTML = "";
-});
+}
+
+// ×ボタンで閉じる
+closeBtn.addEventListener("click", closeModal);
+
+// ★ グレー背景クリックで閉じる
+document.querySelector(".modal-backdrop").addEventListener("click", closeModal);
 
 // ★ chartContainer の高さが入るまで待つ
 function waitForHeight(callback) {
@@ -48,7 +54,10 @@ function waitForHeight(callback) {
 // ★ モーダルを開く
 window.openChartModal = function(ticker, name, index) {
   currentIndex = index;
-  modalTitle.textContent = `${ticker} ${name}`;
+
+  // ★ タイトルは空にして二重表示を防ぐ
+  modalTitle.textContent = "";
+
   modal.style.display = "flex";
 
   requestAnimationFrame(() => {
@@ -249,6 +258,21 @@ async function drawChart(ticker, name) {
   infoBox.style.borderRadius = "4px";
   infoBox.innerText = `${ticker}  ${name}`;
   chartContainer.appendChild(infoBox);
+
+  // ★ 前へ / 次へ ボタン（上部 × の左）
+  const nav = document.createElement("div");
+  nav.style.position = "absolute";
+  nav.style.top = "5px";
+  nav.style.right = "50px";
+  nav.style.zIndex = "2000";
+  nav.innerHTML = `
+    <button id="prevChartBtn" style="margin-right:8px;">前へ</button>
+    <button id="nextChartBtn">次へ</button>
+  `;
+  chartContainer.appendChild(nav);
+
+  document.getElementById("prevChartBtn").onclick = window.showPrev;
+  document.getElementById("nextChartBtn").onclick = window.showNext;
 
   // ★ 凡例（銘柄名の下）
   const legend = document.createElement("div");
