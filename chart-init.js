@@ -27,7 +27,7 @@ window.addEventListener("DOMContentLoaded", () => {
   legend.style.padding = "6px 8px";
   legend.style.borderRadius = "4px";
   legend.innerHTML = `
-    <div><span style="color:#ff0000;">■</span> 5MA</div>
+    <div><span style="color:#ff7f00;">■</span> 5MA</div>
     <div><span style="color:#00aa00;">■</span> 25MA</div>
     <div><span style="color:#0000ff;">■</span> 50MA</div>
     <div><span style="color:#aa00aa;">■</span> 75MA</div>
@@ -95,7 +95,8 @@ window.addEventListener("DOMContentLoaded", () => {
     },
   });
 
-  const ma5   = chart.addSeries(LightweightCharts.LineSeries, { color: '#ff0000', lineWidth: 2 });
+  // ★ 5MA の色をオレンジに変更
+  const ma5   = chart.addSeries(LightweightCharts.LineSeries, { color: '#ff7f00', lineWidth: 2 });
   const ma25  = chart.addSeries(LightweightCharts.LineSeries, { color: '#00aa00', lineWidth: 2 });
   const ma50  = chart.addSeries(LightweightCharts.LineSeries, { color: '#0000ff', lineWidth: 2 });
   const ma75  = chart.addSeries(LightweightCharts.LineSeries, { color: '#aa00aa', lineWidth: 2 });
