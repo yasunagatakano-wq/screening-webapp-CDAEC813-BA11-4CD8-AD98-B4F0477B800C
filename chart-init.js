@@ -27,7 +27,7 @@ window.addEventListener("DOMContentLoaded", () => {
   legend.style.padding = "6px 8px";
   legend.style.borderRadius = "4px";
   legend.innerHTML = `
-    <div><span style="color:#ff7f00;">■</span> 5MA</div>
+    <div><span style="color:#ff1493;">■</span> 5MA</div>
     <div><span style="color:#00aa00;">■</span> 25MA</div>
     <div><span style="color:#0000ff;">■</span> 50MA</div>
     <div><span style="color:#aa00aa;">■</span> 75MA</div>
@@ -96,10 +96,10 @@ window.addEventListener("DOMContentLoaded", () => {
   });
 
   // ★ MA の線幅をすべて 1 に変更
-  const ma5   = chart.addSeries(LightweightCharts.LineSeries, { color: '#ff7f00', lineWidth: 1 });
+  const ma5   = chart.addSeries(LightweightCharts.LineSeries, { color: '#ff1493', lineWidth: 1 });
   const ma25  = chart.addSeries(LightweightCharts.LineSeries, { color: '#00aa00', lineWidth: 1 });
   const ma50  = chart.addSeries(LightweightCharts.LineSeries, { color: '#0000ff', lineWidth: 1 });
-  const ma75  = chart.addSeries(LightweightCharts.LineSeries, { color: '#aa00aa', lineWidth: 1 });
+  const ma75  = chart.add.addSeries(LightweightCharts.LineSeries, { color: '#aa00aa', lineWidth: 1 });
   const ma100 = chart.addSeries(LightweightCharts.LineSeries, { color: '#ffaa00', lineWidth: 1 });
 
   // ★ 標準的な移動平均（当日を含む）
