@@ -85,6 +85,12 @@ async function startScreening() {
       if (running === 0 && index >= tickers.length) {
         clearInterval(waitFinish);
         showResults(results);
+
+        // ★ chart.js 側に結果配列を渡す（前後移動用）
+        if (window.setScreeningResults) {
+          window.setScreeningResults(results);
+        }
+
         startBtn.disabled = false;
         cancelBtn.disabled = true;
         cancelBtn.textContent = "キャンセル";
