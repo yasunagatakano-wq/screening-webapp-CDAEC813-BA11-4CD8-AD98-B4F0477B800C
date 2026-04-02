@@ -87,6 +87,17 @@ window.showNext = function() {
   window.openChartModal(r.コード, r.銘柄名, currentIndex);
 };
 
+// ★ キーボード操作（← →）で前後移動
+window.addEventListener("keydown", (e) => {
+  if (modal.style.display !== "flex") return; // モーダルが開いている時だけ
+
+  if (e.key === "ArrowLeft") {
+    window.showPrev();
+  } else if (e.key === "ArrowRight") {
+    window.showNext();
+  }
+});
+
 // スマホのフリック操作
 let touchStartX = 0;
 modal.addEventListener("touchstart", (e) => {
