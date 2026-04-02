@@ -2,32 +2,97 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>Lightweight Charts テスト</title>
+  <title>出来高＆上髭スクリーニング</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="assets/favicon.ico">
+  <link rel="stylesheet" href="style.css">
 
-  <style>
-    body {
-      margin: 0;
-      padding: 0;
-      background: #fafafa;
-      font-family: sans-serif;
-    }
+  <!-- ライブラリ -->
+  <script src="libs/xlsx.full.min.js"></script>
 
-    #chartContainer {
-      width: 100%;
-      height: 500px;
-      border: 1px solid #ccc;
-      box-sizing: border-box;
-    }
-  </style>
-</head>
-
-<body>
-
-  <div id="chartContainer"></div>
-
+  <!-- TradingView Lightweight Charts -->
+  <!--<script src="libs/lightweight-charts.standalone.production.js"></script>-->
   <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@5.1.0/dist/lightweight-charts.standalone.production.js"></script>
-  <script src="chart-init.js"></script>
 
+  <!-- アプリ本体 -->
+  <script defer src="screening.js"></script>
+  <script defer src="chart.js"></script>
+</head>
+<body>
+  <div class="app-container">
+    <header class="app-header">
+      <h1>出来高＆上髭スクリーニング</h1>
+      <p>JPX銘柄 × Yahoo Finance 日足データ</p>
+    </header>
+
+    <section class="card controls-card">
+      <h2>条件設定</h2>
+      <div class="controls-grid">
+        <div class="control-group">
+          <label for="volumeRatio">出来高倍率以上</label>
+          <input id="volumeRatio" type="number" value="1" step="0.1">
+        </div>
+        <div class="control-group">
+          <label for="shadowRatio">上髭実体比以上</label>
+          <input id="shadowRatio" type="number" value="1" step="0.1">
+        </div>
+        <div class="control-group">
+          <label for="maxConcurrency">並列数</label>
+          <input id="maxConcurrency" type="number" value="40" min="1" max="40">
+        </div>
+      </div>
+
+      <div class="buttons-row">
+        <button id="startBtn" class="btn primary">スクリーニング開始</button>
+        <button id="cancelBtn" class="btn secondary" disabled>キャンセル</button>
+      </div>
+
+      <div id="progressArea" class="progress-area">
+        <div id="progressText" class="progress-text">待機中</div>
+        <progress id="progressBar" value="0" max="100"></progress>
+      </div>
+    </section>
+
+    <section class="card table-card">
+      <h2>スクリーニング結果</h2>
+      <div class="table-wrapper">
+        <table id="resultTable">
+          <thead>
+            <tr>
+              <th>コード</th>
+              <th>銘柄名</th>
+              <th>出来高倍率</th>
+              <th>上髭実体比</th>
+              <th>出来高</th>
+              <th>上髭</th>
+              <th>実体</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+        <p class="hint">行をタップ／クリックするとチャートを表示します。</p>
+      </div>
+    </section>
+  </div>
+
+  <div id="chartModal" class="modal">
+    <div class="modal-backdrop"></div>
+
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="chartModalTitle">チャート</h3>
+        <button id="closeChartBtn" class="btn ghost">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div id="chartContainer"></div>
+      </div>
+
+      <div class="chart-nav">
+        <button id="prevChartBtn" onclick="showPrev()">前へ</button>
+        <button id="nextChartBtn" onclick="showNext()">次へ</button>
+      </div>
+    </div>
+  </div>
 </body>
 </html>
