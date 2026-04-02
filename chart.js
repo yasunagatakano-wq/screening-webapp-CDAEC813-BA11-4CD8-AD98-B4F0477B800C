@@ -67,22 +67,24 @@ window.openChartModal = function(ticker, name, index) {
   });
 };
 
-// 前へ
+// ★ 前へ（ループ移動対応）
 window.showPrev = function() {
-  if (currentIndex > 0) {
-    currentIndex--;
-    const r = screeningResults[currentIndex];
-    window.openChartModal(r.コード, r.銘柄名, currentIndex);
-  }
+  if (screeningResults.length === 0) return;
+
+  currentIndex = (currentIndex - 1 + screeningResults.length) % screeningResults.length;
+
+  const r = screeningResults[currentIndex];
+  window.openChartModal(r.コード, r.銘柄名, currentIndex);
 };
 
-// 次へ
+// ★ 次へ（ループ移動対応）
 window.showNext = function() {
-  if (currentIndex < screeningResults.length - 1) {
-    currentIndex++;
-    const r = screeningResults[currentIndex];
-    window.openChartModal(r.コード, r.銘柄名, currentIndex);
-  }
+  if (screeningResults.length === 0) return;
+
+  currentIndex = (currentIndex + 1) % screeningResults.length;
+
+  const r = screeningResults[currentIndex];
+  window.openChartModal(r.コード, r.銘柄名, currentIndex);
 };
 
 // スマホのフリック操作
@@ -239,13 +241,13 @@ async function drawChart(ticker, name) {
     return s;
   }
 
-  ma5Series   = addMA('#ff1493', ma5);   // 5MA ピンク
-  ma25Series  = addMA('#00aa00', ma25);  // 25MA 緑
-  ma50Series  = addMA('#0000ff', ma50);  // 50MA 青
-  ma75Series  = addMA('#aa00aa', ma75);  // 75MA 紫
-  ma100Series = addMA('#ffaa00', ma100); // 100MA 黄
+  ma5Series   = addMA('#ff1493', ma5);
+  ma25Series  = addMA('#00aa00', ma25);
+  ma50Series  = addMA('#0000ff', ma50);
+  ma75Series  = addMA('#aa00aa', ma75);
+  ma100Series = addMA('#ffaa00', ma100);
 
-  // ★ 銘柄情報（左上）＋（n/m）を追加
+  // ★ 銘柄情報（左上）＋（n/m）
   const infoBox = document.createElement("div");
   infoBox.style.position = "absolute";
   infoBox.style.top = "5px";
@@ -257,7 +259,6 @@ async function drawChart(ticker, name) {
   infoBox.style.padding = "4px 8px";
   infoBox.style.borderRadius = "4px";
 
-  // ★ ここが今回の修正ポイント
   infoBox.innerText = `${ticker}  ${name}（${currentIndex + 1}/${screeningResults.length}）`;
 
   chartContainer.appendChild(infoBox);
@@ -277,7 +278,7 @@ async function drawChart(ticker, name) {
   document.getElementById("prevChartBtn").onclick = window.showPrev;
   document.getElementById("nextChartBtn").onclick = window.showNext;
 
-  // ★ 凡例（銘柄名の下）
+  // ★ 凡例
   const legend = document.createElement("div");
   legend.style.position = "absolute";
   legend.style.top = "40px";
