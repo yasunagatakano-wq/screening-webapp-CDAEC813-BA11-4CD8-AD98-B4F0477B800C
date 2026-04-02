@@ -29,7 +29,6 @@ closeBtn.addEventListener("click", () => {
     tvChart.remove();
     tvChart = null;
   }
-  // オーバーレイ類もクリア
   chartContainer.innerHTML = "";
 });
 
@@ -43,13 +42,12 @@ function waitForHeight(callback) {
   }
 }
 
-// ★ モーダルを開く（レイアウト確定後に描画）
+// ★ モーダルを開く
 window.openChartModal = function(ticker, name, index) {
   currentIndex = index;
   modalTitle.textContent = `${ticker} ${name}`;
   modal.style.display = "flex";
 
-  // レイアウト確定を2フレーム待つ
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
       waitForHeight(() => drawChart(ticker, name));
@@ -116,7 +114,7 @@ async function drawChart(ticker, name) {
     volume: json.Volume[d]
   }));
 
-  // 移動平均計算（当日を含む）
+  // 移動平均計算
   function calcMA(period) {
     const result = [];
     for (let i = 0; i < candleData.length; i++) {
@@ -148,7 +146,7 @@ async function drawChart(ticker, name) {
 
   const rect = chartContainer.getBoundingClientRect();
 
-  // チャート生成
+  // ★ Lightweight Charts v5 正式対応
   tvChart = LightweightCharts.createChart(chartContainer, {
     width: rect.width,
     height: rect.height,
@@ -189,8 +187,8 @@ async function drawChart(ticker, name) {
     },
   });
 
-  // ローソク足
-  candleSeries = tvChart.addCandlestickSeries({
+  // ★ ローソク足（v5 正式対応）
+  candleSeries = tvChart.addSeries(LightweightCharts.CandlestickSeries, {
     upColor: 'red',
     downColor: 'blue',
     borderUpColor: 'red',
@@ -200,8 +198,8 @@ async function drawChart(ticker, name) {
   });
   candleSeries.setData(candleData);
 
-  // 出来高
-  volumeSeries = tvChart.addHistogramSeries({
+  // ★ 出来高（v5 正式対応）
+  volumeSeries = tvChart.addSeries(LightweightCharts.HistogramSeries, {
     priceFormat: { type: 'volume' },
     priceScaleId: 'volume',
     scaleMargins: { top: 0.8, bottom: 0 },
@@ -219,9 +217,12 @@ async function drawChart(ticker, name) {
     scaleMargins: { top: 0.05, bottom: 0.25 },
   });
 
-  // MA シリーズ（色・線幅を最新仕様に）
+  // ★ MA シリーズ（v5 正式対応）
   function addMA(color, data) {
-    const s = tvChart.addLineSeries({ color, lineWidth: 1 });
+    const s = tvChart.addSeries(LightweightCharts.LineSeries, {
+      color,
+      lineWidth: 1
+    });
     s.setData(data.filter(p => p.value !== null));
     return s;
   }
@@ -232,7 +233,7 @@ async function drawChart(ticker, name) {
   ma75Series  = addMA('#aa00aa', ma75);  // 75MA 紫
   ma100Series = addMA('#ffaa00', ma100); // 100MA 黄
 
-  // 銘柄情報（左上オーバーレイ）
+  // ★ 銘柄情報（左上）
   const infoBox = document.createElement("div");
   infoBox.style.position = "absolute";
   infoBox.style.top = "5px";
@@ -246,12 +247,11 @@ async function drawChart(ticker, name) {
   infoBox.innerText = `${ticker}  ${name}`;
   chartContainer.appendChild(infoBox);
 
-  // 凡例（銘柄名の下に配置）
+  // ★ 凡例（銘柄名の下）
   const legend = document.createElement("div");
   legend.style.position = "absolute";
   legend.style.top = "40px";
   legend.style.left = "10px";
-  legend.style.right = "auto";
   legend.style.fontSize = "12px";
   legend.style.zIndex = "2000";
   legend.style.background = "rgba(255,255,255,0.8)";
@@ -266,7 +266,7 @@ async function drawChart(ticker, name) {
   `;
   chartContainer.appendChild(legend);
 
-  // ツールチップ
+  // ★ ツールチップ
   tooltipEl = document.createElement('div');
   tooltipEl.style.position = 'absolute';
   tooltipEl.style.display = 'none';
