@@ -1,7 +1,7 @@
 window.addEventListener("DOMContentLoaded", () => {
   const chartContainer = document.getElementById("chartContainer");
 
-  // ★ 銘柄情報を表示する要素を追加
+  // ★ 銘柄情報（左上）
   const infoBox = document.createElement("div");
   infoBox.style.position = "absolute";
   infoBox.style.top = "5px";
@@ -12,14 +12,15 @@ window.addEventListener("DOMContentLoaded", () => {
   infoBox.style.background = "rgba(255,255,255,0.8)";
   infoBox.style.padding = "4px 8px";
   infoBox.style.borderRadius = "4px";
-  infoBox.innerText = "1605  INPEX";
+  infoBox.innerText = "1605  INPEX"; // ← .T を除去
   chartContainer.appendChild(infoBox);
 
-  // ★ 凡例を追加
+  // ★ 凡例（銘柄名の下に配置）
   const legend = document.createElement("div");
   legend.style.position = "absolute";
-  legend.style.top = "5px";
-  legend.style.right = "10px";
+  legend.style.top = "40px";     // ← 銘柄名の下
+  legend.style.left = "10px";    // ← 左寄せ
+  legend.style.right = "auto";
   legend.style.fontSize = "12px";
   legend.style.zIndex = "2000";
   legend.style.background = "rgba(255,255,255,0.8)";
@@ -100,6 +101,7 @@ window.addEventListener("DOMContentLoaded", () => {
   const ma75  = chart.addSeries(LightweightCharts.LineSeries, { color: '#aa00aa', lineWidth: 2 });
   const ma100 = chart.addSeries(LightweightCharts.LineSeries, { color: '#ffaa00', lineWidth: 2 });
 
+  // ★ 標準的な移動平均（当日を含む）
   function calcMA(data, period) {
     const result = [];
     for (let i = period - 1; i < data.length; i++) {
