@@ -99,7 +99,7 @@ window.addEventListener("DOMContentLoaded", () => {
   const ma5   = chart.addSeries(LightweightCharts.LineSeries, { color: '#ff1493', lineWidth: 1 });
   const ma25  = chart.addSeries(LightweightCharts.LineSeries, { color: '#00aa00', lineWidth: 1 });
   const ma50  = chart.addSeries(LightweightCharts.LineSeries, { color: '#0000ff', lineWidth: 1 });
-  const ma75  = chart.add.addSeries(LightweightCharts.LineSeries, { color: '#aa00aa', lineWidth: 1 });
+  const ma75  = chart.addSeries(LightweightCharts.LineSeries, { color: '#aa00aa', lineWidth: 1 });
   const ma100 = chart.addSeries(LightweightCharts.LineSeries, { color: '#ffaa00', lineWidth: 1 });
 
   // ★ 標準的な移動平均（当日を含む）
