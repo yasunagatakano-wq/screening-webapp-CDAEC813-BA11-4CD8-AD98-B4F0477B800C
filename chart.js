@@ -245,7 +245,7 @@ async function drawChart(ticker, name) {
   ma75Series  = addMA('#aa00aa', ma75);  // 75MA 紫
   ma100Series = addMA('#ffaa00', ma100); // 100MA 黄
 
-  // ★ 銘柄情報（左上）
+  // ★ 銘柄情報（左上）＋（n/m）を追加
   const infoBox = document.createElement("div");
   infoBox.style.position = "absolute";
   infoBox.style.top = "5px";
@@ -256,7 +256,10 @@ async function drawChart(ticker, name) {
   infoBox.style.background = "rgba(255,255,255,0.8)";
   infoBox.style.padding = "4px 8px";
   infoBox.style.borderRadius = "4px";
-  infoBox.innerText = `${ticker}  ${name}`;
+
+  // ★ ここが今回の修正ポイント
+  infoBox.innerText = `${ticker}  ${name}（${currentIndex + 1}/${screeningResults.length}）`;
+
   chartContainer.appendChild(infoBox);
 
   // ★ 前へ / 次へ ボタン（上部 × の左）
