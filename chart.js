@@ -15,6 +15,8 @@ let ma100Series = null;
 let currentIndex = 0;
 let screeningResults = [];
 
+let tooltipEl = null;
+
 // screening.js から結果を受け取る
 window.setScreeningResults = function(results) {
   screeningResults = results;
@@ -27,6 +29,8 @@ closeBtn.addEventListener("click", () => {
     tvChart.remove();
     tvChart = null;
   }
+  // オーバーレイ類もクリア
+  chartContainer.innerHTML = "";
 });
 
 // ★ chartContainer の高さが入るまで待つ
@@ -45,10 +49,10 @@ window.openChartModal = function(ticker, name, index) {
   modalTitle.textContent = `${ticker} ${name}`;
   modal.style.display = "flex";
 
-  // レイアウト確定を2フレーム待つ（最重要）
+  // レイアウト確定を2フレーム待つ
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
-      waitForHeight(() => drawChart(ticker));
+      waitForHeight(() => drawChart(ticker, name));
     });
   });
 };
@@ -84,7 +88,7 @@ modal.addEventListener("touchend", (e) => {
 });
 
 // チャート描画
-async function drawChart(ticker) {
+async function drawChart(ticker, name) {
   const url = `https://yfinance-api-fe86988c-d3b4-f1c6-640d.onrender.com/chart_full?symbol=${ticker}.T`;
 
   let json;
@@ -112,11 +116,11 @@ async function drawChart(ticker) {
     volume: json.Volume[d]
   }));
 
-  // 移動平均計算
+  // 移動平均計算（当日を含む）
   function calcMA(period) {
     const result = [];
     for (let i = 0; i < candleData.length; i++) {
-      if (i < period) {
+      if (i < period - 1) {
         result.push({ time: candleData[i].time, value: null });
         continue;
       }
@@ -140,12 +144,11 @@ async function drawChart(ticker) {
     tvChart.remove();
     tvChart = null;
   }
+  chartContainer.innerHTML = "";
 
   const rect = chartContainer.getBoundingClientRect();
 
-  console.log("createChart 実行");
-
-  // ★ 正しい LightweightCharts の createChart を呼ぶ
+  // チャート生成
   tvChart = LightweightCharts.createChart(chartContainer, {
     width: rect.width,
     height: rect.height,
@@ -153,15 +156,36 @@ async function drawChart(ticker) {
       background: { color: '#ffffff' },
       textColor: '#333',
     },
-    rightPriceScale: { borderVisible: false },
+    rightPriceScale: {
+      visible: true,
+      borderVisible: true,
+    },
     timeScale: {
-      borderVisible: false,
-      timeVisible: true,
+      borderVisible: true,
+      timeVisible: false,
       secondsVisible: false,
+      fixLeftEdge: true,
+      fixRightEdge: true,
+      tickMarkSpacing: 50,
     },
     grid: {
       vertLines: { color: '#eee' },
       horzLines: { color: '#eee' },
+    },
+  });
+
+  tvChart.applyOptions({
+    localization: {
+      dateFormat: 'yyyy/MM/dd',
+    },
+  });
+
+  tvChart.timeScale().applyOptions({
+    tickMarkFormatter: (time) => {
+      const date = new Date(time * 1000);
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      const d = String(date.getDate()).padStart(2, '0');
+      return `${m}/${d}`;
     },
   });
 
@@ -181,12 +205,12 @@ async function drawChart(ticker) {
     priceFormat: { type: 'volume' },
     priceScaleId: 'volume',
     scaleMargins: { top: 0.8, bottom: 0 },
+    color: 'rgba(128,128,128,0.6)',
   });
   volumeSeries.setData(
     candleData.map(c => ({
       time: c.time,
       value: c.volume,
-      color: 'rgba(128,128,128,0.6)',
     }))
   );
 
@@ -195,18 +219,112 @@ async function drawChart(ticker) {
     scaleMargins: { top: 0.05, bottom: 0.25 },
   });
 
-  // MA シリーズ
+  // MA シリーズ（色・線幅を最新仕様に）
   function addMA(color, data) {
     const s = tvChart.addLineSeries({ color, lineWidth: 1 });
     s.setData(data.filter(p => p.value !== null));
     return s;
   }
 
-  ma5Series = addMA('green', ma5);
-  ma25Series = addMA('orange', ma25);
-  ma50Series = addMA('brown', ma50);
-  ma75Series = addMA('purple', ma75);
-  ma100Series = addMA('#0099cc', ma100);
+  ma5Series   = addMA('#ff1493', ma5);   // 5MA ピンク
+  ma25Series  = addMA('#00aa00', ma25);  // 25MA 緑
+  ma50Series  = addMA('#0000ff', ma50);  // 50MA 青
+  ma75Series  = addMA('#aa00aa', ma75);  // 75MA 紫
+  ma100Series = addMA('#ffaa00', ma100); // 100MA 黄
+
+  // 銘柄情報（左上オーバーレイ）
+  const infoBox = document.createElement("div");
+  infoBox.style.position = "absolute";
+  infoBox.style.top = "5px";
+  infoBox.style.left = "10px";
+  infoBox.style.fontSize = "16px";
+  infoBox.style.fontWeight = "bold";
+  infoBox.style.zIndex = "2000";
+  infoBox.style.background = "rgba(255,255,255,0.8)";
+  infoBox.style.padding = "4px 8px";
+  infoBox.style.borderRadius = "4px";
+  infoBox.innerText = `${ticker}  ${name}`;
+  chartContainer.appendChild(infoBox);
+
+  // 凡例（銘柄名の下に配置）
+  const legend = document.createElement("div");
+  legend.style.position = "absolute";
+  legend.style.top = "40px";
+  legend.style.left = "10px";
+  legend.style.right = "auto";
+  legend.style.fontSize = "12px";
+  legend.style.zIndex = "2000";
+  legend.style.background = "rgba(255,255,255,0.8)";
+  legend.style.padding = "6px 8px";
+  legend.style.borderRadius = "4px";
+  legend.innerHTML = `
+    <div><span style="color:#ff1493;">■</span> 5MA</div>
+    <div><span style="color:#00aa00;">■</span> 25MA</div>
+    <div><span style="color:#0000ff;">■</span> 50MA</div>
+    <div><span style="color:#aa00aa;">■</span> 75MA</div>
+    <div><span style="color:#ffaa00;">■</span> 100MA</div>
+  `;
+  chartContainer.appendChild(legend);
+
+  // ツールチップ
+  tooltipEl = document.createElement('div');
+  tooltipEl.style.position = 'absolute';
+  tooltipEl.style.display = 'none';
+  tooltipEl.style.padding = '8px';
+  tooltipEl.style.background = 'rgba(255,255,255,0.9)';
+  tooltipEl.style.border = '1px solid #ccc';
+  tooltipEl.style.borderRadius = '4px';
+  tooltipEl.style.fontSize = '12px';
+  tooltipEl.style.pointerEvents = 'none';
+  tooltipEl.style.zIndex = '2100';
+  chartContainer.appendChild(tooltipEl);
+
+  tvChart.subscribeCrosshairMove(param => {
+    if (!param.time || !param.seriesData.size || !param.point) {
+      tooltipEl.style.display = 'none';
+      return;
+    }
+
+    const candle = param.seriesData.get(candleSeries);
+    const volume = param.seriesData.get(volumeSeries);
+
+    const v5   = param.seriesData.get(ma5Series);
+    const v25  = param.seriesData.get(ma25Series);
+    const v50  = param.seriesData.get(ma50Series);
+    const v75  = param.seriesData.get(ma75Series);
+    const v100 = param.seriesData.get(ma100Series);
+
+    if (!candle) {
+      tooltipEl.style.display = 'none';
+      return;
+    }
+
+    const JST_OFFSET = 9 * 60 * 60 * 1000;
+    const date = new Date(param.time * 1000 + JST_OFFSET);
+
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+
+    tooltipEl.style.display = 'block';
+    tooltipEl.style.left = param.point.x + 20 + 'px';
+    tooltipEl.style.top = param.point.y + 20 + 'px';
+
+    tooltipEl.innerHTML = `
+      <div>日付: ${y}/${m}/${d}</div>
+      <div>始値: ${candle.open.toLocaleString()}</div>
+      <div>高値: ${candle.high.toLocaleString()}</div>
+      <div>安値: ${candle.low.toLocaleString()}</div>
+      <div>終値: ${candle.close.toLocaleString()}</div>
+      <div>出来高: ${volume ? volume.value.toLocaleString() : ''}</div>
+      <hr>
+      <div>5MA: ${v5   && v5.value   ? v5.value.toFixed(2)   : '-'}</div>
+      <div>25MA: ${v25 && v25.value  ? v25.value.toFixed(2)  : '-'}</div>
+      <div>50MA: ${v50 && v50.value  ? v50.value.toFixed(2)  : '-'}</div>
+      <div>75MA: ${v75 && v75.value  ? v75.value.toFixed(2)  : '-'}</div>
+      <div>100MA: ${v100 && v100.value ? v100.value.toFixed(2) : '-'}</div>
+    `;
+  });
 
   // リサイズ対応
   window.addEventListener('resize', () => {
