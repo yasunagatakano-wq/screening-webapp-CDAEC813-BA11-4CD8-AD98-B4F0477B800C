@@ -12,14 +12,14 @@ window.addEventListener("DOMContentLoaded", () => {
   infoBox.style.background = "rgba(255,255,255,0.8)";
   infoBox.style.padding = "4px 8px";
   infoBox.style.borderRadius = "4px";
-  infoBox.innerText = "1605  INPEX"; // ← .T を除去
+  infoBox.innerText = "1605  INPEX";
   chartContainer.appendChild(infoBox);
 
   // ★ 凡例（銘柄名の下に配置）
   const legend = document.createElement("div");
   legend.style.position = "absolute";
-  legend.style.top = "40px";     // ← 銘柄名の下
-  legend.style.left = "10px";    // ← 左寄せ
+  legend.style.top = "40px";
+  legend.style.left = "10px";
   legend.style.right = "auto";
   legend.style.fontSize = "12px";
   legend.style.zIndex = "2000";
@@ -95,12 +95,12 @@ window.addEventListener("DOMContentLoaded", () => {
     },
   });
 
-  // ★ 5MA の色をオレンジに変更
-  const ma5   = chart.addSeries(LightweightCharts.LineSeries, { color: '#ff7f00', lineWidth: 2 });
-  const ma25  = chart.addSeries(LightweightCharts.LineSeries, { color: '#00aa00', lineWidth: 2 });
-  const ma50  = chart.addSeries(LightweightCharts.LineSeries, { color: '#0000ff', lineWidth: 2 });
-  const ma75  = chart.addSeries(LightweightCharts.LineSeries, { color: '#aa00aa', lineWidth: 2 });
-  const ma100 = chart.addSeries(LightweightCharts.LineSeries, { color: '#ffaa00', lineWidth: 2 });
+  // ★ MA の線幅をすべて 1 に変更
+  const ma5   = chart.addSeries(LightweightCharts.LineSeries, { color: '#ff7f00', lineWidth: 1 });
+  const ma25  = chart.addSeries(LightweightCharts.LineSeries, { color: '#00aa00', lineWidth: 1 });
+  const ma50  = chart.addSeries(LightweightCharts.LineSeries, { color: '#0000ff', lineWidth: 1 });
+  const ma75  = chart.addSeries(LightweightCharts.LineSeries, { color: '#aa00aa', lineWidth: 1 });
+  const ma100 = chart.addSeries(LightweightCharts.LineSeries, { color: '#ffaa00', lineWidth: 1 });
 
   // ★ 標準的な移動平均（当日を含む）
   function calcMA(data, period) {
