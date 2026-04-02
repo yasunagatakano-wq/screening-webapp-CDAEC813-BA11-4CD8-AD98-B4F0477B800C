@@ -3,6 +3,9 @@ const modalTitle = document.getElementById("chartModalTitle");
 const closeBtn = document.getElementById("closeChartBtn");
 const chartContainer = document.getElementById("chartContainer");
 
+// ★ 初期表示ではモーダルを閉じておく
+modal.style.display = "none";
+
 let tvChart = null;
 let candleSeries = null;
 let volumeSeries = null;
