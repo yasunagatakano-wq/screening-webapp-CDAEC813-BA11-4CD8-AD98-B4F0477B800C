@@ -114,7 +114,7 @@ modal.addEventListener("touchend", (e) => {
 async function drawChart(ticker, name) {
 
   // ★★★ 新 FastAPI サーバー用 URL に変更 ★★★
-  const API_BASE_URL = "https://your-fastapi-service.onrender.com"; // ← あなたの Render URL に変更
+  const API_BASE_URL = "https://yfinance-api-fe86988c-d3b4-f1c6-640d.onrender.com"; // Render URL
   const url = `${API_BASE_URL}/chart?ticker=${ticker}`;
 
   let json;
