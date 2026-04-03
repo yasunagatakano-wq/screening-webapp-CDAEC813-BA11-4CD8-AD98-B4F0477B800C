@@ -112,7 +112,10 @@ modal.addEventListener("touchend", (e) => {
 
 // チャート描画
 async function drawChart(ticker, name) {
-  const url = `https://yfinance-api-fe86988c-d3b4-f1c6-640d.onrender.com/chart_full?symbol=${ticker}.T`;
+
+  // ★★★ 新 FastAPI サーバー用 URL に変更 ★★★
+  const API_BASE_URL = "https://your-fastapi-service.onrender.com"; // ← あなたの Render URL に変更
+  const url = `${API_BASE_URL}/chart?ticker=${ticker}`;
 
   let json;
   try {
@@ -128,10 +131,12 @@ async function drawChart(ticker, name) {
     return;
   }
 
-  const dates = Object.keys(json.Close).sort((a, b) => Number(a) - Number(b));
+  const dates = Object.keys(json.Close).sort((a, b) => {
+    return new Date(a).getTime() - new Date(b).getTime();
+  });
 
   const candleData = dates.map(d => ({
-    time: Math.floor(Number(d) / 1000),
+    time: Math.floor(new Date(d).getTime() / 1000),
     open: json.Open[d],
     high: json.High[d],
     low: json.Low[d],
