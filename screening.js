@@ -3,15 +3,20 @@ const cancelBtn = document.getElementById("cancelBtn");
 const progressBar = document.getElementById("progressBar");
 const progressText = document.getElementById("progressText");
 const tbody = document.querySelector("#resultTable tbody");
+const tableHeaders = document.querySelectorAll("#resultTable thead th");
 
 let abortController = null;
+let currentResults = [];
+let sortState = {};
 
-// ★★★ FastAPI サーバーの URL ★★★
 const API_BASE_URL = "https://yfinance-api-fe86988c-d3b4-f1c6-640d.onrender.com";
 
 startBtn.addEventListener("click", startScreening);
 cancelBtn.addEventListener("click", cancelScreening);
 
+// ===============================
+// 1. スクリーニング開始
+// ===============================
 async function startScreening() {
   const volumeRatio = parseFloat(document.getElementById("volumeRatio").value) || 5;
   const shadowRatio = parseFloat(document.getElementById("shadowRatio").value) || 5;
@@ -19,12 +24,10 @@ async function startScreening() {
   startBtn.disabled = true;
   cancelBtn.disabled = false;
   progressBar.value = 0;
-  progressBar.max = 100;
   progressText.textContent = "サーバー側でスクリーニング中…";
 
   abortController = new AbortController();
 
-  // ★★★ ローディング開始 ★★★
   document.getElementById("loadingOverlay").classList.remove("hidden");
 
   try {
@@ -36,16 +39,15 @@ async function startScreening() {
       signal: abortController.signal,
     });
 
-    if (!res.ok) {
-      throw new Error("サーバーエラー");
-    }
+    if (!res.ok) throw new Error("サーバーエラー");
 
     const results = await res.json();
+    currentResults = results;
 
     progressBar.value = 100;
     progressText.textContent = `完了：${results.length} 件ヒット`;
 
-    showResults(results);
+    showResults(currentResults);
 
     if (window.setScreeningResults) {
       window.setScreeningResults(results);
@@ -64,12 +66,13 @@ async function startScreening() {
     startBtn.disabled = false;
     cancelBtn.disabled = true;
     cancelBtn.textContent = "キャンセル";
-
-    // ★★★ ローディング終了 ★★★
     document.getElementById("loadingOverlay").classList.add("hidden");
   }
 }
 
+// ===============================
+// 2. キャンセル
+// ===============================
 function cancelScreening() {
   if (abortController) {
     abortController.abort();
@@ -79,9 +82,11 @@ function cancelScreening() {
   }
 }
 
+// ===============================
+// 3. 結果表示
+// ===============================
 function showResults(results) {
   tbody.innerHTML = "";
-  results.sort((a, b) => parseFloat(b.出来高倍率) - parseFloat(a.出来高倍率));
 
   results.forEach((r, index) => {
     const tr = document.createElement("tr");
@@ -96,10 +101,42 @@ function showResults(results) {
     `;
 
     tr.addEventListener("click", () => {
-      console.log("行クリック", r.コード, r.銘柄名, index);
       openChartModal(r.コード, r.銘柄名, index);
     });
 
     tbody.appendChild(tr);
   });
 }
+
+// ===============================
+// 4. 列ヘッダクリックでソート
+// ===============================
+tableHeaders.forEach(th => {
+  const key = th.dataset.sortKey;
+  if (!key) return;
+
+  sortState[key] = "asc";
+
+  th.style.cursor = "pointer";
+
+  th.addEventListener("click", () => {
+    const order = sortState[key];
+
+    currentResults.sort((a, b) => {
+      const valA = a[key];
+      const valB = b[key];
+
+      if (!isNaN(valA) && !isNaN(valB)) {
+        return order === "asc" ? valA - valB : valB - valA;
+      }
+
+      return order === "asc"
+        ? String(valA).localeCompare(String(valB))
+        : String(valB).localeCompare(String(valA));
+    });
+
+    sortState[key] = order === "asc" ? "desc" : "asc";
+
+    showResults(currentResults);
+  });
+});
