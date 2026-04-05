@@ -51,6 +51,13 @@
 
     <section class="card table-card">
       <h2>スクリーニング結果</h2>
+
+      <!-- ★ テーブル部分だけ覆うローディングオーバーレイ -->
+      <div id="loadingOverlay" class="loading-overlay hidden">
+        <div class="spinner"></div>
+        <p>サーバーへリクエスト中…</p>
+      </div>
+
       <div class="table-wrapper">
         <table id="resultTable">
           <thead>
@@ -69,12 +76,6 @@
         <p class="hint">行をタップ／クリックするとチャートを表示します。</p>
       </div>
     </section>
-  </div>
-
-  <!-- ★ ローディングオーバーレイ -->
-  <div id="loadingOverlay" class="loading-overlay hidden">
-    <div class="spinner"></div>
-    <p>サーバーへリクエスト中…</p>
   </div>
 
   <div id="chartModal" class="modal">
