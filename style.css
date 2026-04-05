@@ -80,9 +80,13 @@ input[type="number"] {
 /* ------------------------------
    テーブル
 ------------------------------ */
+.table-card {
+  position: relative; /* ← ローディングをこの中に閉じ込めるため必須 */
+}
+
 .table-wrapper {
   overflow-x: auto;
-  position: relative; /* ← ローディングをこの中に閉じ込める */
+  position: relative;
 }
 
 table {
@@ -160,7 +164,7 @@ tr:hover {
 ------------------------------ */
 .loading-overlay {
   position: absolute;   /* ← fixed から absolute に変更 */
-  inset: 0;             /* 親要素内だけを覆う */
+  inset: 0;             /* 親要素（table-card）内だけを覆う */
   background: rgba(0,0,0,0.4);
   display: flex;
   flex-direction: column;
