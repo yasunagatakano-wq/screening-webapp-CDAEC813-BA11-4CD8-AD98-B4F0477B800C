@@ -53,11 +53,20 @@ input[type="number"] {
   gap: 12px;
 }
 
+/* ボタン（活性／非活性でカーソル変更） */
+button:not(:disabled) {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
 .btn {
   padding: 8px 14px;
   border-radius: 6px;
   border: none;
-  cursor: pointer;
   font-size: 14px;
 }
 
@@ -74,7 +83,6 @@ input[type="number"] {
   background: transparent;
   border: none;
   font-size: 20px;
-  cursor: pointer;
 }
 
 /* ------------------------------
