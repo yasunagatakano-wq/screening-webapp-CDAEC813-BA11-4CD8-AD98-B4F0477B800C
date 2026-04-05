@@ -6,9 +6,8 @@ const tbody = document.querySelector("#resultTable tbody");
 
 let abortController = null;
 
-// ★★★ FastAPI サーバーの URL を設定 ★★★
-const API_BASE_URL = "https://yfinance-api-fe86988c-d3b4-f1c6-640d.onrender.com"; 
-// ↑ Render の URL に置き換えてください
+// ★★★ FastAPI サーバーの URL ★★★
+const API_BASE_URL = "https://yfinance-api-fe86988c-d3b4-f1c6-640d.onrender.com";
 
 startBtn.addEventListener("click", startScreening);
 cancelBtn.addEventListener("click", cancelScreening);
@@ -25,8 +24,10 @@ async function startScreening() {
 
   abortController = new AbortController();
 
+  // ★★★ ローディング開始 ★★★
+  document.getElementById("loadingOverlay").classList.remove("hidden");
+
   try {
-    // ★★★ URL を FastAPI サーバーに向ける ★★★
     const url = new URL("/screening", API_BASE_URL);
     url.searchParams.set("volume_ratio", volumeRatio);
     url.searchParams.set("shadow_ratio", shadowRatio);
@@ -63,6 +64,9 @@ async function startScreening() {
     startBtn.disabled = false;
     cancelBtn.disabled = true;
     cancelBtn.textContent = "キャンセル";
+
+    // ★★★ ローディング終了 ★★★
+    document.getElementById("loadingOverlay").classList.add("hidden");
   }
 }
 
