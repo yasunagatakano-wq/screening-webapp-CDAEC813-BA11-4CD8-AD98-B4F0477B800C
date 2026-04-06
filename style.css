@@ -9,7 +9,7 @@ body {
 }
 
 .app-container {
-  max-width: 900px;
+  max-width: 1200px; /* ← ここを拡張 */
   margin: 0 auto;
   padding: 16px;
 }
@@ -21,7 +21,7 @@ body {
 
 .card {
   background: white;
-  padding: 16px;
+  padding: 20px;
   border-radius: 12px;
   box-shadow: 0 4px 10px rgba(0,0,0,0.05);
   margin-bottom: 20px;
@@ -29,36 +29,62 @@ body {
 
 .card h2 {
   margin-top: 0;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
+  font-size: 20px;
+  font-weight: 600;
 }
 
 /* ------------------------------
-   コントロールパネル
+   条件設定（モダンデザイン）
 ------------------------------ */
 .controls-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 20px;
+}
+
+.control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .control-group label {
-  display: block;
-  margin-bottom: 4px;
-}
-
-input[type="number"] {
-  width: 100%;
-  padding: 6px;
   font-size: 14px;
+  font-weight: 600;
+  color: #374151;
 }
 
+.control-group input[type="number"] {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 15px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #f9fafb;
+  transition: all 0.2s ease;
+}
+
+.control-group input[type="number"]:focus {
+  outline: none;
+  border-color: #2563eb;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+}
+
+.control-group input[type="number"]:hover {
+  background: #ffffff;
+}
+
+/* ------------------------------
+   ボタン
+------------------------------ */
 .buttons-row {
-  margin-top: 12px;
+  margin-top: 16px;
   display: flex;
   gap: 12px;
 }
 
-/* ボタン */
 button:not(:disabled) {
   cursor: pointer;
 }
@@ -69,15 +95,11 @@ button:disabled {
 }
 
 .btn {
-  padding: 8px 14px;
-  border-radius: 6px;
+  padding: 10px 16px;
+  border-radius: 8px;
   border: none;
-  font-size: 14px;
-}
-
-.btn.small {
-  padding: 4px 8px;
-  font-size: 12px;
+  font-size: 15px;
+  font-weight: 600;
 }
 
 .btn.primary {
@@ -116,8 +138,9 @@ thead {
 }
 
 th, td {
-  padding: 8px;
+  padding: 10px;
   border-bottom: 1px solid #e5e7eb;
+  font-size: 14px;
 }
 
 tr:hover {
@@ -162,25 +185,18 @@ tr:hover {
   gap: 12px;
 }
 
-/* 左：銘柄名 */
 .modal #chartHeaderLeft {
   font-size: 16px;
   font-weight: bold;
-}
-
-/* 中央スペースを伸ばす */
-.modal #chartHeaderLeft {
   flex-shrink: 0;
 }
 
-/* 右：前へ／次へ（右寄せ） */
 .modal #chartHeaderNav {
   margin-left: auto;
   display: flex;
   gap: 8px;
 }
 
-/* ✕ボタンは自然に右端へ */
 .modal #closeChartBtn {
   margin-left: 8px;
 }
