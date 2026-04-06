@@ -1,3 +1,16 @@
+// ------------------------------
+// iPhone Safari の余白対策（追加）
+// ------------------------------
+function updateVh() {
+  document.documentElement.style.setProperty('--vh', `${window.innerHeight * 0.01}px`);
+}
+updateVh();
+window.addEventListener('resize', updateVh);
+
+// ------------------------------
+// ここから元の chart.js
+// ------------------------------
+
 const modal = document.getElementById("chartModal");
 const modalTitle = document.getElementById("chartModalTitle");
 const closeBtn = document.getElementById("closeChartBtn");
@@ -105,7 +118,7 @@ window.addEventListener("keydown", (e) => {
 });
 
 // ------------------------------
-// スワイプ操作（修正ポイント）
+// スワイプ操作（チャート領域は除外）
 // ------------------------------
 let touchStartX = 0;
 
@@ -115,9 +128,9 @@ modal.addEventListener("touchstart", (e) => {
 
 modal.addEventListener("touchend", (e) => {
 
-  // ★ 修正：チャート領域ならフリック判定を無効化
+  // ★ チャート領域ならフリック判定を無効化
   if (e.target.closest("#chartContainer")) {
-    return; // ← これでチャート操作中の銘柄遷移を完全に防止
+    return;
   }
 
   const diff = e.changedTouches[0].clientX - touchStartX;
@@ -125,7 +138,9 @@ modal.addEventListener("touchend", (e) => {
   if (diff < -80) window.showNext();
 });
 
+// ------------------------------
 // チャート描画
+// ------------------------------
 async function drawChart(ticker, name) {
   const API_BASE_URL = "https://yfinance-api-fe86988c-d3b4-f1c6-640d.onrender.com";
   const url = `${API_BASE_URL}/chart?ticker=${ticker}`;
