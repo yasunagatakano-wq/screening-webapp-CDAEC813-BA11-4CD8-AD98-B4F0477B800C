@@ -2,8 +2,9 @@ const modal = document.getElementById("chartModal");
 const modalTitle = document.getElementById("chartModalTitle");
 const closeBtn = document.getElementById("closeChartBtn");
 const chartContainer = document.getElementById("chartContainer");
+const chartLoadingOverlay = document.getElementById("chartLoadingOverlay");
 
-// ★ 初期表示ではモーダルを閉じておく
+// 初期状態ではモーダル非表示
 modal.style.display = "none";
 
 let tvChart = null;
@@ -25,23 +26,22 @@ window.setScreeningResults = function(results) {
   screeningResults = results;
 };
 
-// モーダルを閉じる共通関数
+// モーダルを閉じる
 function closeModal() {
   modal.style.display = "none";
+
   if (tvChart) {
     tvChart.remove();
     tvChart = null;
   }
+
   chartContainer.innerHTML = "";
 }
 
-// ×ボタンで閉じる
 closeBtn.addEventListener("click", closeModal);
-
-// ★ グレー背景クリックで閉じる
 document.querySelector(".modal-backdrop").addEventListener("click", closeModal);
 
-// ★ chartContainer の高さが入るまで待つ
+// chartContainer の高さが確定するまで待つ
 function waitForHeight(callback) {
   const h = chartContainer.getBoundingClientRect().height;
   if (h > 0) {
@@ -51,14 +51,15 @@ function waitForHeight(callback) {
   }
 }
 
-// ★ モーダルを開く
+// モーダルを開く
 window.openChartModal = function(ticker, name, index) {
   currentIndex = index;
 
-  // ★ タイトルは空にして二重表示を防ぐ
   modalTitle.textContent = "";
-
   modal.style.display = "flex";
+
+  // ローディング表示
+  chartLoadingOverlay.style.display = "flex";
 
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
@@ -67,43 +68,37 @@ window.openChartModal = function(ticker, name, index) {
   });
 };
 
-// ★ 前へ（ループ移動対応）
+// 前へ
 window.showPrev = function() {
   if (screeningResults.length === 0) return;
 
   currentIndex = (currentIndex - 1 + screeningResults.length) % screeningResults.length;
-
   const r = screeningResults[currentIndex];
   window.openChartModal(r.コード, r.銘柄名, currentIndex);
 };
 
-// ★ 次へ（ループ移動対応）
+// 次へ
 window.showNext = function() {
   if (screeningResults.length === 0) return;
 
   currentIndex = (currentIndex + 1) % screeningResults.length;
-
   const r = screeningResults[currentIndex];
   window.openChartModal(r.コード, r.銘柄名, currentIndex);
 };
 
-// ★ キーボード操作（← →）で前後移動
+// キーボード操作
 window.addEventListener("keydown", (e) => {
-  if (modal.style.display !== "flex") return; // モーダルが開いている時だけ
+  if (modal.style.display !== "flex") return;
 
-  if (e.key === "ArrowLeft") {
-    window.showPrev();
-  } else if (e.key === "ArrowRight") {
-    window.showNext();
-  }
+  if (e.key === "ArrowLeft") window.showPrev();
+  if (e.key === "ArrowRight") window.showNext();
 });
 
-// スマホのフリック操作
+// スワイプ操作
 let touchStartX = 0;
 modal.addEventListener("touchstart", (e) => {
   touchStartX = e.changedTouches[0].clientX;
 });
-
 modal.addEventListener("touchend", (e) => {
   const diff = e.changedTouches[0].clientX - touchStartX;
   if (diff > 80) window.showPrev();
@@ -112,9 +107,7 @@ modal.addEventListener("touchend", (e) => {
 
 // チャート描画
 async function drawChart(ticker, name) {
-
-  // ★★★ 新 FastAPI サーバー用 URL に変更 ★★★
-  const API_BASE_URL = "https://yfinance-api-fe86988c-d3b4-f1c6-640d.onrender.com"; // Render URL
+  const API_BASE_URL = "https://yfinance-api-fe86988c-d3b4-f1c6-640d.onrender.com";
   const url = `${API_BASE_URL}/chart?ticker=${ticker}`;
 
   let json;
@@ -123,11 +116,13 @@ async function drawChart(ticker, name) {
     json = await res.json();
   } catch (e) {
     alert("チャートの取得に失敗しました。");
+    chartLoadingOverlay.style.display = "none";
     return;
   }
 
   if (!json || !json.Close) {
     alert("チャートデータが取得できませんでした。");
+    chartLoadingOverlay.style.display = "none";
     return;
   }
 
@@ -144,7 +139,7 @@ async function drawChart(ticker, name) {
     volume: json.Volume[d]
   }));
 
-  // 移動平均計算
+  // 移動平均
   function calcMA(period) {
     const result = [];
     for (let i = 0; i < candleData.length; i++) {
@@ -176,7 +171,6 @@ async function drawChart(ticker, name) {
 
   const rect = chartContainer.getBoundingClientRect();
 
-  // ★ Lightweight Charts v5 正式対応
   tvChart = LightweightCharts.createChart(chartContainer, {
     width: rect.width,
     height: rect.height,
@@ -217,7 +211,7 @@ async function drawChart(ticker, name) {
     },
   });
 
-  // ★ ローソク足（v5 正式対応）
+  // ローソク足
   candleSeries = tvChart.addSeries(LightweightCharts.CandlestickSeries, {
     upColor: 'red',
     downColor: 'blue',
@@ -228,7 +222,7 @@ async function drawChart(ticker, name) {
   });
   candleSeries.setData(candleData);
 
-  // ★ 出来高（v5 正式対応）
+  // 出来高
   volumeSeries = tvChart.addSeries(LightweightCharts.HistogramSeries, {
     priceFormat: { type: 'volume' },
     priceScaleId: 'volume',
@@ -242,12 +236,11 @@ async function drawChart(ticker, name) {
     }))
   );
 
-  // 価格スケール調整
   candleSeries.priceScale().applyOptions({
     scaleMargins: { top: 0.05, bottom: 0.25 },
   });
 
-  // ★ MA シリーズ（v5 正式対応）
+  // MA
   function addMA(color, data) {
     const s = tvChart.addSeries(LightweightCharts.LineSeries, {
       color,
@@ -257,13 +250,13 @@ async function drawChart(ticker, name) {
     return s;
   }
 
-  ma5Series   = addMA('#ff1493', ma5);
-  ma25Series  = addMA('#00aa00', ma25);
-  ma50Series  = addMA('#0000ff', ma50);
-  ma75Series  = addMA('#aa00aa', ma75);
+  ma5Series = addMA('#ff1493', ma5);
+  ma25Series = addMA('#00aa00', ma25);
+  ma50Series = addMA('#0000ff', ma50);
+  ma75Series = addMA('#aa00aa', ma75);
   ma100Series = addMA('#ffaa00', ma100);
 
-  // ★ 銘柄情報（左上）＋（n/m）
+  // 銘柄情報
   const infoBox = document.createElement("div");
   infoBox.style.position = "absolute";
   infoBox.style.top = "5px";
@@ -274,12 +267,10 @@ async function drawChart(ticker, name) {
   infoBox.style.background = "rgba(255,255,255,0.8)";
   infoBox.style.padding = "4px 8px";
   infoBox.style.borderRadius = "4px";
-
   infoBox.innerText = `${ticker}  ${name}（${currentIndex + 1}/${screeningResults.length}）`;
-
   chartContainer.appendChild(infoBox);
 
-  // ★ 前へ / 次へ ボタン（上部 × の左）
+  // 前へ / 次へ
   const nav = document.createElement("div");
   nav.style.position = "absolute";
   nav.style.top = "5px";
@@ -294,7 +285,7 @@ async function drawChart(ticker, name) {
   document.getElementById("prevChartBtn").onclick = window.showPrev;
   document.getElementById("nextChartBtn").onclick = window.showNext;
 
-  // ★ 凡例
+  // 凡例
   const legend = document.createElement("div");
   legend.style.position = "absolute";
   legend.style.top = "40px";
@@ -313,7 +304,7 @@ async function drawChart(ticker, name) {
   `;
   chartContainer.appendChild(legend);
 
-  // ★ ツールチップ
+  // ツールチップ
   tooltipEl = document.createElement('div');
   tooltipEl.style.position = 'absolute';
   tooltipEl.style.display = 'none';
@@ -335,10 +326,10 @@ async function drawChart(ticker, name) {
     const candle = param.seriesData.get(candleSeries);
     const volume = param.seriesData.get(volumeSeries);
 
-    const v5   = param.seriesData.get(ma5Series);
-    const v25  = param.seriesData.get(ma25Series);
-    const v50  = param.seriesData.get(ma50Series);
-    const v75  = param.seriesData.get(ma75Series);
+    const v5 = param.seriesData.get(ma5Series);
+    const v25 = param.seriesData.get(ma25Series);
+    const v50 = param.seriesData.get(ma50Series);
+    const v75 = param.seriesData.get(ma75Series);
     const v100 = param.seriesData.get(ma100Series);
 
     if (!candle) {
@@ -365,10 +356,10 @@ async function drawChart(ticker, name) {
       <div>終値: ${candle.close.toLocaleString()}</div>
       <div>出来高: ${volume ? volume.value.toLocaleString() : ''}</div>
       <hr>
-      <div>5MA: ${v5   && v5.value   ? v5.value.toFixed(2)   : '-'}</div>
-      <div>25MA: ${v25 && v25.value  ? v25.value.toFixed(2)  : '-'}</div>
-      <div>50MA: ${v50 && v50.value  ? v50.value.toFixed(2)  : '-'}</div>
-      <div>75MA: ${v75 && v75.value  ? v75.value.toFixed(2)  : '-'}</div>
+      <div>5MA: ${v5 && v5.value ? v5.value.toFixed(2) : '-'}</div>
+      <div>25MA: ${v25 && v25.value ? v25.value.toFixed(2) : '-'}</div>
+      <div>50MA: ${v50 && v50.value ? v50.value.toFixed(2) : '-'}</div>
+      <div>75MA: ${v75 && v75.value ? v75.value.toFixed(2) : '-'}</div>
       <div>100MA: ${v100 && v100.value ? v100.value.toFixed(2) : '-'}</div>
     `;
   });
@@ -381,4 +372,7 @@ async function drawChart(ticker, name) {
   });
 
   tvChart.timeScale().fitContent();
+
+  // ★ ローディング非表示（ここが重要）
+  chartLoadingOverlay.style.display = "none";
 }
