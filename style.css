@@ -9,7 +9,7 @@ body {
 }
 
 .app-container {
-  max-width: 1200px; /* ← ここを拡張 */
+  max-width: 1200px;
   margin: 0 auto;
   padding: 16px;
 }
@@ -35,29 +35,30 @@ body {
 }
 
 /* ------------------------------
-   条件設定（モダンデザイン）
+   条件設定（横並び・モダン）
 ------------------------------ */
 .controls-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
 }
 
 .control-group {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
+  align-items: center;
+  gap: 10px;
 }
 
 .control-group label {
   font-size: 14px;
   font-weight: 600;
   color: #374151;
+  white-space: nowrap;
 }
 
 .control-group input[type="number"] {
-  width: 100%;
-  padding: 10px 12px;
+  width: 80px; /* ← 2桁前提で最適化 */
+  padding: 8px 10px;
   font-size: 15px;
   border: 1px solid #d1d5db;
   border-radius: 8px;
@@ -100,6 +101,11 @@ button:disabled {
   border: none;
   font-size: 15px;
   font-weight: 600;
+}
+
+.btn.small {
+  padding: 4px 8px;
+  font-size: 12px;
 }
 
 .btn.primary {
@@ -270,6 +276,10 @@ tr:hover {
    スマホ対応
 ------------------------------ */
 @media (max-width: 600px) {
+  .controls-grid {
+    flex-direction: column;
+  }
+
   .modal .modal-content {
     width: 95vw;
     height: 90vh;
