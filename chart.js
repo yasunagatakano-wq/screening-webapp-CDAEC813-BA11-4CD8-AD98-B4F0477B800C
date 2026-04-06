@@ -104,12 +104,22 @@ window.addEventListener("keydown", (e) => {
   if (e.key === "ArrowRight") window.showNext();
 });
 
-// スワイプ操作
+// ------------------------------
+// スワイプ操作（修正ポイント）
+// ------------------------------
 let touchStartX = 0;
+
 modal.addEventListener("touchstart", (e) => {
   touchStartX = e.changedTouches[0].clientX;
 });
+
 modal.addEventListener("touchend", (e) => {
+
+  // ★ 修正：チャート領域ならフリック判定を無効化
+  if (e.target.closest("#chartContainer")) {
+    return; // ← これでチャート操作中の銘柄遷移を完全に防止
+  }
+
   const diff = e.changedTouches[0].clientX - touchStartX;
   if (diff > 80) window.showPrev();
   if (diff < -80) window.showNext();
