@@ -147,7 +147,7 @@ button:disabled {
 /* コード列（1列目） */
 #resultTable th:nth-child(1),
 #resultTable td:nth-child(1) {
-  width: 60px;        /* ← 4桁に最適化 */
+  width: 35px;        /* ← 4桁に最適化 */
   white-space: nowrap;
   text-align: right;
 }
