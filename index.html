@@ -8,13 +8,9 @@
   <link rel="apple-touch-icon" href="assets/favicon.ico">
   <link rel="stylesheet" href="style.css">
 
-  <!-- ライブラリ -->
   <script src="libs/xlsx.full.min.js"></script>
-
-  <!-- TradingView Lightweight Charts -->
   <script src="libs/lightweight-charts.standalone.production.js"></script>
 
-  <!-- アプリ本体 -->
   <script defer src="screening.js"></script>
   <script defer src="chart.js"></script>
 </head>
@@ -52,7 +48,6 @@
     <section class="card table-card">
       <h2>スクリーニング結果</h2>
 
-      <!-- テーブルローディング -->
       <div id="loadingOverlay" class="loading-overlay hidden">
         <div class="spinner"></div>
         <p>サーバーへリクエスト中…</p>
@@ -83,13 +78,15 @@
 
     <div class="modal-content">
       <div class="modal-header">
-        <h3 id="chartModalTitle">チャート</h3>
+        <div id="chartHeaderLeft"></div>
+        <div id="chartHeaderNav">
+          <button id="prevChartBtn" class="btn small">前へ</button>
+          <button id="nextChartBtn" class="btn small">次へ</button>
+        </div>
         <button id="closeChartBtn" class="btn ghost">✕</button>
       </div>
 
       <div class="modal-body">
-
-        <!-- ★ チャート取得中ローディング（chartContainer の外） -->
         <div id="chartLoadingOverlay">
           <div class="spinner"></div>
           <p>チャートデータ取得中…</p>
