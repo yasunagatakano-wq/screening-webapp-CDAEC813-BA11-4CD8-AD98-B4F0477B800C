@@ -41,7 +41,7 @@ body {
   display: flex;
   flex-wrap: wrap;
   gap: 24px;
-  padding-left: 16px; /* 親子関係を視覚化 */
+  padding-left: 16px;
 }
 
 .control-group {
@@ -147,7 +147,7 @@ button:disabled {
 /* コード列（1列目） */
 #resultTable th:nth-child(1),
 #resultTable td:nth-child(1) {
-  width: 35px;        /* ← 4桁に最適化 */
+  width: 35px;
   white-space: nowrap;
   text-align: right;
 }
@@ -155,7 +155,7 @@ button:disabled {
 /* 銘柄名列（2列目） */
 #resultTable th:nth-child(2),
 #resultTable td:nth-child(2) {
-  min-width: 260px;      /* ← プロとして最適 */
+  min-width: 260px;
   white-space: normal;
   word-break: break-word;
   line-height: 1.4;
@@ -208,8 +208,11 @@ tr:hover {
   background: white;
   border-radius: 12px;
   padding: 12px;
+
+  /* ← iPhone Safari の高さ問題を解決 */
+  height: calc(var(--vh, 1vh) * 90);
+
   width: 95vw;
-  height: 90vh;
   display: flex;
   flex-direction: column;
   z-index: 10;
@@ -319,6 +322,6 @@ tr:hover {
 
   .modal .modal-content {
     width: 95vw;
-    height: 90vh;
+    height: calc(var(--vh, 1vh) * 90);
   }
 }
