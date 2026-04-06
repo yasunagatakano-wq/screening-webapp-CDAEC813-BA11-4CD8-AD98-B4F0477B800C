@@ -147,7 +147,7 @@ button:disabled {
 /* コード列（1列目） */
 #resultTable th:nth-child(1),
 #resultTable td:nth-child(1) {
-  width: 35px;        /* ← 4桁に最適化 */
+  width: 35px;
   white-space: nowrap;
   text-align: right;
 }
@@ -196,8 +196,7 @@ tr:hover {
   justify-content: center;
   z-index: 1000;
 
-  /* ← スマホでチャート操作を可能にする */
-  touch-action: none;
+  /* ← 削除済み: touch-action: none; */
 }
 
 .modal .modal-backdrop {
@@ -255,8 +254,8 @@ tr:hover {
   height: 100%;
   min-height: 300px;
 
-  /* ← チャートのタップ＆ドラッグを有効化 */
-  touch-action: pan-x pan-y;
+  /* ← チャート領域だけスワイプ禁止 */
+  touch-action: none;
 }
 
 /* ------------------------------
