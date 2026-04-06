@@ -332,7 +332,26 @@ async function drawChart(ticker, name) {
     const d = String(date.getDate()).padStart(2, '0');
 
     tooltipEl.style.display = 'block';
-    tooltipEl.style.left = param.point.x + 20 + 'px';
+
+    // ------------------------------
+    // ★ ツールチップの左右自動切り替え（追加）
+    // ------------------------------
+    const tooltipWidth = tooltipEl.offsetWidth;
+    const containerWidth = chartContainer.clientWidth;
+
+    let left = param.point.x + 20; // デフォルトは右側
+
+    // 右端にはみ出す → 左側へ
+    if (left + tooltipWidth > containerWidth) {
+      left = param.point.x - tooltipWidth - 20;
+    }
+
+    // 左端にはみ出す → 0 に補正
+    if (left < 0) {
+      left = 0;
+    }
+
+    tooltipEl.style.left = left + 'px';
     tooltipEl.style.top = param.point.y + 20 + 'px';
 
     tooltipEl.innerHTML = `
