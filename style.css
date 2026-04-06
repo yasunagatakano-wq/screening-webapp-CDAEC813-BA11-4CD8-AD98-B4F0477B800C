@@ -155,17 +155,37 @@ tr:hover {
   z-index: 10;
 }
 
+/* ヘッダー */
 .modal .modal-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 12px;
 }
 
+/* 左：銘柄名 */
 .modal #chartHeaderLeft {
   font-size: 16px;
   font-weight: bold;
 }
 
+/* 中央スペースを伸ばす */
+.modal #chartHeaderLeft {
+  flex-shrink: 0;
+}
+
+/* 右：前へ／次へ（右寄せ） */
+.modal #chartHeaderNav {
+  margin-left: auto;
+  display: flex;
+  gap: 8px;
+}
+
+/* ✕ボタンは自然に右端へ */
+.modal #closeChartBtn {
+  margin-left: 8px;
+}
+
+/* モーダル本体 */
 .modal .modal-body {
   flex: 1;
   min-height: 0;
