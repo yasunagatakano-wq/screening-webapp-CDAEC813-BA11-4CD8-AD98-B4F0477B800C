@@ -41,6 +41,7 @@ body {
   display: flex;
   flex-wrap: wrap;
   gap: 24px;
+  padding-left: 16px; /* ← 親子関係を視覚化するインデント */
 }
 
 .control-group {
@@ -57,7 +58,7 @@ body {
 }
 
 .control-group input[type="number"] {
-  width: 80px; /* ← 2桁前提で最適化 */
+  width: 80px;
   padding: 8px 10px;
   font-size: 15px;
   border: 1px solid #d1d5db;
@@ -278,6 +279,7 @@ tr:hover {
 @media (max-width: 600px) {
   .controls-grid {
     flex-direction: column;
+    padding-left: 8px; /* スマホではインデントを少し減らす */
   }
 
   .modal .modal-content {
