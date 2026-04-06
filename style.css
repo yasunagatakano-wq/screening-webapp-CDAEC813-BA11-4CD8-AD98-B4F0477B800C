@@ -144,7 +144,15 @@ button:disabled {
   z-index: 5;
 }
 
-/* 銘柄名列（2列目）を最優先で広くし、折り返しOK */
+/* コード列（1列目） */
+#resultTable th:nth-child(1),
+#resultTable td:nth-child(1) {
+  width: 60px;        /* ← 4桁に最適化 */
+  white-space: nowrap;
+  text-align: right;
+}
+
+/* 銘柄名列（2列目） */
 #resultTable th:nth-child(2),
 #resultTable td:nth-child(2) {
   min-width: 260px;      /* ← プロとして最適 */
@@ -153,9 +161,9 @@ button:disabled {
   line-height: 1.4;
 }
 
-/* 数値列はコンパクトに固定幅 */
-#resultTable th:not(:nth-child(2)),
-#resultTable td:not(:nth-child(2)) {
+/* 数値列（3列目以降） */
+#resultTable th:not(:nth-child(1)):not(:nth-child(2)),
+#resultTable td:not(:nth-child(1)):not(:nth-child(2)) {
   width: 90px;
   text-align: right;
   white-space: nowrap;
@@ -207,7 +215,7 @@ tr:hover {
   z-index: 10;
 }
 
-/* ヘッダー */
+/* モーダルヘッダー */
 .modal .modal-header {
   display: flex;
   align-items: center;
