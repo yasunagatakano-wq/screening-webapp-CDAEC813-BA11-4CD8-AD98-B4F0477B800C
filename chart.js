@@ -4,6 +4,10 @@ const closeBtn = document.getElementById("closeChartBtn");
 const chartContainer = document.getElementById("chartContainer");
 const chartLoadingOverlay = document.getElementById("chartLoadingOverlay");
 
+const headerLeft = document.getElementById("chartHeaderLeft");
+const prevBtn = document.getElementById("prevChartBtn");
+const nextBtn = document.getElementById("nextChartBtn");
+
 // 初期状態ではモーダル非表示
 modal.style.display = "none";
 
@@ -55,7 +59,9 @@ function waitForHeight(callback) {
 window.openChartModal = function(ticker, name, index) {
   currentIndex = index;
 
-  modalTitle.textContent = "";
+  // ヘッダーに銘柄情報を表示
+  headerLeft.textContent = `${ticker} ${name}（${currentIndex + 1}/${screeningResults.length}）`;
+
   modal.style.display = "flex";
 
   // ローディング表示
@@ -85,6 +91,10 @@ window.showNext = function() {
   const r = screeningResults[currentIndex];
   window.openChartModal(r.コード, r.銘柄名, currentIndex);
 };
+
+// ボタンイベント
+prevBtn.onclick = window.showPrev;
+nextBtn.onclick = window.showNext;
 
 // キーボード操作
 window.addEventListener("keydown", (e) => {
@@ -256,54 +266,6 @@ async function drawChart(ticker, name) {
   ma75Series = addMA('#aa00aa', ma75);
   ma100Series = addMA('#ffaa00', ma100);
 
-  // 銘柄情報
-  const infoBox = document.createElement("div");
-  infoBox.style.position = "absolute";
-  infoBox.style.top = "5px";
-  infoBox.style.left = "10px";
-  infoBox.style.fontSize = "16px";
-  infoBox.style.fontWeight = "bold";
-  infoBox.style.zIndex = "2000";
-  infoBox.style.background = "rgba(255,255,255,0.8)";
-  infoBox.style.padding = "4px 8px";
-  infoBox.style.borderRadius = "4px";
-  infoBox.innerText = `${ticker}  ${name}（${currentIndex + 1}/${screeningResults.length}）`;
-  chartContainer.appendChild(infoBox);
-
-  // 前へ / 次へ
-  const nav = document.createElement("div");
-  nav.style.position = "absolute";
-  nav.style.top = "5px";
-  nav.style.right = "50px";
-  nav.style.zIndex = "2000";
-  nav.innerHTML = `
-    <button id="prevChartBtn" style="margin-right:8px;">前へ</button>
-    <button id="nextChartBtn">次へ</button>
-  `;
-  chartContainer.appendChild(nav);
-
-  document.getElementById("prevChartBtn").onclick = window.showPrev;
-  document.getElementById("nextChartBtn").onclick = window.showNext;
-
-  // 凡例
-  const legend = document.createElement("div");
-  legend.style.position = "absolute";
-  legend.style.top = "40px";
-  legend.style.left = "10px";
-  legend.style.fontSize = "12px";
-  legend.style.zIndex = "2000";
-  legend.style.background = "rgba(255,255,255,0.8)";
-  legend.style.padding = "6px 8px";
-  legend.style.borderRadius = "4px";
-  legend.innerHTML = `
-    <div><span style="color:#ff1493;">■</span> 5MA</div>
-    <div><span style="color:#00aa00;">■</span> 25MA</div>
-    <div><span style="color:#0000ff;">■</span> 50MA</div>
-    <div><span style="color:#aa00aa;">■</span> 75MA</div>
-    <div><span style="color:#ffaa00;">■</span> 100MA</div>
-  `;
-  chartContainer.appendChild(legend);
-
   // ツールチップ
   tooltipEl = document.createElement('div');
   tooltipEl.style.position = 'absolute';
@@ -373,6 +335,6 @@ async function drawChart(ticker, name) {
 
   tvChart.timeScale().fitContent();
 
-  // ★ ローディング非表示（ここが重要）
+  // ★ ローディング非表示
   chartLoadingOverlay.style.display = "none";
 }
