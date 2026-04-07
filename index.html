@@ -37,9 +37,11 @@
       <div class="buttons-row">
         <button id="startBtn" class="btn primary">スクリーニング開始</button>
         <button id="cancelBtn" class="btn secondary" disabled>キャンセル</button>
+
+        <!-- ★ 経過時間表示（新規追加） -->
+        <span id="elapsedTime" class="elapsed-time"></span>
       </div>
 
-      <!-- プログレスバー削除済み -->
       <div id="progressArea" class="progress-area">
         <div id="progressText" class="progress-text">待機中</div>
       </div>
@@ -73,22 +75,17 @@
     </section>
   </div>
 
+  <!-- チャートモーダル -->
   <div id="chartModal" class="modal">
     <div class="modal-backdrop"></div>
 
     <div class="modal-content">
       <div class="modal-header">
-
-        <!-- 左：銘柄名 -->
         <div id="chartHeaderLeft"></div>
-
-        <!-- 右：前へ／次へ -->
         <div id="chartHeaderNav">
           <button id="prevChartBtn" class="btn small">前へ</button>
           <button id="nextChartBtn" class="btn small">次へ</button>
         </div>
-
-        <!-- 右端：閉じる -->
         <button id="closeChartBtn" class="btn ghost">✕</button>
       </div>
 
