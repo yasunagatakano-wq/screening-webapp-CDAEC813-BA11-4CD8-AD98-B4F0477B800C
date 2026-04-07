@@ -1,6 +1,5 @@
 const startBtn = document.getElementById("startBtn");
 const cancelBtn = document.getElementById("cancelBtn");
-const progressBar = document.getElementById("progressBar");
 const progressText = document.getElementById("progressText");
 const tbody = document.querySelector("#resultTable tbody");
 const tableHeaders = document.querySelectorAll("#resultTable thead th");
@@ -8,6 +7,9 @@ const tableHeaders = document.querySelectorAll("#resultTable thead th");
 let abortController = null;
 let currentResults = [];
 let sortState = {};
+
+let elapsedSeconds = 0;
+let timerId = null;
 
 const API_BASE_URL = "https://yfinance-api-fe86988c-d3b4-f1c6-640d.onrender.com";
 
@@ -23,8 +25,16 @@ async function startScreening() {
 
   startBtn.disabled = true;
   cancelBtn.disabled = false;
-  progressBar.value = 0;
-  progressText.textContent = "サーバー側でスクリーニング中…";
+
+  // 経過時間リセット
+  elapsedSeconds = 0;
+  progressText.textContent = "経過時間：0 秒";
+
+  // タイマー開始
+  timerId = setInterval(() => {
+    elapsedSeconds++;
+    progressText.textContent = `経過時間：${elapsedSeconds} 秒`;
+  }, 1000);
 
   abortController = new AbortController();
 
@@ -44,7 +54,10 @@ async function startScreening() {
     const results = await res.json();
     currentResults = results;
 
-    progressBar.value = 100;
+    // タイマー停止
+    clearInterval(timerId);
+    timerId = null;
+
     progressText.textContent = `完了：${results.length} 件ヒット`;
 
     showResults(currentResults);
@@ -55,6 +68,9 @@ async function startScreening() {
 
     alert(`スクリーニング完了：${results.length} 件`);
   } catch (e) {
+    clearInterval(timerId);
+    timerId = null;
+
     if (abortController.signal.aborted) {
       progressText.textContent = "キャンセルされました。";
     } else {
@@ -78,6 +94,11 @@ function cancelScreening() {
     abortController.abort();
     cancelBtn.disabled = true;
     cancelBtn.textContent = "キャンセル中…";
+
+    // タイマー停止
+    clearInterval(timerId);
+    timerId = null;
+
     progressText.textContent += "（キャンセル要求済み）";
   }
 }
