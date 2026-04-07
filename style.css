@@ -129,7 +129,6 @@ button:disabled {
    ★ 経過時間表示（新規追加）
 ------------------------------ */
 .elapsed-time {
-  margin-left: 12px;
   font-size: 14px;
   font-weight: 600;
   color: #374151;
