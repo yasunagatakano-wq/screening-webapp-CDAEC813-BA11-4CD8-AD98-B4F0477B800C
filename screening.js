@@ -1,6 +1,7 @@
 const startBtn = document.getElementById("startBtn");
 const cancelBtn = document.getElementById("cancelBtn");
 const progressText = document.getElementById("progressText");
+const elapsedTimeEl = document.getElementById("elapsedTime");
 const tbody = document.querySelector("#resultTable tbody");
 const tableHeaders = document.querySelectorAll("#resultTable thead th");
 
@@ -17,6 +18,18 @@ startBtn.addEventListener("click", startScreening);
 cancelBtn.addEventListener("click", cancelScreening);
 
 // ===============================
+// 時間フォーマット
+// ===============================
+function formatElapsed(sec) {
+  if (sec < 60) {
+    return `スクリーニング時間：${sec}秒`;
+  }
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  return `スクリーニング時間：${m}分${s}秒`;
+}
+
+// ===============================
 // 1. スクリーニング開始
 // ===============================
 async function startScreening() {
@@ -28,12 +41,12 @@ async function startScreening() {
 
   // 経過時間リセット
   elapsedSeconds = 0;
-  progressText.textContent = "経過時間：0 秒";
+  elapsedTimeEl.textContent = formatElapsed(0);
 
   // タイマー開始
   timerId = setInterval(() => {
     elapsedSeconds++;
-    progressText.textContent = `経過時間：${elapsedSeconds} 秒`;
+    elapsedTimeEl.textContent = formatElapsed(elapsedSeconds);
   }, 1000);
 
   abortController = new AbortController();
@@ -54,7 +67,7 @@ async function startScreening() {
     const results = await res.json();
     currentResults = results;
 
-    // タイマー停止
+    // タイマー停止（表示は残す）
     clearInterval(timerId);
     timerId = null;
 
@@ -95,7 +108,6 @@ function cancelScreening() {
     cancelBtn.disabled = true;
     cancelBtn.textContent = "キャンセル中…";
 
-    // タイマー停止
     clearInterval(timerId);
     timerId = null;
 
