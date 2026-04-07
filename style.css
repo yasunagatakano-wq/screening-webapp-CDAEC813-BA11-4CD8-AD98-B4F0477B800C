@@ -85,6 +85,7 @@ body {
   margin-top: 16px;
   display: flex;
   gap: 12px;
+  align-items: center;
 }
 
 button:not(:disabled) {
@@ -122,6 +123,17 @@ button:disabled {
   background: transparent;
   border: none;
   font-size: 20px;
+}
+
+/* ------------------------------
+   ★ 経過時間表示（新規追加）
+------------------------------ */
+.elapsed-time {
+  margin-left: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  white-space: nowrap;
 }
 
 /* ------------------------------
@@ -215,9 +227,7 @@ tr:hover {
   z-index: 10;
 }
 
-/* ------------------------------
-   ★ 修正版：モーダルヘッダー
------------------------------- */
+/* モーダルヘッダー */
 .modal .modal-header {
   display: flex;
   align-items: center;
@@ -226,11 +236,9 @@ tr:hover {
   box-sizing: border-box;
 }
 
-/* 左：銘柄名（可変幅・省略対応） */
 .modal #chartHeaderLeft {
   font-size: 16px;
   font-weight: bold;
-
   flex: 1 1 auto;
   min-width: 0;
   overflow: hidden;
@@ -238,22 +246,18 @@ tr:hover {
   white-space: nowrap;
 }
 
-/* 右：前へ／次へ（固定幅） */
 .modal #chartHeaderNav {
   flex: 0 0 auto;
   display: flex;
   gap: 8px;
 }
 
-/* 右端：閉じる（固定幅） */
 .modal #closeChartBtn {
   flex: 0 0 auto;
   margin-left: 8px;
 }
 
-/* ------------------------------
-   モーダル本体
------------------------------- */
+/* モーダル本体 */
 .modal .modal-body {
   flex: 1;
   min-height: 0;
