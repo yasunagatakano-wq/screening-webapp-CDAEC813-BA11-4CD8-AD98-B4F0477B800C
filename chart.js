@@ -383,7 +383,17 @@ async function drawChart(ticker, name) {
     tvChart.applyOptions({ width: r.width, height: r.height });
   });
 
-  tvChart.timeScale().fitContent();
+  // ------------------------------
+  // ★ デフォルト表示期間：直近 4 か月
+  // ------------------------------
+  const lastTime = candleData[candleData.length - 1].time;
+  const fourMonthsSec = 60 * 60 * 24 * 30 * 4;
+  const fromTime = lastTime - fourMonthsSec;
+
+  tvChart.timeScale().setVisibleRange({
+    from: fromTime,
+    to: lastTime
+  });
 
   // ★ ローディング非表示
   chartLoadingOverlay.style.display = "none";
