@@ -72,8 +72,14 @@ function waitForHeight(callback) {
 window.openChartModal = function(ticker, name, index) {
   currentIndex = index;
 
-  // ヘッダーに銘柄情報を表示
-  headerLeft.textContent = `${ticker} ${name}（${currentIndex + 1}/${screeningResults.length}）`;
+  // ------------------------------
+  // ★ 修正：銘柄名・コード・ページ番号を分割して表示
+  // ------------------------------
+  headerLeft.innerHTML = `
+    <span class="ticker">${ticker}</span>
+    <span class="name">${name}</span>
+    <span class="page">（${currentIndex + 1}/${screeningResults.length}）</span>
+  `;
 
   modal.style.display = "flex";
 
