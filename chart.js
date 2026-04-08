@@ -12,7 +12,6 @@ window.addEventListener('resize', updateVh);
 // ------------------------------
 
 const modal = document.getElementById("chartModal");
-const modalTitle = document.getElementById("chartModalTitle");
 const closeBtn = document.getElementById("closeChartBtn");
 const chartContainer = document.getElementById("chartContainer");
 const chartLoadingOverlay = document.getElementById("chartLoadingOverlay");
@@ -21,9 +20,15 @@ const headerLeft = document.getElementById("chartHeaderLeft");
 const prevBtn = document.getElementById("prevChartBtn");
 const nextBtn = document.getElementById("nextChartBtn");
 
+// ★ 追加：設定 UI
+const settingsBtn = document.getElementById("chartSettingsBtn");
+const settingsModal = document.getElementById("chartSettingsModal");
+const toggleCandlesCheckbox = document.getElementById("toggleCandles");
+
 // 初期状態ではモーダル非表示
 modal.style.display = "none";
 
+// チャート関連
 let tvChart = null;
 let candleSeries = null;
 let volumeSeries = null;
@@ -37,6 +42,9 @@ let currentIndex = 0;
 let screeningResults = [];
 
 let tooltipEl = null;
+
+// ★ 追加：ローソク足表示設定（保持される）
+let showCandles = true;
 
 // screening.js から結果を受け取る
 window.setScreeningResults = function(results) {
@@ -72,9 +80,7 @@ function waitForHeight(callback) {
 window.openChartModal = function(ticker, name, index) {
   currentIndex = index;
 
-  // ------------------------------
-  // ★ 修正：銘柄名・コード・ページ番号を分割して表示
-  // ------------------------------
+  // 銘柄名・コード・ページ番号を分割して表示
   headerLeft.innerHTML = `
     <span class="ticker">${ticker}</span>
     <span class="name">${name}</span>
@@ -124,24 +130,25 @@ window.addEventListener("keydown", (e) => {
 });
 
 // ------------------------------
-// スワイプ操作（チャート領域は除外）
+// ★ 歯車アイコン → 子モーダル
 // ------------------------------
-let touchStartX = 0;
-
-modal.addEventListener("touchstart", (e) => {
-  touchStartX = e.changedTouches[0].clientX;
+settingsBtn.addEventListener("click", () => {
+  settingsModal.classList.toggle("hidden");
 });
 
-modal.addEventListener("touchend", (e) => {
-
-  // ★ チャート領域ならフリック判定を無効化
-  if (e.target.closest("#chartContainer")) {
-    return;
+// 子モーダル外クリックで閉じる
+document.addEventListener("click", (e) => {
+  if (!settingsModal.contains(e.target) && e.target !== settingsBtn) {
+    settingsModal.classList.add("hidden");
   }
+});
 
-  const diff = e.changedTouches[0].clientX - touchStartX;
-  if (diff > 80) window.showPrev();
-  if (diff < -80) window.showNext();
+// チェックボックスでローソク足表示切替
+toggleCandlesCheckbox.addEventListener("change", (e) => {
+  showCandles = e.target.checked;
+  if (candleSeries) {
+    candleSeries.applyOptions({ visible: showCandles });
+  }
 });
 
 // ------------------------------
@@ -263,6 +270,9 @@ async function drawChart(ticker, name) {
   });
   candleSeries.setData(candleData);
 
+  // ★ 表示設定を反映
+  candleSeries.applyOptions({ visible: showCandles });
+
   // 出来高
   volumeSeries = tvChart.addSeries(LightweightCharts.HistogramSeries, {
     priceFormat: { type: 'volume' },
@@ -339,20 +349,15 @@ async function drawChart(ticker, name) {
 
     tooltipEl.style.display = 'block';
 
-    // ------------------------------
-    // ★ ツールチップの左右自動切り替え（追加）
-    // ------------------------------
     const tooltipWidth = tooltipEl.offsetWidth;
     const containerWidth = chartContainer.clientWidth;
 
-    let left = param.point.x + 20; // デフォルトは右側
+    let left = param.point.x + 20;
 
-    // 右端にはみ出す → 左側へ
     if (left + tooltipWidth > containerWidth) {
       left = param.point.x - tooltipWidth - 20;
     }
 
-    // 左端にはみ出す → 0 に補正
     if (left < 0) {
       left = 0;
     }
@@ -383,9 +388,7 @@ async function drawChart(ticker, name) {
     tvChart.applyOptions({ width: r.width, height: r.height });
   });
 
-  // ------------------------------
   // ★ デフォルト表示期間：直近 4 か月
-  // ------------------------------
   const lastTime = candleData[candleData.length - 1].time;
   const fourMonthsSec = 60 * 60 * 24 * 30 * 4;
   const fromTime = lastTime - fourMonthsSec;
@@ -395,6 +398,6 @@ async function drawChart(ticker, name) {
     to: lastTime
   });
 
-  // ★ ローディング非表示
+  // ローディング非表示
   chartLoadingOverlay.style.display = "none";
 }
