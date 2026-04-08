@@ -38,7 +38,7 @@
         <button id="startBtn" class="btn primary">スクリーニング開始</button>
         <button id="cancelBtn" class="btn secondary" disabled>キャンセル</button>
 
-        <!-- ★ 経過時間表示（新規追加） -->
+        <!-- 経過時間表示 -->
         <span id="elapsedTime" class="elapsed-time"></span>
       </div>
 
@@ -96,6 +96,20 @@
         </div>
 
         <div id="chartContainer"></div>
+
+        <!-- ★ 歯車アイコン -->
+        <div id="chartSettingsBtn" class="chart-settings-btn">⚙️</div>
+
+        <!-- ★ 子モーダル（設定） -->
+        <div id="chartSettingsModal" class="chart-settings-modal hidden">
+          <div class="settings-content">
+            <label>
+              <input type="checkbox" id="toggleCandles" checked>
+              ローソク足を表示
+            </label>
+          </div>
+        </div>
+
       </div>
     </div>
   </div>
