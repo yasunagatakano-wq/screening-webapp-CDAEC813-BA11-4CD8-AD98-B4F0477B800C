@@ -277,7 +277,7 @@ tr:hover {
 .chart-settings-btn {
   position: absolute;
   right: 10px;
-  bottom: 10px;
+  bottom: 0;
   font-size: 22px;
   cursor: pointer;
   z-index: 2000;
