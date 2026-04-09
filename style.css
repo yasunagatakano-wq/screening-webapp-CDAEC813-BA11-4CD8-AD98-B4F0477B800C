@@ -375,14 +375,14 @@ tr:hover {
     height: calc(var(--vh, 1vh) * 90);
   }
 
-  /* スマホ時：ボタンの下にスクリーニング時間を表示 */
+  /* スマホ時：ボタンは横並びのまま、時間だけ下段へ */
   .buttons-row {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 6px;
+    flex-wrap: wrap;          /* 折り返しを許可 */
+    align-items: center;
   }
 
   .elapsed-time {
+    flex-basis: 100%;         /* 1 行占有してボタンの下に来る */
     margin-left: 0;
     margin-top: 4px;
   }
