@@ -1,5 +1,5 @@
 // ------------------------------
-// iPhone Safari の余白対策（追加）
+// iPhone Safari の余白対策
 // ------------------------------
 function updateVh() {
   document.documentElement.style.setProperty('--vh', `${window.innerHeight * 0.01}px`);
@@ -8,9 +8,8 @@ updateVh();
 window.addEventListener('resize', updateVh);
 
 // ------------------------------
-// ここから元の chart.js
+// 要素取得
 // ------------------------------
-
 const modal = document.getElementById("chartModal");
 const closeBtn = document.getElementById("closeChartBtn");
 const chartContainer = document.getElementById("chartContainer");
@@ -20,7 +19,7 @@ const headerLeft = document.getElementById("chartHeaderLeft");
 const prevBtn = document.getElementById("prevChartBtn");
 const nextBtn = document.getElementById("nextChartBtn");
 
-// ★ 追加：設定 UI
+// 設定 UI
 const settingsBtn = document.getElementById("chartSettingsBtn");
 const settingsModal = document.getElementById("chartSettingsModal");
 const toggleCandlesCheckbox = document.getElementById("toggleCandles");
@@ -43,7 +42,7 @@ let screeningResults = [];
 
 let tooltipEl = null;
 
-// ★ 追加：ローソク足表示設定（保持される）
+// ローソク足表示フラグ（見た目だけ切り替える）
 let showCandles = true;
 
 // screening.js から結果を受け取る
@@ -80,7 +79,6 @@ function waitForHeight(callback) {
 window.openChartModal = function(ticker, name, index) {
   currentIndex = index;
 
-  // 銘柄名・コード・ページ番号を分割して表示
   headerLeft.innerHTML = `
     <span class="ticker">${ticker}</span>
     <span class="name">${name}</span>
@@ -88,8 +86,6 @@ window.openChartModal = function(ticker, name, index) {
   `;
 
   modal.style.display = "flex";
-
-  // ローディング表示
   chartLoadingOverlay.style.display = "flex";
 
   requestAnimationFrame(() => {
@@ -130,7 +126,7 @@ window.addEventListener("keydown", (e) => {
 });
 
 // ------------------------------
-// ★ 歯車アイコン → 子モーダル
+// 歯車アイコン → 子モーダル
 // ------------------------------
 settingsBtn.addEventListener("click", () => {
   settingsModal.classList.toggle("hidden");
@@ -143,22 +139,38 @@ document.addEventListener("click", (e) => {
   }
 });
 
-// チェックボックスでローソク足表示切替
-toggleCandlesCheckbox.addEventListener("change", (e) => {
-  showCandles = e.target.checked;
+// ------------------------------
+// ローソク足の見た目だけ切り替える関数
+// ------------------------------
+function applyCandleVisibility() {
+  if (!candleSeries) return;
 
-  if (candleSeries) {
+  if (showCandles) {
     candleSeries.applyOptions({
-      visible: showCandles,
-      priceScaleId: 'right'
+      upColor: 'red',
+      downColor: 'blue',
+      borderUpColor: 'red',
+      borderDownColor: 'blue',
+      wickUpColor: 'red',
+      wickDownColor: 'blue',
     });
-
-    // ★ 非表示でもスケール計算に含める
-    candleSeries.priceScale().applyOptions({
-      autoScale: true,
-      mode: 1
+  } else {
+    // 完全透明にして「見えなくする」だけ（スケール計算には残す）
+    candleSeries.applyOptions({
+      upColor: 'rgba(0,0,0,0)',
+      downColor: 'rgba(0,0,0,0)',
+      borderUpColor: 'rgba(0,0,0,0)',
+      borderDownColor: 'rgba(0,0,0,0)',
+      wickUpColor: 'rgba(0,0,0,0)',
+      wickDownColor: 'rgba(0,0,0,0)',
     });
   }
+}
+
+// チェックボックスでローソク足表示切替（visible は変えない）
+toggleCandlesCheckbox.addEventListener("change", (e) => {
+  showCandles = e.target.checked;
+  applyCandleVisibility();
 });
 
 // ------------------------------
@@ -269,7 +281,7 @@ async function drawChart(ticker, name) {
     },
   });
 
-  // ローソク足
+  // ローソク足（常に visible: true）
   candleSeries = tvChart.addSeries(LightweightCharts.CandlestickSeries, {
     upColor: 'red',
     downColor: 'blue',
@@ -280,17 +292,13 @@ async function drawChart(ticker, name) {
   });
   candleSeries.setData(candleData);
 
-  // ★ 表示設定を反映
-  candleSeries.applyOptions({
-    visible: showCandles,
-    priceScaleId: 'right'
+  // y軸スケール設定（ローソク足を基準）
+  candleSeries.priceScale().applyOptions({
+    scaleMargins: { top: 0.05, bottom: 0.25 },
   });
 
-  // ★ 非表示でもスケール計算に含める
-  candleSeries.priceScale().applyOptions({
-    autoScale: true,
-    mode: 1
-  });
+  // ★ 見た目の表示／非表示を反映（スケールには常に含まれる）
+  applyCandleVisibility();
 
   // 出来高
   volumeSeries = tvChart.addSeries(LightweightCharts.HistogramSeries, {
@@ -305,10 +313,6 @@ async function drawChart(ticker, name) {
       value: c.volume,
     }))
   );
-
-  candleSeries.priceScale().applyOptions({
-    scaleMargins: { top: 0.05, bottom: 0.25 },
-  });
 
   // MA
   function addMA(color, data) {
@@ -407,7 +411,7 @@ async function drawChart(ticker, name) {
     tvChart.applyOptions({ width: r.width, height: r.height });
   });
 
-  // ★ デフォルト表示期間：直近 4 か月
+  // デフォルト表示期間：直近 4 か月
   const lastTime = candleData[candleData.length - 1].time;
   const fourMonthsSec = 60 * 60 * 24 * 30 * 4;
   const fromTime = lastTime - fourMonthsSec;
