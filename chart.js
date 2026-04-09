@@ -146,8 +146,18 @@ document.addEventListener("click", (e) => {
 // チェックボックスでローソク足表示切替
 toggleCandlesCheckbox.addEventListener("change", (e) => {
   showCandles = e.target.checked;
+
   if (candleSeries) {
-    candleSeries.applyOptions({ visible: showCandles });
+    candleSeries.applyOptions({
+      visible: showCandles,
+      priceScaleId: 'right'
+    });
+
+    // ★ 非表示でもスケール計算に含める
+    candleSeries.priceScale().applyOptions({
+      autoScale: true,
+      mode: 1
+    });
   }
 });
 
@@ -271,7 +281,16 @@ async function drawChart(ticker, name) {
   candleSeries.setData(candleData);
 
   // ★ 表示設定を反映
-  candleSeries.applyOptions({ visible: showCandles });
+  candleSeries.applyOptions({
+    visible: showCandles,
+    priceScaleId: 'right'
+  });
+
+  // ★ 非表示でもスケール計算に含める
+  candleSeries.priceScale().applyOptions({
+    autoScale: true,
+    mode: 1
+  });
 
   // 出来高
   volumeSeries = tvChart.addSeries(LightweightCharts.HistogramSeries, {
