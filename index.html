@@ -8,12 +8,27 @@
   <link rel="apple-touch-icon" href="assets/favicon.ico">
   <link rel="stylesheet" href="style.css">
 
+  <!-- ライブラリ -->
   <script src="libs/xlsx.full.min.js"></script>
   <script src="libs/lightweight-charts.standalone.production.js"></script>
 
+  <!-- スクリーニング処理 -->
   <script defer src="screening.js"></script>
-  <script defer src="chart.js"></script>
+
+  <!-- チャート関連（依存順に読み込む） -->
+  <script defer src="js/chart-indicators.js"></script>
+  <script defer src="js/chart-data.js"></script>
+
+  <script defer src="js/chart-price.js"></script>
+  <script defer src="js/chart-rci.js"></script>
+  <script defer src="js/chart-macd.js"></script>
+
+  <script defer src="js/chart-sync.js"></script>
+
+  <!-- メイン制御（chart-main.js に名称変更済み） -->
+  <script defer src="js/chart-main.js"></script>
 </head>
+
 <body>
   <div class="app-container">
     <header class="app-header">
