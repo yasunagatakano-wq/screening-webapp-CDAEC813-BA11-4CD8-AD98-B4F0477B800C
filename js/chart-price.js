@@ -3,9 +3,36 @@
 // 価格チャート（ローソク足・MA・一目・BB・雲・出来高）
 // --------------------------------------
 
-// main.js で参照するため、グローバル変数を使用
-// priceChart, candleSeries, volumeSeries, maXXSeries などは main.js 側で宣言済み
+// ------------------------------
+// ローソク足の見た目だけ切り替える（★追加）
+// ------------------------------
+function applyCandleVisibility() {
+  if (!candleSeries) return;
 
+  if (showCandles) {
+    candleSeries.applyOptions({
+      upColor: 'red',
+      downColor: 'blue',
+      borderUpColor: 'red',
+      borderDownColor: 'blue',
+      wickUpColor: 'red',
+      wickDownColor: 'blue',
+    });
+  } else {
+    candleSeries.applyOptions({
+      upColor: 'rgba(0,0,0,0)',
+      downColor: 'rgba(0,0,0,0)',
+      borderUpColor: 'rgba(0,0,0,0)',
+      borderDownColor: 'rgba(0,0,0,0)',
+      wickUpColor: 'rgba(0,0,0,0)',
+      wickDownColor: 'rgba(0,0,0,0)',
+    });
+  }
+}
+
+// --------------------------------------
+// 価格チャート生成
+// --------------------------------------
 function createPriceChart(candleData) {
   const rect = chartContainer.getBoundingClientRect();
 
@@ -67,7 +94,7 @@ function createPriceChart(candleData) {
     scaleMargins: { top: 0.05, bottom: 0.25 },
   });
 
-  // main.js の設定 UI と連動
+  // ★ここで applyCandleVisibility を呼ぶ（修正済み）
   applyCandleVisibility();
 
   // ------------------------------
@@ -130,7 +157,7 @@ function createPriceChart(candleData) {
   });
   ichimokuSpan2Series.setData(ichimoku.span2.filter(p => p.value !== null));
 
-  // 雲（先行スパン1・2の間）
+  // 雲
   const cloudData = [];
   const span1Map = new Map();
   ichimoku.span1.forEach(p => {
