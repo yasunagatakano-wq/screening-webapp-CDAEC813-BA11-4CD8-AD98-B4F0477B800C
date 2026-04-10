@@ -13,6 +13,8 @@ window.addEventListener('resize', updateVh);
 const modal = document.getElementById("chartModal");
 const closeBtn = document.getElementById("closeChartBtn");
 const chartContainer = document.getElementById("chartContainer");
+const rciContainer = document.getElementById("rciContainer");
+const macdContainer = document.getElementById("macdContainer");
 const chartLoadingOverlay = document.getElementById("chartLoadingOverlay");
 
 const headerLeft = document.getElementById("chartHeaderLeft");
@@ -28,7 +30,10 @@ const toggleCandlesCheckbox = document.getElementById("toggleCandles");
 modal.style.display = "none";
 
 // チャート関連
-let tvChart = null;
+let priceChart = null;   // ① 価格チャート
+let rciChart = null;     // ② RCIチャート
+let macdChart = null;    // ③ MACDチャート
+
 let candleSeries = null;
 let volumeSeries = null;
 let ma5Series = null;
@@ -37,6 +42,27 @@ let ma50Series = null;
 let ma75Series = null;
 let ma100Series = null;
 
+// 一目均衡表
+let ichimokuTenkanSeries = null;
+let ichimokuKijunSeries = null;
+let ichimokuSpan1Series = null;
+let ichimokuSpan2Series = null;
+let ichimokuChikouSeries = null;
+
+// ボリンジャーバンド
+let bbMidSeries = null;
+let bbUpperSeries = null;
+let bbLowerSeries = null;
+let bbAreaSeries = null;
+
+// RCI
+let rciSeries = null;
+
+// MACD
+let macdLineSeries = null;
+let macdSignalSeries = null;
+let macdHistSeries = null;
+
 let currentIndex = 0;
 let screeningResults = [];
 
@@ -44,6 +70,9 @@ let tooltipEl = null;
 
 // ローソク足表示フラグ（見た目だけ切り替える）
 let showCandles = true;
+
+// 同期制御フラグ
+let isSyncing = false;
 
 // screening.js から結果を受け取る
 window.setScreeningResults = function(results) {
@@ -54,12 +83,22 @@ window.setScreeningResults = function(results) {
 function closeModal() {
   modal.style.display = "none";
 
-  if (tvChart) {
-    tvChart.remove();
-    tvChart = null;
+  if (priceChart) {
+    priceChart.remove();
+    priceChart = null;
+  }
+  if (rciChart) {
+    rciChart.remove();
+    rciChart = null;
+  }
+  if (macdChart) {
+    macdChart.remove();
+    macdChart = null;
   }
 
   chartContainer.innerHTML = "";
+  if (rciContainer) rciContainer.innerHTML = "";
+  if (macdContainer) macdContainer.innerHTML = "";
 }
 
 closeBtn.addEventListener("click", closeModal);
@@ -155,7 +194,6 @@ function applyCandleVisibility() {
       wickDownColor: 'blue',
     });
   } else {
-    // 完全透明にして「見えなくする」だけ（スケール計算には残す）
     candleSeries.applyOptions({
       upColor: 'rgba(0,0,0,0)',
       downColor: 'rgba(0,0,0,0)',
@@ -172,6 +210,266 @@ toggleCandlesCheckbox.addEventListener("change", (e) => {
   showCandles = e.target.checked;
   applyCandleVisibility();
 });
+
+// ------------------------------
+// インジケータ計算関数
+// ------------------------------
+function calcMAFromData(data, period) {
+  const result = [];
+  for (let i = 0; i < data.length; i++) {
+    if (i < period - 1) {
+      result.push({ time: data[i].time, value: null });
+      continue;
+    }
+    let sum = 0;
+    for (let j = i - period + 1; j <= i; j++) {
+      sum += data[j].close;
+    }
+    result.push({ time: data[i].time, value: sum / period });
+  }
+  return result;
+}
+
+function calcIchimoku(data) {
+  const len = data.length;
+  const tenkan = [];
+  const kijun = [];
+  const span1 = [];
+  const span2 = [];
+  const chikou = [];
+
+  for (let i = 0; i < len; i++) {
+    // 転換線 9
+    if (i >= 8) {
+      let high = -Infinity;
+      let low = Infinity;
+      for (let j = i - 8; j <= i; j++) {
+        if (data[j].high > high) high = data[j].high;
+        if (data[j].low < low) low = data[j].low;
+      }
+      tenkan.push({ time: data[i].time, value: (high + low) / 2 });
+    } else {
+      tenkan.push({ time: data[i].time, value: null });
+    }
+
+    // 基準線 26
+    if (i >= 25) {
+      let high = -Infinity;
+      let low = Infinity;
+      for (let j = i - 25; j <= i; j++) {
+        if (data[j].high > high) high = data[j].high;
+        if (data[j].low < low) low = data[j].low;
+      }
+      kijun.push({ time: data[i].time, value: (high + low) / 2 });
+    } else {
+      kijun.push({ time: data[i].time, value: null });
+    }
+
+    // 遅行スパン（26本前）
+    if (i - 26 >= 0) {
+      chikou.push({ time: data[i - 26].time, value: data[i].close });
+    } else {
+      chikou.push({ time: data[i].time, value: null });
+    }
+  }
+
+  // 先行スパン1・2（26本先）
+  for (let i = 0; i < len; i++) {
+    const targetIndex = i + 26;
+    if (targetIndex >= len) break;
+
+    const t = tenkan[i].value;
+    const k = kijun[i].value;
+
+    if (t != null && k != null) {
+      span1.push({
+        time: data[targetIndex].time,
+        value: (t + k) / 2,
+      });
+    } else {
+      span1.push({
+        time: data[targetIndex].time,
+        value: null,
+      });
+    }
+
+    if (i >= 51) {
+      let high = -Infinity;
+      let low = Infinity;
+      for (let j = i - 51; j <= i; j++) {
+        if (data[j].high > high) high = data[j].high;
+        if (data[j].low < low) low = data[j].low;
+      }
+      span2.push({
+        time: data[targetIndex].time,
+        value: (high + low) / 2,
+      });
+    } else {
+      span2.push({
+        time: data[targetIndex].time,
+        value: null,
+      });
+    }
+  }
+
+  return {
+    tenkan,
+    kijun,
+    span1,
+    span2,
+    chikou,
+  };
+}
+
+function calcBB(data, period = 20, k = 2) {
+  const mid = [];
+  const upper = [];
+  const lower = [];
+
+  for (let i = 0; i < data.length; i++) {
+    if (i < period - 1) {
+      mid.push({ time: data[i].time, value: null });
+      upper.push({ time: data[i].time, value: null });
+      lower.push({ time: data[i].time, value: null });
+      continue;
+    }
+    let sum = 0;
+    for (let j = i - period + 1; j <= i; j++) {
+      sum += data[j].close;
+    }
+    const mean = sum / period;
+
+    let variance = 0;
+    for (let j = i - period + 1; j <= i; j++) {
+      const diff = data[j].close - mean;
+      variance += diff * diff;
+    }
+    variance /= period;
+    const std = Math.sqrt(variance);
+
+    mid.push({ time: data[i].time, value: mean });
+    upper.push({ time: data[i].time, value: mean + k * std });
+    lower.push({ time: data[i].time, value: mean - k * std });
+  }
+
+  return { mid, upper, lower };
+}
+
+function calcRCI(data, period = 9) {
+  const result = [];
+  const n = period;
+
+  for (let i = 0; i < data.length; i++) {
+    if (i < n - 1) {
+      result.push({ time: data[i].time, value: null });
+      continue;
+    }
+
+    const slice = data.slice(i - n + 1, i + 1);
+    const timeRanks = [];
+    for (let j = 0; j < n; j++) {
+      timeRanks.push({ idx: j, rank: j + 1 });
+    }
+
+    const priceSorted = [...slice]
+      .map((d, idx) => ({ idx, close: d.close }))
+      .sort((a, b) => a.close - b.close);
+
+    const priceRankMap = {};
+    for (let r = 0; r < n; r++) {
+      priceRankMap[priceSorted[r].idx] = r + 1;
+    }
+
+    let sumDiff2 = 0;
+    for (let j = 0; j < n; j++) {
+      const tRank = timeRanks[j].rank;
+      const pRank = priceRankMap[j];
+      const diff = tRank - pRank;
+      sumDiff2 += diff * diff;
+    }
+
+    const rci =
+      100 * (1 - (6 * sumDiff2) / (n * (n * n - 1)));
+
+    result.push({ time: data[i].time, value: rci });
+  }
+
+  return result;
+}
+
+function calcEMA(values, period) {
+  const k = 2 / (period + 1);
+  const ema = [];
+  let prev = null;
+
+  for (let i = 0; i < values.length; i++) {
+    const v = values[i];
+    if (v == null) {
+      ema.push(null);
+      continue;
+    }
+    if (prev == null) {
+      prev = v;
+    } else {
+      prev = v * k + prev * (1 - k);
+    }
+    ema.push(prev);
+  }
+  return ema;
+}
+
+function calcMACD(data, shortPeriod = 12, longPeriod = 26, signalPeriod = 9) {
+  const closes = data.map(d => d.close);
+  const emaShort = calcEMA(closes, shortPeriod);
+  const emaLong = calcEMA(closes, longPeriod);
+
+  const macd = [];
+  for (let i = 0; i < data.length; i++) {
+    if (emaShort[i] == null || emaLong[i] == null) {
+      macd.push(null);
+    } else {
+      macd.push(emaShort[i] - emaLong[i]);
+    }
+  }
+
+  const signal = calcEMA(macd, signalPeriod);
+  const hist = [];
+  for (let i = 0; i < data.length; i++) {
+    if (macd[i] == null || signal[i] == null) {
+      hist.push(null);
+    } else {
+      hist.push(macd[i] - signal[i]);
+    }
+  }
+
+  const macdData = [];
+  const signalData = [];
+  const histData = [];
+
+  for (let i = 0; i < data.length; i++) {
+    macdData.push({ time: data[i].time, value: macd[i] });
+    signalData.push({ time: data[i].time, value: signal[i] });
+    histData.push({ time: data[i].time, value: hist[i] });
+  }
+
+  return { macdData, signalData, histData };
+}
+
+// ------------------------------
+// チャート同期
+// ------------------------------
+function bindTimeSync(srcChart, targetCharts) {
+  if (!srcChart) return;
+  srcChart.timeScale().subscribeVisibleTimeRangeChange((range) => {
+    if (!range || isSyncing) return;
+    isSyncing = true;
+    targetCharts.forEach(ch => {
+      if (!ch) return;
+      ch.timeScale().setVisibleRange(range);
+    });
+    isSyncing = false;
+  });
+}
 
 // ------------------------------
 // チャート描画
@@ -210,38 +508,46 @@ async function drawChart(ticker, name) {
   }));
 
   // 移動平均
-  function calcMA(period) {
-    const result = [];
-    for (let i = 0; i < candleData.length; i++) {
-      if (i < period - 1) {
-        result.push({ time: candleData[i].time, value: null });
-        continue;
-      }
-      let sum = 0;
-      for (let j = i - period + 1; j <= i; j++) {
-        sum += candleData[j].close;
-      }
-      result.push({ time: candleData[i].time, value: sum / period });
-    }
-    return result;
-  }
+  const ma5 = calcMAFromData(candleData, 5);
+  const ma25 = calcMAFromData(candleData, 25);
+  const ma50 = calcMAFromData(candleData, 50);
+  const ma75 = calcMAFromData(candleData, 75);
+  const ma100 = calcMAFromData(candleData, 100);
 
-  const ma5 = calcMA(5);
-  const ma25 = calcMA(25);
-  const ma50 = calcMA(50);
-  const ma75 = calcMA(75);
-  const ma100 = calcMA(100);
+  // 一目均衡表
+  const ichimoku = calcIchimoku(candleData);
+
+  // ボリンジャーバンド
+  const bb = calcBB(candleData, 20, 2);
+
+  // RCI
+  const rci = calcRCI(candleData, 9);
+
+  // MACD
+  const macd = calcMACD(candleData, 12, 26, 9);
 
   // 既存チャート破棄
-  if (tvChart) {
-    tvChart.remove();
-    tvChart = null;
+  if (priceChart) {
+    priceChart.remove();
+    priceChart = null;
   }
+  if (rciChart) {
+    rciChart.remove();
+    rciChart = null;
+  }
+  if (macdChart) {
+    macdChart.remove();
+    macdChart = null;
+  }
+
   chartContainer.innerHTML = "";
+  if (rciContainer) rciContainer.innerHTML = "";
+  if (macdContainer) macdContainer.innerHTML = "";
 
   const rect = chartContainer.getBoundingClientRect();
 
-  tvChart = LightweightCharts.createChart(chartContainer, {
+  // ① 価格チャート
+  priceChart = LightweightCharts.createChart(chartContainer, {
     width: rect.width,
     height: rect.height,
     layout: {
@@ -266,13 +572,13 @@ async function drawChart(ticker, name) {
     },
   });
 
-  tvChart.applyOptions({
+  priceChart.applyOptions({
     localization: {
       dateFormat: 'yyyy/MM/dd',
     },
   });
 
-  tvChart.timeScale().applyOptions({
+  priceChart.timeScale().applyOptions({
     tickMarkFormatter: (time) => {
       const date = new Date(time * 1000);
       const m = String(date.getMonth() + 1).padStart(2, '0');
@@ -282,7 +588,7 @@ async function drawChart(ticker, name) {
   });
 
   // ローソク足（常に visible: true）
-  candleSeries = tvChart.addSeries(LightweightCharts.CandlestickSeries, {
+  candleSeries = priceChart.addSeries(LightweightCharts.CandlestickSeries, {
     upColor: 'red',
     downColor: 'blue',
     borderUpColor: 'red',
@@ -292,16 +598,14 @@ async function drawChart(ticker, name) {
   });
   candleSeries.setData(candleData);
 
-  // y軸スケール設定（ローソク足を基準）
   candleSeries.priceScale().applyOptions({
     scaleMargins: { top: 0.05, bottom: 0.25 },
   });
 
-  // ★ 見た目の表示／非表示を反映（スケールには常に含まれる）
   applyCandleVisibility();
 
   // 出来高
-  volumeSeries = tvChart.addSeries(LightweightCharts.HistogramSeries, {
+  volumeSeries = priceChart.addSeries(LightweightCharts.HistogramSeries, {
     priceFormat: { type: 'volume' },
     priceScaleId: 'volume',
     scaleMargins: { top: 0.8, bottom: 0 },
@@ -316,7 +620,7 @@ async function drawChart(ticker, name) {
 
   // MA
   function addMA(color, data) {
-    const s = tvChart.addSeries(LightweightCharts.LineSeries, {
+    const s = priceChart.addSeries(LightweightCharts.LineSeries, {
       color,
       lineWidth: 1
     });
@@ -330,7 +634,112 @@ async function drawChart(ticker, name) {
   ma75Series = addMA('#aa00aa', ma75);
   ma100Series = addMA('#ffaa00', ma100);
 
-  // ツールチップ
+  // 一目均衡表
+  ichimokuTenkanSeries = priceChart.addSeries(LightweightCharts.LineSeries, {
+    color: '#ff0000',
+    lineWidth: 1,
+  });
+  ichimokuTenkanSeries.setData(ichimoku.tenkan.filter(p => p.value !== null));
+
+  ichimokuKijunSeries = priceChart.addSeries(LightweightCharts.LineSeries, {
+    color: '#0000ff',
+    lineWidth: 1,
+  });
+  ichimokuKijunSeries.setData(ichimoku.kijun.filter(p => p.value !== null));
+
+  ichimokuSpan1Series = priceChart.addSeries(LightweightCharts.LineSeries, {
+    color: 'rgba(0, 128, 0, 1)',
+    lineWidth: 1,
+  });
+  ichimokuSpan1Series.setData(ichimoku.span1.filter(p => p.value !== null));
+
+  ichimokuSpan2Series = priceChart.addSeries(LightweightCharts.LineSeries, {
+    color: 'rgba(128, 0, 128, 1)',
+    lineWidth: 1,
+  });
+  ichimokuSpan2Series.setData(ichimoku.span2.filter(p => p.value !== null));
+
+  // 雲（Span1 と Span2 の間を塗る）
+  const cloudData = [];
+  const span1Map = new Map();
+  ichimoku.span1.forEach(p => {
+    if (p.value != null) span1Map.set(p.time, p.value);
+  });
+  ichimoku.span2.forEach(p => {
+    if (p.value != null && span1Map.has(p.time)) {
+      const v1 = span1Map.get(p.time);
+      const v2 = p.value;
+      cloudData.push({
+        time: p.time,
+        value: Math.max(v1, v2),
+        lowerValue: Math.min(v1, v2),
+      });
+    }
+  });
+
+  if (cloudData.length > 0) {
+    const cloudSeries = priceChart.addSeries(LightweightCharts.AreaSeries, {
+      topColor: 'rgba(0, 200, 0, 0.3)',
+      bottomColor: 'rgba(200, 0, 200, 0.3)',
+      lineColor: 'rgba(0,0,0,0)',
+      lineWidth: 0,
+    });
+    cloudSeries.setData(cloudData);
+  }
+
+  ichimokuChikouSeries = priceChart.addSeries(LightweightCharts.LineSeries, {
+    color: '#008080',
+    lineWidth: 1,
+  });
+  ichimokuChikouSeries.setData(ichimoku.chikou.filter(p => p.value !== null));
+
+  // ボリンジャーバンド
+  bbMidSeries = priceChart.addSeries(LightweightCharts.LineSeries, {
+    color: '#ffa500',
+    lineWidth: 1,
+  });
+  bbMidSeries.setData(bb.mid.filter(p => p.value !== null));
+
+  bbUpperSeries = priceChart.addSeries(LightweightCharts.LineSeries, {
+    color: '#ffa500',
+    lineWidth: 1,
+  });
+  bbUpperSeries.setData(bb.upper.filter(p => p.value !== null));
+
+  bbLowerSeries = priceChart.addSeries(LightweightCharts.LineSeries, {
+    color: '#ffa500',
+    lineWidth: 1,
+  });
+  bbLowerSeries.setData(bb.lower.filter(p => p.value !== null));
+
+  const bbAreaData = [];
+  const upperMap = new Map();
+  bb.upper.forEach(p => {
+    if (p.value != null) upperMap.set(p.time, p.value);
+  });
+  bb.lower.forEach(p => {
+    if (p.value != null && upperMap.has(p.time)) {
+      const u = upperMap.get(p.time);
+      const l = p.value;
+      bbAreaData.push({
+        time: p.time,
+        value: u,
+        lowerValue: l,
+      });
+    }
+  });
+
+  if (bbAreaData.length > 0) {
+    bbAreaSeries = priceChart.addSeries(LightweightCharts.AreaSeries, {
+      topColor: 'rgba(255,165,0,0.2)',
+      bottomColor: 'rgba(255,165,0,0.05)',
+      lineColor: 'rgba(0,0,0,0)',
+      lineWidth: 0,
+    });
+    bbAreaSeries.setData(bbAreaData);
+  }
+
+  // ツールチップ（価格チャートのみ）
   tooltipEl = document.createElement('div');
   tooltipEl.style.position = 'absolute';
   tooltipEl.style.display = 'none';
@@ -343,7 +752,7 @@ async function drawChart(ticker, name) {
   tooltipEl.style.zIndex = '2100';
   chartContainer.appendChild(tooltipEl);
 
-  tvChart.subscribeCrosshairMove(param => {
+  priceChart.subscribeCrosshairMove(param => {
     if (!param.time || !param.seriesData.size || !param.point) {
       tooltipEl.style.display = 'none';
       return;
@@ -404,11 +813,111 @@ async function drawChart(ticker, name) {
     `;
   });
 
+  // ② RCIチャート
+  if (rciContainer) {
+    const rRect = rciContainer.getBoundingClientRect();
+    rciChart = LightweightCharts.createChart(rciContainer, {
+      width: rRect.width || rect.width,
+      height: rRect.height || 160,
+      layout: {
+        background: { color: '#ffffff' },
+        textColor: '#333',
+      },
+      rightPriceScale: {
+        visible: true,
+        borderVisible: true,
+      },
+      timeScale: {
+        borderVisible: true,
+        timeVisible: false,
+        secondsVisible: false,
+        fixLeftEdge: true,
+        fixRightEdge: true,
+        tickMarkSpacing: 50,
+      },
+      grid: {
+        vertLines: { color: '#eee' },
+        horzLines: { color: '#eee' },
+      },
+    });
+
+    rciSeries = rciChart.addSeries(LightweightCharts.LineSeries, {
+      color: '#ff1493',
+      lineWidth: 1,
+    });
+    rciSeries.setData(rci.filter(p => p.value !== null));
+
+    rciChart.priceScale('right').applyOptions({
+      scaleMargins: { top: 0.1, bottom: 0.1 },
+    });
+  }
+
+  // ③ MACDチャート
+  if (macdContainer) {
+    const mRect = macdContainer.getBoundingClientRect();
+    macdChart = LightweightCharts.createChart(macdContainer, {
+      width: mRect.width || rect.width,
+      height: mRect.height || 160,
+      layout: {
+        background: { color: '#ffffff' },
+        textColor: '#333',
+      },
+      rightPriceScale: {
+        visible: true,
+        borderVisible: true,
+      },
+      timeScale: {
+        borderVisible: true,
+        timeVisible: false,
+        secondsVisible: false,
+        fixLeftEdge: true,
+        fixRightEdge: true,
+        tickMarkSpacing: 50,
+      },
+      grid: {
+        vertLines: { color: '#eee' },
+        horzLines: { color: '#eee' },
+      },
+    });
+
+    macdLineSeries = macdChart.addSeries(LightweightCharts.LineSeries, {
+      color: '#0000ff',
+      lineWidth: 1,
+    });
+    macdLineSeries.setData(macd.macdData.filter(p => p.value !== null));
+
+    macdSignalSeries = macdChart.addSeries(LightweightCharts.LineSeries, {
+      color: '#ff0000',
+      lineWidth: 1,
+    });
+    macdSignalSeries.setData(macd.signalData.filter(p => p.value !== null));
+
+    macdHistSeries = macdChart.addSeries(LightweightCharts.HistogramSeries, {
+      color: 'rgba(0, 128, 0, 0.6)',
+      priceFormat: { type: 'price', precision: 4, minMove: 0.0001 },
+      scaleMargins: { top: 0.1, bottom: 0.1 },
+    });
+    macdHistSeries.setData(macd.histData.filter(p => p.value !== null));
+
+    macdChart.priceScale('right').applyOptions({
+      scaleMargins: { top: 0.1, bottom: 0.1 },
+    });
+  }
+
   // リサイズ対応
   window.addEventListener('resize', () => {
-    if (!tvChart) return;
-    const r = chartContainer.getBoundingClientRect();
-    tvChart.applyOptions({ width: r.width, height: r.height });
+    if (priceChart) {
+      const r = chartContainer.getBoundingClientRect();
+      priceChart.applyOptions({ width: r.width, height: r.height });
+    }
+    if (rciChart && rciContainer) {
+      const r = rciContainer.getBoundingClientRect();
+      rciChart.applyOptions({ width: r.width, height: r.height });
+    }
+    if (macdChart && macdContainer) {
+      const r = macdContainer.getBoundingClientRect();
+      macdChart.applyOptions({ width: r.width, height: r.height });
+    }
   });
 
   // デフォルト表示期間：直近 4 か月
@@ -416,10 +925,31 @@ async function drawChart(ticker, name) {
   const fourMonthsSec = 60 * 60 * 24 * 30 * 4;
   const fromTime = lastTime - fourMonthsSec;
 
-  tvChart.timeScale().setVisibleRange({
+  priceChart.timeScale().setVisibleRange({
     from: fromTime,
     to: lastTime
   });
+
+  if (rciChart) {
+    rciChart.timeScale().setVisibleRange({
+      from: fromTime,
+      to: lastTime
+    });
+  }
+
+  if (macdChart) {
+    macdChart.timeScale().setVisibleRange({
+      from: fromTime,
+      to: lastTime
+    });
+  }
+
+  // チャート間の同期（スクロール・ズーム）
+  if (priceChart && rciChart && macdChart) {
+    bindTimeSync(priceChart, [rciChart, macdChart]);
+    bindTimeSync(rciChart, [priceChart, macdChart]);
+    bindTimeSync(macdChart, [priceChart, rciChart]);
+  }
 
   // ローディング非表示
   chartLoadingOverlay.style.display = "none";
