@@ -256,19 +256,26 @@ tr:hover {
   margin-left: 8px;
 }
 
-/* モーダル本体 */
+/* モーダル本体：3チャート縦並び */
 .modal .modal-body {
   flex: 1;
   min-height: 0;
   display: flex;
+  flex-direction: column;
   position: relative;
+  gap: 6px;
 }
 
 .modal #chartContainer {
-  flex: 1;
   width: 100%;
-  height: 100%;
-  min-height: 300px;
+  flex: 1 1 auto;
+  min-height: 180px;
+}
+
+#rciContainer,
+#macdContainer {
+  width: 100%;
+  height: 160px;
 }
 
 /* ------------------------------
@@ -277,7 +284,7 @@ tr:hover {
 .chart-settings-btn {
   position: absolute;
   right: 10px;
-  bottom: 0;
+  bottom: 6px;
   font-size: 22px;
   cursor: pointer;
   z-index: 2000;
@@ -377,12 +384,12 @@ tr:hover {
 
   /* スマホ時：ボタンは横並びのまま、時間だけ下段へ */
   .buttons-row {
-    flex-wrap: wrap;          /* 折り返しを許可 */
+    flex-wrap: wrap;
     align-items: center;
   }
 
   .elapsed-time {
-    flex-basis: 100%;         /* 1 行占有してボタンの下に来る */
+    flex-basis: 100%;
     margin-left: 0;
     margin-top: 4px;
   }
