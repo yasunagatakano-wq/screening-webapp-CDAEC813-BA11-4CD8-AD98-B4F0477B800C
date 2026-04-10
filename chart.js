@@ -206,7 +206,6 @@ function applyCandleVisibility() {
   }
 }
 
-// チェックボックスでローソク足表示切替（visible は変えない）
 toggleCandlesCheckbox.addEventListener("change", (e) => {
   showCandles = e.target.checked;
   applyCandleVisibility();
@@ -521,7 +520,7 @@ async function drawChart(ticker, name) {
   // ボリンジャーバンド
   const bb = calcBB(candleData, 20, 2);
 
-  // ★ RCI（短期・長期）
+  // RCI（短期・長期）
   const rciShort = calcRCI(candleData, 9);
   const rciLong  = calcRCI(candleData, 26);
 
@@ -760,6 +759,16 @@ async function drawChart(ticker, name) {
     },
   });
 
+  // 日付フォーマット統一
+  rciChart.timeScale().applyOptions({
+    tickMarkFormatter: (time) => {
+      const date = new Date(time * 1000);
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      const d = String(date.getDate()).padStart(2, '0');
+      return `${m}/${d}`;
+    },
+  });
+
   // RCI短期（9）
   rciShortSeries = rciChart.addSeries(LightweightCharts.LineSeries, {
     color: '#ff1493',
@@ -776,6 +785,47 @@ async function drawChart(ticker, name) {
 
   rciChart.priceScale('right').applyOptions({
     scaleMargins: { top: 0.1, bottom: 0.1 },
+  });
+
+  // ------------------------------
+  // RCI ツールチップ
+  // ------------------------------
+  const rciTooltip = document.createElement('div');
+  rciTooltip.style.position = 'absolute';
+  rciTooltip.style.display = 'none';
+  rciTooltip.style.padding = '6px';
+  rciTooltip.style.background = 'rgba(255,255,255,0.9)';
+  rciTooltip.style.border = '1px solid #ccc';
+  rciTooltip.style.borderRadius = '4px';
+  rciTooltip.style.fontSize = '12px';
+  rciTooltip.style.pointerEvents = 'none';
+  rciTooltip.style.zIndex = '2100';
+  rciContainer.appendChild(rciTooltip);
+
+  rciChart.subscribeCrosshairMove(param => {
+    if (!param.time || !param.point) {
+      rciTooltip.style.display = 'none';
+      return;
+    }
+
+    const shortVal = param.seriesData.get(rciShortSeries);
+    const longVal  = param.seriesData.get(rciLongSeries);
+
+    const JST_OFFSET = 9 * 60 * 60 * 1000;
+    const date = new Date(param.time * 1000 + JST_OFFSET);
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+
+    rciTooltip.style.display = 'block';
+    rciTooltip.style.left = param.point.x + 20 + 'px';
+    rciTooltip.style.top  = param.point.y + 20 + 'px';
+
+    rciTooltip.innerHTML = `
+      <div>日付: ${y}/${m}/${d}</div>
+      <div>RCI(9): ${shortVal?.value?.toFixed(2) ?? '-'}</div>
+      <div>RCI(26): ${longVal?.value?.toFixed(2) ?? '-'}</div>
+    `;
   });
 
   // ------------------------------
@@ -807,6 +857,16 @@ async function drawChart(ticker, name) {
     },
   });
 
+  // 日付フォーマット統一
+  macdChart.timeScale().applyOptions({
+    tickMarkFormatter: (time) => {
+      const date = new Date(time * 1000);
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      const d = String(date.getDate()).padStart(2, '0');
+      return `${m}/${d}`;
+    },
+  });
+
   macdLineSeries = macdChart.addSeries(LightweightCharts.LineSeries, {
     color: '#0000ff',
     lineWidth: 1,
@@ -830,8 +890,51 @@ async function drawChart(ticker, name) {
     scaleMargins: { top: 0.1, bottom: 0.1 },
   });
 
-    // ------------------------------
-  // ツールチップ（価格チャートのみ）
+  // ------------------------------
+  // MACD ツールチップ
+  // ------------------------------
+  const macdTooltip = document.createElement('div');
+  macdTooltip.style.position = 'absolute';
+  macdTooltip.style.display = 'none';
+  macdTooltip.style.padding = '6px';
+  macdTooltip.style.background = 'rgba(255,255,255,0.9)';
+  macdTooltip.style.border = '1px solid #ccc';
+  macdTooltip.style.borderRadius = '4px';
+  macdTooltip.style.fontSize = '12px';
+  macdTooltip.style.pointerEvents = 'none';
+  macdTooltip.style.zIndex = '2100';
+  macdContainer.appendChild(macdTooltip);
+
+  macdChart.subscribeCrosshairMove(param => {
+    if (!param.time || !param.point) {
+      macdTooltip.style.display = 'none';
+      return;
+    }
+
+    const macdVal   = param.seriesData.get(macdLineSeries);
+    const signalVal = param.seriesData.get(macdSignalSeries);
+    const histVal   = param.seriesData.get(macdHistSeries);
+
+    const JST_OFFSET = 9 * 60 * 60 * 1000;
+    const date = new Date(param.time * 1000 + JST_OFFSET);
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+
+    macdTooltip.style.display = 'block';
+    macdTooltip.style.left = param.point.x + 20 + 'px';
+    macdTooltip.style.top  = param.point.y + 20 + 'px';
+
+    macdTooltip.innerHTML = `
+      <div>日付: ${y}/${m}/${d}</div>
+      <div>MACD: ${macdVal?.value?.toFixed(4) ?? '-'}</div>
+      <div>Signal: ${signalVal?.value?.toFixed(4) ?? '-'}</div>
+      <div>Hist: ${histVal?.value?.toFixed(4) ?? '-'}</div>
+    `;
+  });
+
+  // ------------------------------
+  // 価格チャートのツールチップ
   // ------------------------------
   tooltipEl = document.createElement('div');
   tooltipEl.style.position = 'absolute';
