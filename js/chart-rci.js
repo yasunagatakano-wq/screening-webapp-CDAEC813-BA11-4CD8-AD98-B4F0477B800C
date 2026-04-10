@@ -37,8 +37,16 @@ function createRciChart(candleData) {
     },
   });
 
+  // ★ クロスヘアのX軸ラベル用フォーマット（2026/03/26 形式）
+  rciChart.applyOptions({
+    localization: {
+      locale: 'ja-JP',
+      dateFormat: 'yyyy/MM/dd',
+    },
+  });
+
   // ------------------------------
-  // 日付フォーマット統一（MM/DD）
+  // 日付フォーマット（目盛り用：MM/DD）
   // ------------------------------
   rciChart.timeScale().applyOptions({
     tickMarkFormatter: (time) => {
