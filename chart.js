@@ -55,8 +55,9 @@ let bbUpperSeries = null;
 let bbLowerSeries = null;
 let bbAreaSeries = null;
 
-// RCI
-let rciSeries = null;
+// RCI（短期・長期）
+let rciShortSeries = null;
+let rciLongSeries = null;
 
 // MACD
 let macdLineSeries = null;
@@ -520,33 +521,27 @@ async function drawChart(ticker, name) {
   // ボリンジャーバンド
   const bb = calcBB(candleData, 20, 2);
 
-  // RCI
-  const rci = calcRCI(candleData, 9);
+  // ★ RCI（短期・長期）
+  const rciShort = calcRCI(candleData, 9);
+  const rciLong  = calcRCI(candleData, 26);
 
   // MACD
   const macd = calcMACD(candleData, 12, 26, 9);
 
   // 既存チャート破棄
-  if (priceChart) {
-    priceChart.remove();
-    priceChart = null;
-  }
-  if (rciChart) {
-    rciChart.remove();
-    rciChart = null;
-  }
-  if (macdChart) {
-    macdChart.remove();
-    macdChart = null;
-  }
+  if (priceChart) priceChart.remove();
+  if (rciChart)   rciChart.remove();
+  if (macdChart)  macdChart.remove();
 
   chartContainer.innerHTML = "";
-  if (rciContainer) rciContainer.innerHTML = "";
-  if (macdContainer) macdContainer.innerHTML = "";
+  rciContainer.innerHTML = "";
+  macdContainer.innerHTML = "";
 
   const rect = chartContainer.getBoundingClientRect();
 
+  // ------------------------------
   // ① 価格チャート
+  // ------------------------------
   priceChart = LightweightCharts.createChart(chartContainer, {
     width: rect.width,
     height: rect.height,
@@ -573,9 +568,7 @@ async function drawChart(ticker, name) {
   });
 
   priceChart.applyOptions({
-    localization: {
-      dateFormat: 'yyyy/MM/dd',
-    },
+    localization: { dateFormat: 'yyyy/MM/dd' },
   });
 
   priceChart.timeScale().applyOptions({
@@ -587,7 +580,7 @@ async function drawChart(ticker, name) {
     },
   });
 
-  // ローソク足（常に visible: true）
+  // ローソク足
   candleSeries = priceChart.addSeries(LightweightCharts.CandlestickSeries, {
     upColor: 'red',
     downColor: 'blue',
@@ -612,10 +605,7 @@ async function drawChart(ticker, name) {
     color: 'rgba(128,128,128,0.6)',
   });
   volumeSeries.setData(
-    candleData.map(c => ({
-      time: c.time,
-      value: c.volume,
-    }))
+    candleData.map(c => ({ time: c.time, value: c.volume }))
   );
 
   // MA
@@ -634,7 +624,7 @@ async function drawChart(ticker, name) {
   ma75Series = addMA('#aa00aa', ma75);
   ma100Series = addMA('#ffaa00', ma100);
 
-  // 一目均衡表
+  // 一目均衡表（転換線・基準線）
   ichimokuTenkanSeries = priceChart.addSeries(LightweightCharts.LineSeries, {
     color: '#ff0000',
     lineWidth: 1,
@@ -647,6 +637,7 @@ async function drawChart(ticker, name) {
   });
   ichimokuKijunSeries.setData(ichimoku.kijun.filter(p => p.value !== null));
 
+  // 先行スパン1・2
   ichimokuSpan1Series = priceChart.addSeries(LightweightCharts.LineSeries, {
     color: 'rgba(0, 128, 0, 1)',
     lineWidth: 1,
@@ -659,7 +650,7 @@ async function drawChart(ticker, name) {
   });
   ichimokuSpan2Series.setData(ichimoku.span2.filter(p => p.value !== null));
 
-  // 雲（Span1 と Span2 の間を塗る）
+  // 雲
   const cloudData = [];
   const span1Map = new Map();
   ichimoku.span1.forEach(p => {
@@ -687,6 +678,7 @@ async function drawChart(ticker, name) {
     cloudSeries.setData(cloudData);
   }
 
+  // 遅行スパン
   ichimokuChikouSeries = priceChart.addSeries(LightweightCharts.LineSeries, {
     color: '#008080',
     lineWidth: 1,
@@ -739,7 +731,108 @@ async function drawChart(ticker, name) {
     bbAreaSeries.setData(bbAreaData);
   }
 
+  // ------------------------------
+  // ② RCIチャート（短期＋長期）
+  // ------------------------------
+  const rRect = rciContainer.getBoundingClientRect();
+  rciChart = LightweightCharts.createChart(rciContainer, {
+    width: rRect.width || rect.width,
+    height: rRect.height || 160,
+    layout: {
+      background: { color: '#ffffff' },
+      textColor: '#333',
+    },
+    rightPriceScale: {
+      visible: true,
+      borderVisible: true,
+    },
+    timeScale: {
+      borderVisible: true,
+      timeVisible: false,
+      secondsVisible: false,
+      fixLeftEdge: true,
+      fixRightEdge: true,
+      tickMarkSpacing: 50,
+    },
+    grid: {
+      vertLines: { color: '#eee' },
+      horzLines: { color: '#eee' },
+    },
+  });
+
+  // RCI短期（9）
+  rciShortSeries = rciChart.addSeries(LightweightCharts.LineSeries, {
+    color: '#ff1493',
+    lineWidth: 1,
+  });
+  rciShortSeries.setData(rciShort.filter(p => p.value !== null));
+
+  // RCI長期（26）
+  rciLongSeries = rciChart.addSeries(LightweightCharts.LineSeries, {
+    color: '#1e90ff',
+    lineWidth: 1,
+  });
+  rciLongSeries.setData(rciLong.filter(p => p.value !== null));
+
+  rciChart.priceScale('right').applyOptions({
+    scaleMargins: { top: 0.1, bottom: 0.1 },
+  });
+
+  // ------------------------------
+  // ③ MACDチャート
+  // ------------------------------
+  const mRect = macdContainer.getBoundingClientRect();
+  macdChart = LightweightCharts.createChart(macdContainer, {
+    width: mRect.width || rect.width,
+    height: mRect.height || 160,
+    layout: {
+      background: { color: '#ffffff' },
+      textColor: '#333',
+    },
+    rightPriceScale: {
+      visible: true,
+      borderVisible: true,
+    },
+    timeScale: {
+      borderVisible: true,
+      timeVisible: false,
+      secondsVisible: false,
+      fixLeftEdge: true,
+      fixRightEdge: true,
+      tickMarkSpacing: 50,
+    },
+    grid: {
+      vertLines: { color: '#eee' },
+      horzLines: { color: '#eee' },
+    },
+  });
+
+  macdLineSeries = macdChart.addSeries(LightweightCharts.LineSeries, {
+    color: '#0000ff',
+    lineWidth: 1,
+  });
+  macdLineSeries.setData(macd.macdData.filter(p => p.value !== null));
+
+  macdSignalSeries = macdChart.addSeries(LightweightCharts.LineSeries, {
+    color: '#ff0000',
+    lineWidth: 1,
+  });
+  macdSignalSeries.setData(macd.signalData.filter(p => p.value !== null));
+
+  macdHistSeries = macdChart.addSeries(LightweightCharts.HistogramSeries, {
+    color: 'rgba(0, 128, 0, 0.6)',
+    priceFormat: { type: 'price', precision: 4, minMove: 0.0001 },
+    scaleMargins: { top: 0.1, bottom: 0.1 },
+  });
+  macdHistSeries.setData(macd.histData.filter(p => p.value !== null));
+
+  macdChart.priceScale('right').applyOptions({
+    scaleMargins: { top: 0.1, bottom: 0.1 },
+  });
+
+    // ------------------------------
   // ツールチップ（価格チャートのみ）
+  // ------------------------------
   tooltipEl = document.createElement('div');
   tooltipEl.style.position = 'absolute';
   tooltipEl.style.display = 'none';
@@ -790,9 +883,7 @@ async function drawChart(ticker, name) {
       left = param.point.x - tooltipWidth - 20;
     }
 
-    if (left < 0) {
-      left = 0;
-    }
+    if (left < 0) left = 0;
 
     tooltipEl.style.left = left + 'px';
     tooltipEl.style.top = param.point.y + 20 + 'px';
@@ -813,144 +904,44 @@ async function drawChart(ticker, name) {
     `;
   });
 
-  // ② RCIチャート
-  if (rciContainer) {
-    const rRect = rciContainer.getBoundingClientRect();
-    rciChart = LightweightCharts.createChart(rciContainer, {
-      width: rRect.width || rect.width,
-      height: rRect.height || 160,
-      layout: {
-        background: { color: '#ffffff' },
-        textColor: '#333',
-      },
-      rightPriceScale: {
-        visible: true,
-        borderVisible: true,
-      },
-      timeScale: {
-        borderVisible: true,
-        timeVisible: false,
-        secondsVisible: false,
-        fixLeftEdge: true,
-        fixRightEdge: true,
-        tickMarkSpacing: 50,
-      },
-      grid: {
-        vertLines: { color: '#eee' },
-        horzLines: { color: '#eee' },
-      },
-    });
-
-    rciSeries = rciChart.addSeries(LightweightCharts.LineSeries, {
-      color: '#ff1493',
-      lineWidth: 1,
-    });
-    rciSeries.setData(rci.filter(p => p.value !== null));
-
-    rciChart.priceScale('right').applyOptions({
-      scaleMargins: { top: 0.1, bottom: 0.1 },
-    });
-  }
-
-  // ③ MACDチャート
-  if (macdContainer) {
-    const mRect = macdContainer.getBoundingClientRect();
-    macdChart = LightweightCharts.createChart(macdContainer, {
-      width: mRect.width || rect.width,
-      height: mRect.height || 160,
-      layout: {
-        background: { color: '#ffffff' },
-        textColor: '#333',
-      },
-      rightPriceScale: {
-        visible: true,
-        borderVisible: true,
-      },
-      timeScale: {
-        borderVisible: true,
-        timeVisible: false,
-        secondsVisible: false,
-        fixLeftEdge: true,
-        fixRightEdge: true,
-        tickMarkSpacing: 50,
-      },
-      grid: {
-        vertLines: { color: '#eee' },
-        horzLines: { color: '#eee' },
-      },
-    });
-
-    macdLineSeries = macdChart.addSeries(LightweightCharts.LineSeries, {
-      color: '#0000ff',
-      lineWidth: 1,
-    });
-    macdLineSeries.setData(macd.macdData.filter(p => p.value !== null));
-
-    macdSignalSeries = macdChart.addSeries(LightweightCharts.LineSeries, {
-      color: '#ff0000',
-      lineWidth: 1,
-    });
-    macdSignalSeries.setData(macd.signalData.filter(p => p.value !== null));
-
-    macdHistSeries = macdChart.addSeries(LightweightCharts.HistogramSeries, {
-      color: 'rgba(0, 128, 0, 0.6)',
-      priceFormat: { type: 'price', precision: 4, minMove: 0.0001 },
-      scaleMargins: { top: 0.1, bottom: 0.1 },
-    });
-    macdHistSeries.setData(macd.histData.filter(p => p.value !== null));
-
-    macdChart.priceScale('right').applyOptions({
-      scaleMargins: { top: 0.1, bottom: 0.1 },
-    });
-  }
-
+  // ------------------------------
   // リサイズ対応
+  // ------------------------------
   window.addEventListener('resize', () => {
     if (priceChart) {
       const r = chartContainer.getBoundingClientRect();
       priceChart.applyOptions({ width: r.width, height: r.height });
     }
-    if (rciChart && rciContainer) {
+    if (rciChart) {
       const r = rciContainer.getBoundingClientRect();
       rciChart.applyOptions({ width: r.width, height: r.height });
     }
-    if (macdChart && macdContainer) {
+    if (macdChart) {
       const r = macdContainer.getBoundingClientRect();
       macdChart.applyOptions({ width: r.width, height: r.height });
     }
   });
 
-  // デフォルト表示期間：直近 4 か月
+  // ------------------------------
+  // デフォルト表示期間：直近4ヶ月
+  // ------------------------------
   const lastTime = candleData[candleData.length - 1].time;
   const fourMonthsSec = 60 * 60 * 24 * 30 * 4;
   const fromTime = lastTime - fourMonthsSec;
 
-  priceChart.timeScale().setVisibleRange({
-    from: fromTime,
-    to: lastTime
-  });
+  priceChart.timeScale().setVisibleRange({ from: fromTime, to: lastTime });
+  rciChart.timeScale().setVisibleRange({ from: fromTime, to: lastTime });
+  macdChart.timeScale().setVisibleRange({ from: fromTime, to: lastTime });
 
-  if (rciChart) {
-    rciChart.timeScale().setVisibleRange({
-      from: fromTime,
-      to: lastTime
-    });
-  }
+  // ------------------------------
+  // 3チャート同期（スクロール・ズーム）
+  // ------------------------------
+  bindTimeSync(priceChart, [rciChart, macdChart]);
+  bindTimeSync(rciChart,   [priceChart, macdChart]);
+  bindTimeSync(macdChart,  [priceChart, rciChart]);
 
-  if (macdChart) {
-    macdChart.timeScale().setVisibleRange({
-      from: fromTime,
-      to: lastTime
-    });
-  }
-
-  // チャート間の同期（スクロール・ズーム）
-  if (priceChart && rciChart && macdChart) {
-    bindTimeSync(priceChart, [rciChart, macdChart]);
-    bindTimeSync(rciChart, [priceChart, macdChart]);
-    bindTimeSync(macdChart, [priceChart, rciChart]);
-  }
-
+  // ------------------------------
   // ローディング非表示
+  // ------------------------------
   chartLoadingOverlay.style.display = "none";
 }
