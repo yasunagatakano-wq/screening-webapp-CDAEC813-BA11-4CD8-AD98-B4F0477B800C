@@ -1,15 +1,16 @@
-// ------------------------------
+// --------------------------------------
+// chart-main.js
+// モーダル制御・チャート描画の司令塔
+// --------------------------------------
+
 // iPhone Safari の余白対策
-// ------------------------------
 function updateVh() {
   document.documentElement.style.setProperty('--vh', `${window.innerHeight * 0.01}px`);
 }
 updateVh();
 window.addEventListener('resize', updateVh);
 
-// ------------------------------
 // 要素取得
-// ------------------------------
 const modal = document.getElementById("chartModal");
 const closeBtn = document.getElementById("closeChartBtn");
 const chartContainer = document.getElementById("chartContainer");
@@ -34,7 +35,7 @@ let priceChart = null;
 let rciChart = null;
 let macdChart = null;
 
-// シリーズ
+// シリーズ（chart-price.js / chart-rci.js / chart-macd.js が設定）
 let candleSeries = null;
 let volumeSeries = null;
 let ma5Series = null;
@@ -72,9 +73,7 @@ window.setScreeningResults = function(results) {
   screeningResults = results;
 };
 
-// ------------------------------
 // モーダルを閉じる
-// ------------------------------
 function closeModal() {
   modal.style.display = "none";
 
@@ -90,18 +89,14 @@ function closeModal() {
 closeBtn.addEventListener("click", closeModal);
 document.querySelector(".modal-backdrop").addEventListener("click", closeModal);
 
-// ------------------------------
 // chartContainer の高さが確定するまで待つ
-// ------------------------------
 function waitForHeight(callback) {
   const h = chartContainer.getBoundingClientRect().height;
   if (h > 0) callback();
   else setTimeout(() => waitForHeight(callback), 30);
 }
 
-// ------------------------------
 // モーダルを開く
-// ------------------------------
 window.openChartModal = function(ticker, name, index) {
   currentIndex = index;
 
@@ -121,9 +116,7 @@ window.openChartModal = function(ticker, name, index) {
   });
 };
 
-// ------------------------------
 // 前へ・次へ
-// ------------------------------
 window.showPrev = function() {
   if (screeningResults.length === 0) return;
   currentIndex = (currentIndex - 1 + screeningResults.length) % screeningResults.length;
@@ -148,9 +141,7 @@ window.addEventListener("keydown", (e) => {
   if (e.key === "ArrowRight") window.showNext();
 });
 
-// ------------------------------
 // 歯車アイコン → 子モーダル
-// ------------------------------
 settingsBtn.addEventListener("click", () => {
   settingsModal.classList.toggle("hidden");
 });
@@ -162,9 +153,7 @@ document.addEventListener("click", (e) => {
   }
 });
 
-// ------------------------------
-// ローソク足の見た目だけ切り替える
-// ------------------------------
+// ローソク足の見た目切り替え（chart-price.js の applyCandleVisibility を呼ぶ）
 toggleCandlesCheckbox.addEventListener("change", (e) => {
   showCandles = e.target.checked;
   if (candleSeries) applyCandleVisibility();
