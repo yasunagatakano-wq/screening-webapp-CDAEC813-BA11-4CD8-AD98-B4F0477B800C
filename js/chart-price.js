@@ -1,5 +1,6 @@
 // --------------------------------------
-// chart-price.js（休場日を表示しない完全修正版）
+// chart-price.js
+// 価格チャート（ローソク足・MA・一目・BB・雲・出来高）
 // --------------------------------------
 
 function applyCandleVisibility() {
@@ -26,6 +27,9 @@ function applyCandleVisibility() {
   }
 }
 
+// --------------------------------------
+// 価格チャート生成
+// --------------------------------------
 function createPriceChart(candleData) {
   const rect = chartContainer.getBoundingClientRect();
 
@@ -41,8 +45,7 @@ function createPriceChart(candleData) {
       borderVisible: true,
       timeVisible: false,
       secondsVisible: false,
-
-      // ★ 休場日を表示しないための正しい設定
+      // 休場日を余計に描画しないための設定
       fixLeftEdge: false,
       fixRightEdge: false,
       allowShiftVisibleRangeOnResize: false,
@@ -72,7 +75,7 @@ function createPriceChart(candleData) {
   });
 
   // ------------------------------
-  // 凡例（色付き）
+  // 凡例（色付きラベル）
   // ------------------------------
   const legend = document.createElement("div");
   legend.className = "chart-legend";
@@ -146,57 +149,49 @@ function createPriceChart(candleData) {
   ma100Series = addMA('#ffaa00', calcMA(candleData, 100));
 
   // ------------------------------
-  // 一目均衡表（先行スパンは offset で右にずらす）
+  // 一目均衡表
   // ------------------------------
   const ichimoku = calcIchimoku(candleData);
 
+  // 転換線
   ichimokuTenkanSeries = priceChart.addSeries(LightweightCharts.LineSeries, {
     color: '#ff0000',
     lineWidth: 1,
   });
   ichimokuTenkanSeries.setData(ichimoku.tenkan.filter(p => p.value !== null));
 
+  // 基準線
   ichimokuKijunSeries = priceChart.addSeries(LightweightCharts.LineSeries, {
     color: '#0000ff',
     lineWidth: 1,
   });
   ichimokuKijunSeries.setData(ichimoku.kijun.filter(p => p.value !== null));
 
-  // ★ 先行スパン1（offset: 26）
+  // 先行スパン1
   ichimokuSpan1Series = priceChart.addSeries(LightweightCharts.LineSeries, {
     color: 'rgba(0, 128, 0, 1)',
     lineWidth: 1,
   });
   ichimokuSpan1Series.setData(
-    ichimoku.span1
-      .filter(p => p.value !== null)
-      .map(p => ({
-        time: p.time,
-        value: p.value,
-        offset: 26,
-      }))
+    ichimoku.span1.filter(p => p.value !== null)
   );
 
-  // ★ 先行スパン2（offset: 26）
+  // 先行スパン2
   ichimokuSpan2Series = priceChart.addSeries(LightweightCharts.LineSeries, {
     color: 'rgba(128, 0, 128, 1)',
     lineWidth: 1,
   });
   ichimokuSpan2Series.setData(
-    ichimoku.span2
-      .filter(p => p.value !== null)
-      .map(p => ({
-        time: p.time,
-        value: p.value,
-        offset: 26,
-      }))
+    ichimoku.span2.filter(p => p.value !== null)
   );
 
-  // ★ 雲（先行スパン1と2の間）
+  // ★ 雲：先行スパン1と先行スパン2の「間だけ」を塗る
   const cloudData = [];
   const span1Map = new Map();
   ichimoku.span1.forEach(p => {
-    if (p.value != null) span1Map.set(p.time, p.value);
+    if (p.value != null) {
+      span1Map.set(p.time, p.value);
+    }
   });
 
   ichimoku.span2.forEach(p => {
@@ -205,21 +200,21 @@ function createPriceChart(candleData) {
       const v2 = p.value;
       cloudData.push({
         time: p.time,
-        value: Math.max(v1, v2),
-        lowerValue: Math.min(v1, v2),
-        offset: 26,
+        value: Math.max(v1, v2),       // 上側
+        lowerValue: Math.min(v1, v2),  // 下側
       });
     }
   });
 
+  let ichimokuCloudSeries = null;
   if (cloudData.length > 0) {
-    bbAreaSeries = priceChart.addSeries(LightweightCharts.AreaSeries, {
-      topColor: 'rgba(0, 200, 0, 0.3)',
-      bottomColor: 'rgba(200, 0, 200, 0.3)',
+    ichimokuCloudSeries = priceChart.addSeries(LightweightCharts.AreaSeries, {
+      topColor: 'rgba(0, 200, 0, 0.3)',      // 雲の上側
+      bottomColor: 'rgba(200, 0, 200, 0.3)', // 雲の下側
       lineColor: 'rgba(0,0,0,0)',
       lineWidth: 0,
     });
-    bbAreaSeries.setData(cloudData);
+    ichimokuCloudSeries.setData(cloudData);
   }
 
   // 遅行スパン
@@ -269,6 +264,7 @@ function createPriceChart(candleData) {
     }
   });
 
+  let bbAreaSeries = null;
   if (bbAreaData.length > 0) {
     bbAreaSeries = priceChart.addSeries(LightweightCharts.AreaSeries, {
       topColor: 'rgba(255,165,0,0.2)',
