@@ -3,15 +3,9 @@
 // RCIチャート（短期9・長期26）
 // --------------------------------------
 
-// main.js 側で宣言されている変数を利用
-// rciChart, rciShortSeries, rciLongSeries など
-
 function createRciChart(candleData) {
   const rRect = rciContainer.getBoundingClientRect();
 
-  // ------------------------------
-  // チャート生成
-  // ------------------------------
   rciChart = LightweightCharts.createChart(rciContainer, {
     width: rRect.width || 400,
     height: rRect.height || 160,
@@ -19,10 +13,7 @@ function createRciChart(candleData) {
       background: { color: '#ffffff' },
       textColor: '#333',
     },
-    rightPriceScale: {
-      visible: true,
-      borderVisible: true,
-    },
+    rightPriceScale: { visible: true, borderVisible: true },
     timeScale: {
       borderVisible: true,
       timeVisible: false,
@@ -37,7 +28,7 @@ function createRciChart(candleData) {
     },
   });
 
-  // ★ クロスヘアのX軸ラベル用フォーマット（2026/03/26 形式）
+  // クロスヘアのX軸ラベル
   rciChart.applyOptions({
     localization: {
       locale: 'ja-JP',
@@ -45,9 +36,7 @@ function createRciChart(candleData) {
     },
   });
 
-  // ------------------------------
-  // 日付フォーマット（目盛り用：MM/DD）
-  // ------------------------------
+  // 目盛りのフォーマット
   rciChart.timeScale().applyOptions({
     tickMarkFormatter: (time) => {
       const date = new Date(time * 1000);
@@ -57,24 +46,16 @@ function createRciChart(candleData) {
     },
   });
 
-  // ------------------------------
   // RCI 計算
-  // ------------------------------
   const rciShort = calcRCI(candleData, 9);
   const rciLong  = calcRCI(candleData, 26);
 
-  // ------------------------------
-  // RCI短期（9）
-  // ------------------------------
   rciShortSeries = rciChart.addSeries(LightweightCharts.LineSeries, {
     color: '#ff1493',
     lineWidth: 1,
   });
   rciShortSeries.setData(rciShort.filter(p => p.value !== null));
 
-  // ------------------------------
-  // RCI長期（26）
-  // ------------------------------
   rciLongSeries = rciChart.addSeries(LightweightCharts.LineSeries, {
     color: '#1e90ff',
     lineWidth: 1,
@@ -98,6 +79,9 @@ function createRciChart(candleData) {
   rciTooltip.style.fontSize = '12px';
   rciTooltip.style.pointerEvents = 'none';
   rciTooltip.style.zIndex = '2100';
+
+  // ★ 価格チャートではなく、RCIチャートの中に入れる
+  rciContainer.style.position = "relative";
   rciContainer.appendChild(rciTooltip);
 
   rciChart.subscribeCrosshairMove(param => {
@@ -116,7 +100,18 @@ function createRciChart(candleData) {
     const d = String(date.getDate()).padStart(2, '0');
 
     rciTooltip.style.display = 'block';
-    rciTooltip.style.left = param.point.x + 20 + 'px';
+
+    // ★ はみ出し防止ロジック（価格チャートと同じ）
+    const tooltipWidth = rciTooltip.offsetWidth;
+    const containerWidth = rciContainer.clientWidth;
+
+    let left = param.point.x + 20;
+    if (left + tooltipWidth > containerWidth) {
+      left = param.point.x - tooltipWidth - 20;
+    }
+    if (left < 0) left = 0;
+
+    rciTooltip.style.left = left + 'px';
     rciTooltip.style.top  = param.point.y + 20 + 'px';
 
     rciTooltip.innerHTML = `
@@ -126,10 +121,5 @@ function createRciChart(candleData) {
     `;
   });
 
-  // ------------------------------
-  // main.js が同期処理に使うため返却
-  // ------------------------------
-  return {
-    chart: rciChart,
-  };
+  return { chart: rciChart };
 }
