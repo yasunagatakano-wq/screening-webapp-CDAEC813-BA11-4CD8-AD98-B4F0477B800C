@@ -1,8 +1,22 @@
 // --------------------------------------
 // chart-price.js
-// 価格チャート（ローソク足・MA・一目・BB・雲・出来高）
+// 価格チャート（ローソク足・MA・一目・BB・雲・出来高・ツールチップ）
 // --------------------------------------
 
+let priceChart;
+let candleSeries;
+let volumeSeries;
+let ma5Series, ma25Series, ma50Series, ma75Series, ma100Series;
+let ichimokuTenkanSeries, ichimokuKijunSeries;
+let ichimokuSpan1Series, ichimokuSpan2Series, ichimokuChikouSeries;
+let ichimokuCloudBullSeries, ichimokuCloudBearSeries;
+let bbMidSeries, bbUpperSeries, bbLowerSeries, bbAreaSeries;
+
+let showCandles = true;
+
+// --------------------------------------
+// ローソク足の表示／非表示反映
+// --------------------------------------
 function applyCandleVisibility() {
   if (!candleSeries) return;
 
@@ -55,6 +69,9 @@ function createPriceChart(candleData) {
     grid: {
       vertLines: { color: '#eee' },
       horzLines: { color: '#eee' },
+    },
+    crosshair: {
+      mode: LightweightCharts.CrosshairMode.Normal,
     },
   });
 
@@ -149,72 +166,115 @@ function createPriceChart(candleData) {
   ma100Series = addMA('#ffaa00', calcMA(candleData, 100));
 
   // ------------------------------
-  // 一目均衡表
+  // 一目均衡表（先行スパンは26日先へシフト）
   // ------------------------------
   const ichimoku = calcIchimoku(candleData);
+  const shiftSec = 26 * 24 * 60 * 60;
 
   // 転換線
   ichimokuTenkanSeries = priceChart.addSeries(LightweightCharts.LineSeries, {
     color: '#ff0000',
     lineWidth: 1,
   });
-  ichimokuTenkanSeries.setData(ichimoku.tenkan.filter(p => p.value !== null));
+  ichimokuTenkanSeries.setData(
+    ichimoku.tenkan
+      .filter(p => p.value !== null)
+      .map(p => ({ time: p.time, value: p.value }))
+  );
 
   // 基準線
   ichimokuKijunSeries = priceChart.addSeries(LightweightCharts.LineSeries, {
     color: '#0000ff',
     lineWidth: 1,
   });
-  ichimokuKijunSeries.setData(ichimoku.kijun.filter(p => p.value !== null));
+  ichimokuKijunSeries.setData(
+    ichimoku.kijun
+      .filter(p => p.value !== null)
+      .map(p => ({ time: p.time, value: p.value }))
+  );
 
-  // 先行スパン1
+  // 先行スパン1（26日先）
   ichimokuSpan1Series = priceChart.addSeries(LightweightCharts.LineSeries, {
     color: 'rgba(0, 128, 0, 1)',
     lineWidth: 1,
   });
-  ichimokuSpan1Series.setData(
-    ichimoku.span1.filter(p => p.value !== null)
-  );
+  const span1Shifted = ichimoku.span1
+    .filter(p => p.value !== null)
+    .map(p => ({
+      time: p.time + shiftSec,
+      value: p.value,
+    }));
+  ichimokuSpan1Series.setData(span1Shifted);
 
-  // 先行スパン2
+  // 先行スパン2（26日先）
   ichimokuSpan2Series = priceChart.addSeries(LightweightCharts.LineSeries, {
     color: 'rgba(128, 0, 128, 1)',
     lineWidth: 1,
   });
-  ichimokuSpan2Series.setData(
-    ichimoku.span2.filter(p => p.value !== null)
-  );
+  const span2Shifted = ichimoku.span2
+    .filter(p => p.value !== null)
+    .map(p => ({
+      time: p.time + shiftSec,
+      value: p.value,
+    }));
+  ichimokuSpan2Series.setData(span2Shifted);
 
-  // ★ 雲：先行スパン1と先行スパン2の「間だけ」を塗る
-  const cloudData = [];
+  // ★ 雲：先行スパン1と先行スパン2の「間だけ」
+  //   上昇雲（Span1 > Span2）＝緑、下降雲（Span1 < Span2）＝赤
   const span1Map = new Map();
-  ichimoku.span1.forEach(p => {
-    if (p.value != null) {
-      span1Map.set(p.time, p.value);
-    }
+  span1Shifted.forEach(p => {
+    span1Map.set(p.time, p.value);
   });
 
-  ichimoku.span2.forEach(p => {
-    if (p.value != null && span1Map.has(p.time)) {
-      const v1 = span1Map.get(p.time);
-      const v2 = p.value;
-      cloudData.push({
-        time: p.time,
-        value: Math.max(v1, v2),       // 上側
-        lowerValue: Math.min(v1, v2),  // 下側
+  const bullCloud = [];
+  const bearCloud = [];
+
+  span2Shifted.forEach(p => {
+    const t = p.time;
+    const v2 = p.value;
+    if (v2 == null) return;
+    if (!span1Map.has(t)) return;
+    const v1 = span1Map.get(t);
+    if (v1 == null) return;
+
+    const upper = Math.max(v1, v2);
+    const lower = Math.min(v1, v2);
+
+    if (v1 >= v2) {
+      // 上昇雲（Span1 >= Span2）→ 緑
+      bullCloud.push({
+        time: t,
+        value: upper,
+        lowerValue: lower,
+      });
+    } else {
+      // 下降雲（Span1 < Span2）→ 赤
+      bearCloud.push({
+        time: t,
+        value: upper,
+        lowerValue: lower,
       });
     }
   });
 
-  let ichimokuCloudSeries = null;
-  if (cloudData.length > 0) {
-    ichimokuCloudSeries = priceChart.addSeries(LightweightCharts.AreaSeries, {
-      topColor: 'rgba(0, 200, 0, 0.3)',      // 雲の上側
-      bottomColor: 'rgba(200, 0, 200, 0.3)', // 雲の下側
+  if (bullCloud.length > 0) {
+    ichimokuCloudBullSeries = priceChart.addSeries(LightweightCharts.AreaSeries, {
+      topColor: 'rgba(0, 200, 0, 0.4)',
+      bottomColor: 'rgba(0, 200, 0, 0.1)',
       lineColor: 'rgba(0,0,0,0)',
       lineWidth: 0,
     });
-    ichimokuCloudSeries.setData(cloudData);
+    ichimokuCloudBullSeries.setData(bullCloud);
+  }
+
+  if (bearCloud.length > 0) {
+    ichimokuCloudBearSeries = priceChart.addSeries(LightweightCharts.AreaSeries, {
+      topColor: 'rgba(200, 0, 0, 0.4)',
+      bottomColor: 'rgba(200, 0, 0, 0.1)',
+      lineColor: 'rgba(0,0,0,0)',
+      lineWidth: 0,
+    });
+    ichimokuCloudBearSeries.setData(bearCloud);
   }
 
   // 遅行スパン
@@ -222,7 +282,11 @@ function createPriceChart(candleData) {
     color: '#008080',
     lineWidth: 1,
   });
-  ichimokuChikouSeries.setData(ichimoku.chikou.filter(p => p.value !== null));
+  ichimokuChikouSeries.setData(
+    ichimoku.chikou
+      .filter(p => p.value !== null)
+      .map(p => ({ time: p.time, value: p.value }))
+  );
 
   // ------------------------------
   // ボリンジャーバンド
@@ -264,7 +328,6 @@ function createPriceChart(candleData) {
     }
   });
 
-  let bbAreaSeries = null;
   if (bbAreaData.length > 0) {
     bbAreaSeries = priceChart.addSeries(LightweightCharts.AreaSeries, {
       topColor: 'rgba(255,165,0,0.2)',
@@ -274,6 +337,72 @@ function createPriceChart(candleData) {
     });
     bbAreaSeries.setData(bbAreaData);
   }
+
+  // ------------------------------
+  // ツールチップ（価格チャート用）
+  // ------------------------------
+  const tooltip = document.createElement('div');
+  tooltip.className = 'chart-tooltip';
+  tooltip.style.position = 'absolute';
+  tooltip.style.display = 'none';
+  tooltip.style.pointerEvents = 'none';
+  tooltip.style.background = 'rgba(0,0,0,0.75)';
+  tooltip.style.color = '#fff';
+  tooltip.style.padding = '6px 8px';
+  tooltip.style.borderRadius = '4px';
+  tooltip.style.fontSize = '12px';
+  tooltip.style.zIndex = '4000';
+  chartContainer.appendChild(tooltip);
+
+  priceChart.subscribeCrosshairMove(param => {
+    if (!param || !param.time || !param.point) {
+      tooltip.style.display = 'none';
+      return;
+    }
+
+    const price = param.seriesPrices.get(candleSeries);
+    if (!price) {
+      tooltip.style.display = 'none';
+      return;
+    }
+
+    const date = new Date(param.time * 1000);
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+
+    tooltip.innerHTML = `
+      <div>${y}/${m}/${d}</div>
+      <div>始値: ${price.open}</div>
+      <div>高値: ${price.high}</div>
+      <div>安値: ${price.low}</div>
+      <div>終値: ${price.close}</div>
+    `;
+
+    const containerRect = chartContainer.getBoundingClientRect();
+    const tooltipRect = tooltip.getBoundingClientRect();
+
+    let x = param.point.x;
+    let yPos = param.point.y;
+
+    // 右側にはみ出す場合は左側に表示
+    if (x + tooltipRect.width + 16 > containerRect.width) {
+      x = x - tooltipRect.width - 8;
+    } else {
+      x = x + 8;
+    }
+
+    // 上下のはみ出しを軽く補正
+    if (yPos + tooltipRect.height + 16 > containerRect.height) {
+      yPos = containerRect.height - tooltipRect.height - 8;
+    } else if (yPos < 0) {
+      yPos = 8;
+    }
+
+    tooltip.style.left = `${x}px`;
+    tooltip.style.top = `${yPos}px`;
+    tooltip.style.display = 'block';
+  });
 
   return { chart: priceChart };
 }
