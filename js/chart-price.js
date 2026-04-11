@@ -169,6 +169,7 @@ function createPriceChart(candleData) {
   // 一目均衡表
   // --------------------------------------
   const ichimoku = calcIchimoku(candleData);
+  console.log("ICHIMOKU SAMPLE:", ichimoku.tenkan[30]);
   const shiftSec = 26 * 24 * 60 * 60;
 
   // 転換線
