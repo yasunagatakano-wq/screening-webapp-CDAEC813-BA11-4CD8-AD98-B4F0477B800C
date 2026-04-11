@@ -131,7 +131,7 @@ button:disabled {
 .elapsed-time {
   font-size: 14px;
   font-weight: 600;
-  color: #2563eb;  /* スクリーニング開始ボタンと同じ色 */
+  color: #2563eb;
   white-space: nowrap;
 }
 
@@ -382,7 +382,6 @@ tr:hover {
     height: calc(var(--vh, 1vh) * 90);
   }
 
-  /* スマホ時：ボタンは横並びのまま、時間だけ下段へ */
   .buttons-row {
     flex-wrap: wrap;
     align-items: center;
@@ -393,4 +392,29 @@ tr:hover {
     margin-left: 0;
     margin-top: 4px;
   }
+}
+
+/* ------------------------------
+   ★ 追加：チャート凡例（TradingView風）
+------------------------------ */
+.chart-legend {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  background: rgba(255, 255, 255, 0.85);
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: #333;
+  z-index: 3000;
+  pointer-events: none;
+  box-shadow: 0 0 4px rgba(0,0,0,0.15);
+}
+
+/* ツールチップの位置基準を正しくする */
+#chartContainer,
+#rciContainer,
+#macdContainer {
+  position: relative;
 }
