@@ -30,12 +30,12 @@ const toggleCandlesCheckbox = document.getElementById("toggleCandles");
 // 初期状態ではモーダル非表示
 modal.style.display = "none";
 
-// チャートインスタンス（chart-price.js / chart-rci.js / chart-macd.js が代入する）
+// チャートインスタンス
 let priceChart = null;
 let rciChart = null;
 let macdChart = null;
 
-// RCI / MACD のシリーズ（chart-rci.js / chart-macd.js が代入する）
+// RCI / MACD のシリーズ
 let rciShortSeries = null;
 let rciLongSeries = null;
 
@@ -133,7 +133,7 @@ document.addEventListener("click", (e) => {
   }
 });
 
-// ローソク足の見た目切り替え（chart-price.js の applyCandleVisibility を呼ぶ）
+// ローソク足の見た目切り替え
 toggleCandlesCheckbox.addEventListener("change", (e) => {
   showCandles = e.target.checked;
   if (candleSeries) applyCandleVisibility();
@@ -159,24 +159,70 @@ async function drawChart(ticker, name) {
   rciContainer.innerHTML = "";
   macdContainer.innerHTML = "";
 
-  // 価格チャート生成
-  const price = createPriceChart(data);
+  // ① 価格チャートの箱を先に作る
+  const rect = chartContainer.getBoundingClientRect();
+  priceChart = LightweightCharts.createChart(chartContainer, {
+    width: rect.width,
+    height: rect.height,
+    layout: {
+      background: { color: '#ffffff' },
+      textColor: '#333',
+    },
+    rightPriceScale: { visible: true, borderVisible: true },
+    timeScale: {
+      borderVisible: true,
+      timeVisible: false,
+      secondsVisible: false,
+      fixLeftEdge: false,
+      fixRightEdge: false,
+      allowShiftVisibleRangeOnResize: false,
+      rightOffset: 0,
+      barSpacing: 6,
+    },
+    grid: {
+      vertLines: { color: '#eee' },
+      horzLines: { color: '#eee' },
+    },
+    crosshair: {
+      mode: LightweightCharts.CrosshairMode.Normal,
+    },
+  });
 
-  // RCIチャート生成
+  priceChart.applyOptions({
+    localization: {
+      locale: 'ja-JP',
+      dateFormat: 'yyyy/MM/dd',
+    },
+  });
+
+  priceChart.timeScale().applyOptions({
+    tickMarkFormatter: (time) => {
+      const date = new Date(time * 1000);
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      const d = String(date.getDate()).padStart(2, '0');
+      return `${m}/${d}`;
+    },
+  });
+
+  // ② シリーズ生成は chart-price.js に任せる
+  createPriceChart(priceChart, data);
+
+  // chart-sync.js と整合させるためのラッパー
+  const price = { chart: priceChart };
+
+  // ③ RCI / MACD チャート生成
   const rci = createRciChart(data);
-
-  // MACDチャート生成
   const macd = createMacdChart(data);
 
-  // 同期処理
+  // ④ 同期処理
   bindTimeSync(price.chart, [rci.chart, macd.chart]);
   bindTimeSync(rci.chart, [price.chart, macd.chart]);
   bindTimeSync(macd.chart, [price.chart, rci.chart]);
 
-  // リサイズ処理
+  // ⑤ リサイズ処理
   setupResize(price.chart, rci.chart, macd.chart);
 
-  // デフォルト表示期間
+  // ⑥ デフォルト表示期間
   applyDefaultRange(price.chart, rci.chart, macd.chart, data);
 
   chartLoadingOverlay.style.display = "none";
