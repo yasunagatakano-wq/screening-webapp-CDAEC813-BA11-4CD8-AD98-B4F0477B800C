@@ -3,15 +3,9 @@
 // MACDチャート（MACD・Signal・Histogram）
 // --------------------------------------
 
-// main.js 側で宣言されている変数を利用
-// macdChart, macdLineSeries, macdSignalSeries, macdHistSeries など
-
 function createMacdChart(candleData) {
   const mRect = macdContainer.getBoundingClientRect();
 
-  // ------------------------------
-  // チャート生成
-  // ------------------------------
   macdChart = LightweightCharts.createChart(macdContainer, {
     width: mRect.width || 400,
     height: mRect.height || 160,
@@ -19,10 +13,7 @@ function createMacdChart(candleData) {
       background: { color: '#ffffff' },
       textColor: '#333',
     },
-    rightPriceScale: {
-      visible: true,
-      borderVisible: true,
-    },
+    rightPriceScale: { visible: true, borderVisible: true },
     timeScale: {
       borderVisible: true,
       timeVisible: false,
@@ -37,7 +28,6 @@ function createMacdChart(candleData) {
     },
   });
 
-  // ★ クロスヘアのX軸ラベル用フォーマット（2026/03/26 形式）
   macdChart.applyOptions({
     localization: {
       locale: 'ja-JP',
@@ -45,9 +35,6 @@ function createMacdChart(candleData) {
     },
   });
 
-  // ------------------------------
-  // 日付フォーマット（目盛り用：MM/DD）
-  // ------------------------------
   macdChart.timeScale().applyOptions({
     tickMarkFormatter: (time) => {
       const date = new Date(time * 1000);
@@ -57,32 +44,20 @@ function createMacdChart(candleData) {
     },
   });
 
-  // ------------------------------
-  // MACD 計算
-  // ------------------------------
   const macd = calcMACD(candleData, 12, 26, 9);
 
-  // ------------------------------
-  // MACDライン
-  // ------------------------------
   macdLineSeries = macdChart.addSeries(LightweightCharts.LineSeries, {
     color: '#0000ff',
     lineWidth: 1,
   });
   macdLineSeries.setData(macd.macdData.filter(p => p.value !== null));
 
-  // ------------------------------
-  // シグナルライン
-  // ------------------------------
   macdSignalSeries = macdChart.addSeries(LightweightCharts.LineSeries, {
     color: '#ff0000',
     lineWidth: 1,
   });
   macdSignalSeries.setData(macd.signalData.filter(p => p.value !== null));
 
-  // ------------------------------
-  // ヒストグラム
-  // ------------------------------
   macdHistSeries = macdChart.addSeries(LightweightCharts.HistogramSeries, {
     color: 'rgba(0, 128, 0, 0.6)',
     priceFormat: { type: 'price', precision: 4, minMove: 0.0001 },
@@ -107,6 +82,9 @@ function createMacdChart(candleData) {
   macdTooltip.style.fontSize = '12px';
   macdTooltip.style.pointerEvents = 'none';
   macdTooltip.style.zIndex = '2100';
+
+  // ★ MACDチャートの中に入れる
+  macdContainer.style.position = "relative";
   macdContainer.appendChild(macdTooltip);
 
   macdChart.subscribeCrosshairMove(param => {
@@ -126,7 +104,18 @@ function createMacdChart(candleData) {
     const d = String(date.getDate()).padStart(2, '0');
 
     macdTooltip.style.display = 'block';
-    macdTooltip.style.left = param.point.x + 20 + 'px';
+
+    // ★ はみ出し防止ロジック
+    const tooltipWidth = macdTooltip.offsetWidth;
+    const containerWidth = macdContainer.clientWidth;
+
+    let left = param.point.x + 20;
+    if (left + tooltipWidth > containerWidth) {
+      left = param.point.x - tooltipWidth - 20;
+    }
+    if (left < 0) left = 0;
+
+    macdTooltip.style.left = left + 'px';
     macdTooltip.style.top  = param.point.y + 20 + 'px';
 
     macdTooltip.innerHTML = `
@@ -137,10 +126,5 @@ function createMacdChart(candleData) {
     `;
   });
 
-  // ------------------------------
-  // main.js が同期処理に使うため返却
-  // ------------------------------
-  return {
-    chart: macdChart,
-  };
+  return { chart: macdChart };
 }
