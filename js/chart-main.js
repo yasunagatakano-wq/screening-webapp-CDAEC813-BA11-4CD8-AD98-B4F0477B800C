@@ -30,31 +30,12 @@ const toggleCandlesCheckbox = document.getElementById("toggleCandles");
 // 初期状態ではモーダル非表示
 modal.style.display = "none";
 
-// チャートインスタンス
+// チャートインスタンス（chart-price.js / chart-rci.js / chart-macd.js が代入する）
 let priceChart = null;
 let rciChart = null;
 let macdChart = null;
 
-// シリーズ（chart-price.js / chart-rci.js / chart-macd.js が設定）
-let candleSeries = null;
-let volumeSeries = null;
-let ma5Series = null;
-let ma25Series = null;
-let ma50Series = null;
-let ma75Series = null;
-let ma100Series = null;
-
-let ichimokuTenkanSeries = null;
-let ichimokuKijunSeries = null;
-let ichimokuSpan1Series = null;
-let ichimokuSpan2Series = null;
-let ichimokuChikouSeries = null;
-
-let bbMidSeries = null;
-let bbUpperSeries = null;
-let bbLowerSeries = null;
-let bbAreaSeries = null;
-
+// RCI / MACD のシリーズ（chart-rci.js / chart-macd.js が代入する）
 let rciShortSeries = null;
 let rciLongSeries = null;
 
@@ -65,7 +46,6 @@ let macdHistSeries = null;
 let currentIndex = 0;
 let screeningResults = [];
 
-let showCandles = true;
 let isSyncing = false;
 
 // screening.js から結果を受け取る
