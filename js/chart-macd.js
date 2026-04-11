@@ -31,7 +31,6 @@ function createMacdChart(candleData) {
     },
   });
 
-  // ★ クロスヘアのX軸ラベル
   macdChart.applyOptions({
     localization: {
       locale: 'ja-JP',
@@ -39,9 +38,6 @@ function createMacdChart(candleData) {
     },
   });
 
-  // ------------------------------
-  // 目盛りフォーマット（MM/DD）
-  // ------------------------------
   macdChart.timeScale().applyOptions({
     tickMarkFormatter: (time) => {
       const date = new Date(time * 1000);
@@ -51,18 +47,18 @@ function createMacdChart(candleData) {
     },
   });
 
-  // ------------------------------
-  // 凡例（TradingView風）
-  // ------------------------------
+  // 凡例（色付き）
   const legend = document.createElement("div");
   legend.className = "chart-legend";
-  legend.innerHTML = `【MACD】<br>MACD / Signal / Histogram`;
+  legend.innerHTML = `
+    <div><strong>【MACD】</strong></div>
+    <div><span style="color:#0000ff;">■</span> MACD</div>
+    <div><span style="color:#ff0000;">■</span> Signal</div>
+    <div><span style="color:rgba(0,128,0,0.8);">■</span> Histogram</div>
+  `;
   macdContainer.style.position = "relative";
   macdContainer.appendChild(legend);
 
-  // ------------------------------
-  // MACD 計算
-  // ------------------------------
   const macd = calcMACD(candleData, 12, 26, 9);
 
   macdLineSeries = macdChart.addSeries(LightweightCharts.LineSeries, {
@@ -88,9 +84,6 @@ function createMacdChart(candleData) {
     scaleMargins: { top: 0.1, bottom: 0.1 },
   });
 
-  // ------------------------------
-  // MACD ツールチップ
-  // ------------------------------
   const macdTooltip = document.createElement('div');
   macdTooltip.style.position = 'absolute';
   macdTooltip.style.display = 'none';
@@ -102,7 +95,6 @@ function createMacdChart(candleData) {
   macdTooltip.style.pointerEvents = 'none';
   macdTooltip.style.zIndex = '2100';
 
-  // ★ MACDチャート内に配置
   macdContainer.style.position = "relative";
   macdContainer.appendChild(macdTooltip);
 
@@ -124,7 +116,6 @@ function createMacdChart(candleData) {
 
     macdTooltip.style.display = 'block';
 
-    // ★ はみ出し防止（右→左）
     const tooltipWidth = macdTooltip.offsetWidth;
     const containerWidth = macdContainer.clientWidth;
 
