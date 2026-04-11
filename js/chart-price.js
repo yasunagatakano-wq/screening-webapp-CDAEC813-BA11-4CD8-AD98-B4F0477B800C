@@ -1,15 +1,21 @@
 // --------------------------------------
-// chart-price.js
-// 価格チャート（ローソク足・MA・一目・BB・雲・出来高・ツールチップ）
+// chart-price.js（完全版）
 // --------------------------------------
 
-// ※ ここでは「宣言」は行わず、すでにグローバルにある前提で代入のみ行う
-//   （priceChart, candleSeries などは chart-main.js 側で宣言されている想定）
+// ▼ 価格チャートで使用する変数はすべてここで宣言（chart-main.js には置かない）
+let priceChart;
+let candleSeries;
+let volumeSeries;
+let ma5Series, ma25Series, ma50Series, ma75Series, ma100Series;
+let ichimokuTenkanSeries, ichimokuKijunSeries;
+let ichimokuSpan1Series, ichimokuSpan2Series, ichimokuChikouSeries;
+let ichimokuCloudBullSeries, ichimokuCloudBearSeries;
+let bbMidSeries, bbUpperSeries, bbLowerSeries, bbAreaSeries;
 
 let showCandles = true;
 
 // --------------------------------------
-// ローソク足の表示／非表示反映
+// ローソク足の表示／非表示
 // --------------------------------------
 function applyCandleVisibility() {
   if (!candleSeries) return;
@@ -84,9 +90,9 @@ function createPriceChart(candleData) {
     },
   });
 
-  // ------------------------------
+  // --------------------------------------
   // 凡例
-  // ------------------------------
+  // --------------------------------------
   const legend = document.createElement("div");
   legend.className = "chart-legend";
   legend.innerHTML = `
@@ -108,9 +114,9 @@ function createPriceChart(candleData) {
   chartContainer.style.position = "relative";
   chartContainer.appendChild(legend);
 
-  // ------------------------------
+  // --------------------------------------
   // ローソク足
-  // ------------------------------
+  // --------------------------------------
   candleSeries = priceChart.addSeries(LightweightCharts.CandlestickSeries, {
     upColor: 'red',
     downColor: 'blue',
@@ -127,9 +133,9 @@ function createPriceChart(candleData) {
 
   applyCandleVisibility();
 
-  // ------------------------------
+  // --------------------------------------
   // 出来高
-  // ------------------------------
+  // --------------------------------------
   volumeSeries = priceChart.addSeries(LightweightCharts.HistogramSeries, {
     priceFormat: { type: 'volume' },
     priceScaleId: 'volume',
@@ -140,9 +146,9 @@ function createPriceChart(candleData) {
     candleData.map(c => ({ time: c.time, value: c.volume }))
   );
 
-  // ------------------------------
+  // --------------------------------------
   // 移動平均線
-  // ------------------------------
+  // --------------------------------------
   function addMA(color, data) {
     const s = priceChart.addSeries(LightweightCharts.LineSeries, {
       color,
@@ -158,12 +164,13 @@ function createPriceChart(candleData) {
   ma75Series  = addMA('#aa00aa', calcMA(candleData, 75));
   ma100Series = addMA('#ffaa00', calcMA(candleData, 100));
 
-  // ------------------------------
+  // --------------------------------------
   // 一目均衡表
-  // ------------------------------
+  // --------------------------------------
   const ichimoku = calcIchimoku(candleData);
   const shiftSec = 26 * 24 * 60 * 60;
 
+  // 転換線
   ichimokuTenkanSeries = priceChart.addSeries(LightweightCharts.LineSeries, {
     color: '#ff0000',
     lineWidth: 1,
@@ -174,6 +181,7 @@ function createPriceChart(candleData) {
       .map(p => ({ time: p.time, value: p.value }))
   );
 
+  // 基準線
   ichimokuKijunSeries = priceChart.addSeries(LightweightCharts.LineSeries, {
     color: '#0000ff',
     lineWidth: 1,
@@ -210,7 +218,9 @@ function createPriceChart(candleData) {
     }));
   ichimokuSpan2Series.setData(span2Shifted);
 
+  // --------------------------------------
   // 雲（上昇雲＝緑、下降雲＝赤）
+  // --------------------------------------
   const span1Map = new Map();
   span1Shifted.forEach(p => {
     span1Map.set(p.time, p.value);
@@ -222,10 +232,8 @@ function createPriceChart(candleData) {
   span2Shifted.forEach(p => {
     const t = p.time;
     const v2 = p.value;
-    if (v2 == null) return;
     if (!span1Map.has(t)) return;
     const v1 = span1Map.get(t);
-    if (v1 == null) return;
 
     const upper = Math.max(v1, v2);
     const lower = Math.min(v1, v2);
@@ -268,9 +276,9 @@ function createPriceChart(candleData) {
       .map(p => ({ time: p.time, value: p.value }))
   );
 
-  // ------------------------------
+  // --------------------------------------
   // ボリンジャーバンド
-  // ------------------------------
+  // --------------------------------------
   const bb = calcBB(candleData, 20, 2);
 
   bbMidSeries = priceChart.addSeries(LightweightCharts.LineSeries, {
@@ -318,9 +326,9 @@ function createPriceChart(candleData) {
     bbAreaSeries.setData(bbAreaData);
   }
 
-  // ------------------------------
+  // --------------------------------------
   // ツールチップ
-  // ------------------------------
+  // --------------------------------------
   const tooltip = document.createElement('div');
   tooltip.className = 'chart-tooltip';
   tooltip.style.position = 'absolute';
