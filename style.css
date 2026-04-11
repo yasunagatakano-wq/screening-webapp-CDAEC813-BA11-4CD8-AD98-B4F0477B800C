@@ -410,6 +410,7 @@ tr:hover {
   z-index: 3000;
   pointer-events: none;
   box-shadow: 0 0 4px rgba(0,0,0,0.15);
+  white-space: nowrap;
 }
 
 /* ツールチップの位置基準を正しくする */
