@@ -3,14 +3,8 @@
 // 価格チャート（ローソク足・MA・一目・BB・雲・出来高・ツールチップ）
 // --------------------------------------
 
-let priceChart;
-let candleSeries;
-let volumeSeries;
-let ma5Series, ma25Series, ma50Series, ma75Series, ma100Series;
-let ichimokuTenkanSeries, ichimokuKijunSeries;
-let ichimokuSpan1Series, ichimokuSpan2Series, ichimokuChikouSeries;
-let ichimokuCloudBullSeries, ichimokuCloudBearSeries;
-let bbMidSeries, bbUpperSeries, bbLowerSeries, bbAreaSeries;
+// ※ ここでは「宣言」は行わず、すでにグローバルにある前提で代入のみ行う
+//   （priceChart, candleSeries などは chart-main.js 側で宣言されている想定）
 
 let showCandles = true;
 
@@ -59,7 +53,6 @@ function createPriceChart(candleData) {
       borderVisible: true,
       timeVisible: false,
       secondsVisible: false,
-      // 休場日を余計に描画しないための設定
       fixLeftEdge: false,
       fixRightEdge: false,
       allowShiftVisibleRangeOnResize: false,
@@ -92,7 +85,7 @@ function createPriceChart(candleData) {
   });
 
   // ------------------------------
-  // 凡例（色付きラベル）
+  // 凡例
   // ------------------------------
   const legend = document.createElement("div");
   legend.className = "chart-legend";
@@ -166,12 +159,11 @@ function createPriceChart(candleData) {
   ma100Series = addMA('#ffaa00', calcMA(candleData, 100));
 
   // ------------------------------
-  // 一目均衡表（先行スパンは26日先へシフト）
+  // 一目均衡表
   // ------------------------------
   const ichimoku = calcIchimoku(candleData);
   const shiftSec = 26 * 24 * 60 * 60;
 
-  // 転換線
   ichimokuTenkanSeries = priceChart.addSeries(LightweightCharts.LineSeries, {
     color: '#ff0000',
     lineWidth: 1,
@@ -182,7 +174,6 @@ function createPriceChart(candleData) {
       .map(p => ({ time: p.time, value: p.value }))
   );
 
-  // 基準線
   ichimokuKijunSeries = priceChart.addSeries(LightweightCharts.LineSeries, {
     color: '#0000ff',
     lineWidth: 1,
@@ -219,8 +210,7 @@ function createPriceChart(candleData) {
     }));
   ichimokuSpan2Series.setData(span2Shifted);
 
-  // ★ 雲：先行スパン1と先行スパン2の「間だけ」
-  //   上昇雲（Span1 > Span2）＝緑、下降雲（Span1 < Span2）＝赤
+  // 雲（上昇雲＝緑、下降雲＝赤）
   const span1Map = new Map();
   span1Shifted.forEach(p => {
     span1Map.set(p.time, p.value);
@@ -241,19 +231,9 @@ function createPriceChart(candleData) {
     const lower = Math.min(v1, v2);
 
     if (v1 >= v2) {
-      // 上昇雲（Span1 >= Span2）→ 緑
-      bullCloud.push({
-        time: t,
-        value: upper,
-        lowerValue: lower,
-      });
+      bullCloud.push({ time: t, value: upper, lowerValue: lower });
     } else {
-      // 下降雲（Span1 < Span2）→ 赤
-      bearCloud.push({
-        time: t,
-        value: upper,
-        lowerValue: lower,
-      });
+      bearCloud.push({ time: t, value: upper, lowerValue: lower });
     }
   });
 
@@ -339,7 +319,7 @@ function createPriceChart(candleData) {
   }
 
   // ------------------------------
-  // ツールチップ（価格チャート用）
+  // ツールチップ
   // ------------------------------
   const tooltip = document.createElement('div');
   tooltip.className = 'chart-tooltip';
@@ -385,14 +365,12 @@ function createPriceChart(candleData) {
     let x = param.point.x;
     let yPos = param.point.y;
 
-    // 右側にはみ出す場合は左側に表示
     if (x + tooltipRect.width + 16 > containerRect.width) {
       x = x - tooltipRect.width - 8;
     } else {
       x = x + 8;
     }
 
-    // 上下のはみ出しを軽く補正
     if (yPos + tooltipRect.height + 16 > containerRect.height) {
       yPos = containerRect.height - tooltipRect.height - 8;
     } else if (yPos < 0) {
