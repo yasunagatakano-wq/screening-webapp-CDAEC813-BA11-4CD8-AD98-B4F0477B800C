@@ -6,6 +6,9 @@
 function createRciChart(candleData) {
   const rRect = rciContainer.getBoundingClientRect();
 
+  // ------------------------------
+  // チャート生成
+  // ------------------------------
   rciChart = LightweightCharts.createChart(rciContainer, {
     width: rRect.width || 400,
     height: rRect.height || 160,
@@ -13,7 +16,10 @@ function createRciChart(candleData) {
       background: { color: '#ffffff' },
       textColor: '#333',
     },
-    rightPriceScale: { visible: true, borderVisible: true },
+    rightPriceScale: {
+      visible: true,
+      borderVisible: true,
+    },
     timeScale: {
       borderVisible: true,
       timeVisible: false,
@@ -28,7 +34,7 @@ function createRciChart(candleData) {
     },
   });
 
-  // クロスヘアのX軸ラベル
+  // ★ クロスヘアのX軸ラベル用フォーマット
   rciChart.applyOptions({
     localization: {
       locale: 'ja-JP',
@@ -36,7 +42,9 @@ function createRciChart(candleData) {
     },
   });
 
-  // 目盛りのフォーマット
+  // ------------------------------
+  // 目盛りフォーマット（MM/DD）
+  // ------------------------------
   rciChart.timeScale().applyOptions({
     tickMarkFormatter: (time) => {
       const date = new Date(time * 1000);
@@ -46,16 +54,33 @@ function createRciChart(candleData) {
     },
   });
 
+  // ------------------------------
+  // 凡例（TradingView風）
+  // ------------------------------
+  const legend = document.createElement("div");
+  legend.className = "chart-legend";
+  legend.innerHTML = `【RCI】<br>RCI(9) / RCI(26)`;
+  rciContainer.style.position = "relative";
+  rciContainer.appendChild(legend);
+
+  // ------------------------------
   // RCI 計算
+  // ------------------------------
   const rciShort = calcRCI(candleData, 9);
   const rciLong  = calcRCI(candleData, 26);
 
+  // ------------------------------
+  // RCI短期（9）
+  // ------------------------------
   rciShortSeries = rciChart.addSeries(LightweightCharts.LineSeries, {
     color: '#ff1493',
     lineWidth: 1,
   });
   rciShortSeries.setData(rciShort.filter(p => p.value !== null));
 
+  // ------------------------------
+  // RCI長期（26）
+  // ------------------------------
   rciLongSeries = rciChart.addSeries(LightweightCharts.LineSeries, {
     color: '#1e90ff',
     lineWidth: 1,
@@ -80,7 +105,7 @@ function createRciChart(candleData) {
   rciTooltip.style.pointerEvents = 'none';
   rciTooltip.style.zIndex = '2100';
 
-  // ★ 価格チャートではなく、RCIチャートの中に入れる
+  // ★ RCIチャート内に配置
   rciContainer.style.position = "relative";
   rciContainer.appendChild(rciTooltip);
 
@@ -101,7 +126,7 @@ function createRciChart(candleData) {
 
     rciTooltip.style.display = 'block';
 
-    // ★ はみ出し防止ロジック（価格チャートと同じ）
+    // ★ はみ出し防止（右→左）
     const tooltipWidth = rciTooltip.offsetWidth;
     const containerWidth = rciContainer.clientWidth;
 
