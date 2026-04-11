@@ -13,7 +13,10 @@ function createMacdChart(candleData) {
       background: { color: '#ffffff' },
       textColor: '#333',
     },
-    rightPriceScale: { visible: true, borderVisible: true },
+    rightPriceScale: {
+      visible: true,
+      borderVisible: true,
+    },
     timeScale: {
       borderVisible: true,
       timeVisible: false,
@@ -28,6 +31,7 @@ function createMacdChart(candleData) {
     },
   });
 
+  // ★ クロスヘアのX軸ラベル
   macdChart.applyOptions({
     localization: {
       locale: 'ja-JP',
@@ -35,6 +39,9 @@ function createMacdChart(candleData) {
     },
   });
 
+  // ------------------------------
+  // 目盛りフォーマット（MM/DD）
+  // ------------------------------
   macdChart.timeScale().applyOptions({
     tickMarkFormatter: (time) => {
       const date = new Date(time * 1000);
@@ -44,6 +51,18 @@ function createMacdChart(candleData) {
     },
   });
 
+  // ------------------------------
+  // 凡例（TradingView風）
+  // ------------------------------
+  const legend = document.createElement("div");
+  legend.className = "chart-legend";
+  legend.innerHTML = `【MACD】<br>MACD / Signal / Histogram`;
+  macdContainer.style.position = "relative";
+  macdContainer.appendChild(legend);
+
+  // ------------------------------
+  // MACD 計算
+  // ------------------------------
   const macd = calcMACD(candleData, 12, 26, 9);
 
   macdLineSeries = macdChart.addSeries(LightweightCharts.LineSeries, {
@@ -83,7 +102,7 @@ function createMacdChart(candleData) {
   macdTooltip.style.pointerEvents = 'none';
   macdTooltip.style.zIndex = '2100';
 
-  // ★ MACDチャートの中に入れる
+  // ★ MACDチャート内に配置
   macdContainer.style.position = "relative";
   macdContainer.appendChild(macdTooltip);
 
@@ -105,7 +124,7 @@ function createMacdChart(candleData) {
 
     macdTooltip.style.display = 'block';
 
-    // ★ はみ出し防止ロジック
+    // ★ はみ出し防止（右→左）
     const tooltipWidth = macdTooltip.offsetWidth;
     const containerWidth = macdContainer.clientWidth;
 
