@@ -1,9 +1,8 @@
 // --------------------------------------
-// chart-price.js（完全版）
+// chart-price.js（完全修正版）
 // --------------------------------------
 
-// ▼ 価格チャートで使用する変数はすべてここで宣言（chart-main.js には置かない）
-let priceChart;
+// ▼ 価格チャートで使用するシリーズ変数（chart-main.js には置かない）
 let candleSeries;
 let volumeSeries;
 let ma5Series, ma25Series, ma50Series, ma75Series, ma100Series;
@@ -45,9 +44,11 @@ function applyCandleVisibility() {
 // 価格チャート生成
 // --------------------------------------
 function createPriceChart(candleData) {
+
+  // priceChart は chart-main.js が管理するため、ここでは宣言しない
   const rect = chartContainer.getBoundingClientRect();
 
-  priceChart = LightweightCharts.createChart(chartContainer, {
+  const priceChart = LightweightCharts.createChart(chartContainer, {
     width: rect.width,
     height: rect.height,
     layout: {
