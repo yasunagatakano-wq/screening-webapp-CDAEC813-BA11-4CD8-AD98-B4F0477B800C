@@ -1,9 +1,7 @@
 // --------------------------------------
-// chart-price.js
-// 価格チャート（ローソク足・MA・一目・BB・雲・出来高）
+// chart-price.js（休場日を表示しない完全修正版）
 // --------------------------------------
 
-// ローソク足の見た目だけ切り替える
 function applyCandleVisibility() {
   if (!candleSeries) return;
 
@@ -28,9 +26,6 @@ function applyCandleVisibility() {
   }
 }
 
-// --------------------------------------
-// 価格チャート生成
-// --------------------------------------
 function createPriceChart(candleData) {
   const rect = chartContainer.getBoundingClientRect();
 
@@ -46,9 +41,13 @@ function createPriceChart(candleData) {
       borderVisible: true,
       timeVisible: false,
       secondsVisible: false,
-      fixLeftEdge: true,
-      fixRightEdge: true,
-      tickMarkSpacing: 50,
+
+      // ★ 休場日を表示しないための正しい設定
+      fixLeftEdge: false,
+      fixRightEdge: false,
+      allowShiftVisibleRangeOnResize: false,
+      rightOffset: 0,
+      barSpacing: 6,
     },
     grid: {
       vertLines: { color: '#eee' },
@@ -73,13 +72,14 @@ function createPriceChart(candleData) {
   });
 
   // ------------------------------
-  // 凡例（色付きラベル）
+  // 凡例（色付き）
   // ------------------------------
   const legend = document.createElement("div");
   legend.className = "chart-legend";
   legend.innerHTML = `
     <div><strong>【価格チャート】</strong></div>
-    <div><span style="color:red;">■</span> ローソク足（陽線） / <span style="color:blue;">■</span> ローソク足（陰線）</div>
+    <div><span style="color:red;">■</span> 陽線　
+         <span style="color:blue;">■</span> 陰線</div>
     <div><span style="color:#ff1493;">■</span> MA5　
          <span style="color:#00aa00;">■</span> MA25　
          <span style="color:#0000ff;">■</span> MA50</div>
@@ -90,12 +90,14 @@ function createPriceChart(candleData) {
     <div><span style="color:rgba(0,128,0,1);">■</span> 先行スパン1　
          <span style="color:rgba(128,0,128,1);">■</span> 先行スパン2</div>
     <div><span style="color:#008080;">■</span> 遅行スパン</div>
-    <div><span style="color:#ffa500;">■</span> ボリンジャーバンド（ミドル・上限・下限）</div>
+    <div><span style="color:#ffa500;">■</span> ボリンジャーバンド</div>
   `;
   chartContainer.style.position = "relative";
   chartContainer.appendChild(legend);
 
+  // ------------------------------
   // ローソク足
+  // ------------------------------
   candleSeries = priceChart.addSeries(LightweightCharts.CandlestickSeries, {
     upColor: 'red',
     downColor: 'blue',
@@ -112,7 +114,9 @@ function createPriceChart(candleData) {
 
   applyCandleVisibility();
 
+  // ------------------------------
   // 出来高
+  // ------------------------------
   volumeSeries = priceChart.addSeries(LightweightCharts.HistogramSeries, {
     priceFormat: { type: 'volume' },
     priceScaleId: 'volume',
@@ -123,7 +127,9 @@ function createPriceChart(candleData) {
     candleData.map(c => ({ time: c.time, value: c.volume }))
   );
 
+  // ------------------------------
   // 移動平均線
+  // ------------------------------
   function addMA(color, data) {
     const s = priceChart.addSeries(LightweightCharts.LineSeries, {
       color,
@@ -139,9 +145,10 @@ function createPriceChart(candleData) {
   ma75Series  = addMA('#aa00aa', calcMA(candleData, 75));
   ma100Series = addMA('#ffaa00', calcMA(candleData, 100));
 
-  // 一目均衡表（雲は26日先）
+  // ------------------------------
+  // 一目均衡表（先行スパンは offset で右にずらす）
+  // ------------------------------
   const ichimoku = calcIchimoku(candleData);
-  const shiftSec = 26 * 24 * 60 * 60;
 
   ichimokuTenkanSeries = priceChart.addSeries(LightweightCharts.LineSeries, {
     color: '#ff0000',
@@ -155,6 +162,7 @@ function createPriceChart(candleData) {
   });
   ichimokuKijunSeries.setData(ichimoku.kijun.filter(p => p.value !== null));
 
+  // ★ 先行スパン1（offset: 26）
   ichimokuSpan1Series = priceChart.addSeries(LightweightCharts.LineSeries, {
     color: 'rgba(0, 128, 0, 1)',
     lineWidth: 1,
@@ -162,9 +170,14 @@ function createPriceChart(candleData) {
   ichimokuSpan1Series.setData(
     ichimoku.span1
       .filter(p => p.value !== null)
-      .map(p => ({ time: p.time + shiftSec, value: p.value }))
+      .map(p => ({
+        time: p.time,
+        value: p.value,
+        offset: 26,
+      }))
   );
 
+  // ★ 先行スパン2（offset: 26）
   ichimokuSpan2Series = priceChart.addSeries(LightweightCharts.LineSeries, {
     color: 'rgba(128, 0, 128, 1)',
     lineWidth: 1,
@@ -172,9 +185,14 @@ function createPriceChart(candleData) {
   ichimokuSpan2Series.setData(
     ichimoku.span2
       .filter(p => p.value !== null)
-      .map(p => ({ time: p.time + shiftSec, value: p.value }))
+      .map(p => ({
+        time: p.time,
+        value: p.value,
+        offset: 26,
+      }))
   );
 
+  // ★ 雲（先行スパン1と2の間）
   const cloudData = [];
   const span1Map = new Map();
   ichimoku.span1.forEach(p => {
@@ -186,9 +204,10 @@ function createPriceChart(candleData) {
       const v1 = span1Map.get(p.time);
       const v2 = p.value;
       cloudData.push({
-        time: p.time + shiftSec,
+        time: p.time,
         value: Math.max(v1, v2),
         lowerValue: Math.min(v1, v2),
+        offset: 26,
       });
     }
   });
@@ -203,13 +222,16 @@ function createPriceChart(candleData) {
     bbAreaSeries.setData(cloudData);
   }
 
+  // 遅行スパン
   ichimokuChikouSeries = priceChart.addSeries(LightweightCharts.LineSeries, {
     color: '#008080',
     lineWidth: 1,
   });
   ichimokuChikouSeries.setData(ichimoku.chikou.filter(p => p.value !== null));
 
+  // ------------------------------
   // ボリンジャーバンド
+  // ------------------------------
   const bb = calcBB(candleData, 20, 2);
 
   bbMidSeries = priceChart.addSeries(LightweightCharts.LineSeries, {
@@ -256,8 +278,6 @@ function createPriceChart(candleData) {
     });
     bbAreaSeries.setData(bbAreaData);
   }
-
-  // （ツールチップなどは既存のまま）
 
   return { chart: priceChart };
 }
