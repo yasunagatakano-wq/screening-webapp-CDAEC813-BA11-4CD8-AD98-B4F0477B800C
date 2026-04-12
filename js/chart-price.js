@@ -1,8 +1,7 @@
 // --------------------------------------
-// chart-price.js（完全再構築版）
+// chart-price.js（完全修正版）
 // --------------------------------------
 
-// ▼ 価格チャートで使用するシリーズ変数
 let candleSeries;
 let volumeSeries;
 
@@ -10,7 +9,9 @@ let ma5Series, ma25Series, ma50Series, ma75Series, ma100Series;
 
 let tenkanSeries, kijunSeries;
 let span1Series, span2Series, chikouSeries;
-let cloudBullSeries, cloudBearSeries;
+
+let cloudBullSeriesList = [];
+let cloudBearSeriesList = [];
 
 let bbMidSeries, bbUpperSeries, bbLowerSeries, bbAreaSeries;
 
@@ -47,6 +48,30 @@ function applyCandleVisibility() {
 // 価格チャート生成（priceChart を外部から受け取る）
 // --------------------------------------
 function createPriceChart(priceChart, candleData) {
+
+  // --------------------------------------
+  // 凡例（復活）
+  // --------------------------------------
+  const legend = document.createElement("div");
+  legend.className = "chart-legend";
+  legend.innerHTML = `
+    <div><strong>【価格チャート】</strong></div>
+    <div><span style="color:red;">■</span> 陽線　
+         <span style="color:blue;">■</span> 陰線</div>
+    <div><span style="color:#ff1493;">■</span> MA5　
+         <span style="color:#00aa00;">■</span> MA25　
+         <span style="color:#0000ff;">■</span> MA50</div>
+    <div><span style="color:#aa00aa;">■</span> MA75　
+         <span style="color:#ffaa00;">■</span> MA100</div>
+    <div><span style="color:#ff0000;">■</span> 転換線　
+         <span style="color:#0000ff;">■</span> 基準線</div>
+    <div><span style="color:rgba(0,128,0,1);">■</span> 先行スパン1　
+         <span style="color:rgba(128,0,128,1);">■</span> 先行スパン2</div>
+    <div><span style="color:#008080;">■</span> 遅行スパン</div>
+    <div><span style="color:#ffa500;">■</span> ボリンジャーバンド</div>
+  `;
+  chartContainer.style.position = "relative";
+  chartContainer.appendChild(legend);
 
   // --------------------------------------
   // ローソク足
@@ -99,7 +124,7 @@ function createPriceChart(priceChart, candleData) {
   ma100Series = addMA('#ffaa00', calcMA(candleData, 100));
 
   // --------------------------------------
-  // 一目均衡表（TradingView 互換）
+  // 一目均衡表
   // --------------------------------------
   const ichimoku = calcIchimoku(candleData);
   const shiftSec = 26 * 24 * 60 * 60;
@@ -109,26 +134,19 @@ function createPriceChart(priceChart, candleData) {
     color: '#ff0000',
     lineWidth: 1,
   });
-  tenkanSeries.setData(
-    ichimoku.tenkan.filter(p => p.value !== null)
-  );
+  tenkanSeries.setData(ichimoku.tenkan.filter(p => p.value !== null));
 
   // 基準線
   kijunSeries = priceChart.addSeries(LightweightCharts.LineSeries, {
     color: '#0000ff',
     lineWidth: 1,
   });
-  kijunSeries.setData(
-    ichimoku.kijun.filter(p => p.value !== null)
-  );
+  kijunSeries.setData(ichimoku.kijun.filter(p => p.value !== null));
 
   // 先行スパン1（26日先）
   const span1Shifted = ichimoku.span1
     .filter(p => p.value !== null)
-    .map(p => ({
-      time: p.time + shiftSec,
-      value: p.value,
-    }));
+    .map(p => ({ time: p.time + shiftSec, value: p.value }));
 
   span1Series = priceChart.addSeries(LightweightCharts.LineSeries, {
     color: 'rgba(0, 128, 0, 1)',
@@ -139,10 +157,7 @@ function createPriceChart(priceChart, candleData) {
   // 先行スパン2（26日先）
   const span2Shifted = ichimoku.span2
     .filter(p => p.value !== null)
-    .map(p => ({
-      time: p.time + shiftSec,
-      value: p.value,
-    }));
+    .map(p => ({ time: p.time + shiftSec, value: p.value }));
 
   span2Series = priceChart.addSeries(LightweightCharts.LineSeries, {
     color: 'rgba(128, 0, 128, 1)',
@@ -151,48 +166,54 @@ function createPriceChart(priceChart, candleData) {
   span2Series.setData(span2Shifted);
 
   // --------------------------------------
-  // 雲（TradingView と同じロジック）
+  // 雲（先行スパン1と先行スパン2の間だけ塗る）
+  // TradingView 完全互換ロジック
   // --------------------------------------
-  const span1Map = new Map();
-  span1Shifted.forEach(p => span1Map.set(p.time, p.value));
+  cloudBullSeriesList = [];
+  cloudBearSeriesList = [];
 
-  const bullCloud = [];
-  const bearCloud = [];
+  let currentBull = [];
+  let currentBear = [];
 
-  span2Shifted.forEach(p => {
-    const t = p.time;
-    const v2 = p.value;
-    if (!span1Map.has(t)) return;
+  for (let i = 0; i < span1Shifted.length; i++) {
+    const p1 = span1Shifted[i];
+    const p2 = span2Shifted[i];
+    if (!p1 || !p2) continue;
 
-    const v1 = span1Map.get(t);
-    const upper = Math.max(v1, v2);
-    const lower = Math.min(v1, v2);
+    const upper = Math.max(p1.value, p2.value);
+    const lower = Math.min(p1.value, p2.value);
 
-    if (v1 >= v2) {
-      bullCloud.push({ time: t, value: upper, lowerValue: lower });
+    const isBull = p1.value >= p2.value;
+
+    if (isBull) {
+      if (currentBear.length > 0) {
+        addCloudSeries(priceChart, currentBear, false);
+        currentBear = [];
+      }
+      currentBull.push({ time: p1.time, value: upper, lowerValue: lower });
     } else {
-      bearCloud.push({ time: t, value: upper, lowerValue: lower });
+      if (currentBull.length > 0) {
+        addCloudSeries(priceChart, currentBull, true);
+        currentBull = [];
+      }
+      currentBear.push({ time: p1.time, value: upper, lowerValue: lower });
     }
-  });
-
-  if (bullCloud.length > 0) {
-    cloudBullSeries = priceChart.addSeries(LightweightCharts.AreaSeries, {
-      topColor: 'rgba(0, 200, 0, 0.4)',
-      bottomColor: 'rgba(0, 200, 0, 0.1)',
-      lineColor: 'rgba(0,0,0,0)',
-      lineWidth: 0,
-    });
-    cloudBullSeries.setData(bullCloud);
   }
 
-  if (bearCloud.length > 0) {
-    cloudBearSeries = priceChart.addSeries(LightweightCharts.AreaSeries, {
-      topColor: 'rgba(200, 0, 0, 0.4)',
-      bottomColor: 'rgba(200, 0, 0, 0.1)',
+  if (currentBull.length > 0) addCloudSeries(priceChart, currentBull, true);
+  if (currentBear.length > 0) addCloudSeries(priceChart, currentBear, false);
+
+  function addCloudSeries(chart, data, isBull) {
+    const s = chart.addSeries(LightweightCharts.AreaSeries, {
+      topColor: isBull ? 'rgba(0,200,0,0.4)' : 'rgba(200,0,0,0.4)',
+      bottomColor: isBull ? 'rgba(0,200,0,0.1)' : 'rgba(200,0,0,0.1)',
       lineColor: 'rgba(0,0,0,0)',
       lineWidth: 0,
     });
-    cloudBearSeries.setData(bearCloud);
+    s.setData(data);
+
+    if (isBull) cloudBullSeriesList.push(s);
+    else cloudBearSeriesList.push(s);
   }
 
   // 遅行スパン
@@ -200,9 +221,7 @@ function createPriceChart(priceChart, candleData) {
     color: '#008080',
     lineWidth: 1,
   });
-  chikouSeries.setData(
-    ichimoku.chikou.filter(p => p.value !== null)
-  );
+  chikouSeries.setData(ichimoku.chikou.filter(p => p.value !== null));
 
   // --------------------------------------
   // ボリンジャーバンド
