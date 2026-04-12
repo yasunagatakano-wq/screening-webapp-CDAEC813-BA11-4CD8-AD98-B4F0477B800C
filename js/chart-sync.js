@@ -10,33 +10,13 @@ function bindTimeSync(srcChart, targetCharts) {
   if (!srcChart) return;
 
   srcChart.timeScale().subscribeVisibleTimeRangeChange((range) => {
+    if (!range || isSyncing) return;
 
-    // range が null → 初期化中なので無視
-    if (!range) return;
-
-    // from/to が null → データがまだ無いので無視
-    if (range.from == null || range.to == null) return;
-
-    // ここで「同期先チャートがデータを持っているか」を確認
-    for (const ch of targetCharts) {
-      if (!ch) continue;
-
-      const logical = ch.timeScale().getVisibleLogicalRange();
-      if (!logical) return; // データ未セット → 同期しない
-    }
-
-    if (isSyncing) return;
     isSyncing = true;
-
     targetCharts.forEach(ch => {
       if (!ch) return;
-      try {
-        ch.timeScale().setVisibleRange(range);
-      } catch (e) {
-        // 完全に握りつぶす（警告も出さない）
-      }
+      ch.timeScale().setVisibleRange(range);
     });
-
     isSyncing = false;
   });
 }
@@ -68,14 +48,10 @@ function applyDefaultRange(priceChart, rciChart, macdChart, candleData) {
   if (!candleData || candleData.length === 0) return;
 
   const lastTime = candleData[candleData.length - 1].time;
-  if (lastTime == null) return;
-
   const fourMonthsSec = 60 * 60 * 24 * 30 * 4;
   const fromTime = lastTime - fourMonthsSec;
 
-  const range = { from: fromTime, to: lastTime };
-
-  try { priceChart.timeScale().setVisibleRange(range); } catch (e) {}
-  try { rciChart.timeScale().setVisibleRange(range); }   catch (e) {}
-  try { macdChart.timeScale().setVisibleRange(range); }  catch (e) {}
+  priceChart.timeScale().setVisibleRange({ from: fromTime, to: lastTime });
+  rciChart.timeScale().setVisibleRange({ from: fromTime, to: lastTime });
+  macdChart.timeScale().setVisibleRange({ from: fromTime, to: lastTime });
 }

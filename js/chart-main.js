@@ -195,7 +195,6 @@ async function drawChart(ticker, name) {
     },
   });
 
-  // UNIX秒 → 日付表示
   priceChart.timeScale().applyOptions({
     tickMarkFormatter: (time) => {
       const date = new Date(time * 1000);
@@ -205,12 +204,13 @@ async function drawChart(ticker, name) {
     },
   });
 
-  // ② シリーズ生成（UNIX秒 time のまま）
+  // ② シリーズ生成は chart-price.js に任せる
   createPriceChart(priceChart, data);
 
+  // chart-sync.js と整合させるためのラッパー
   const price = { chart: priceChart };
 
-  // ③ RCI / MACD チャート生成（UNIX秒 time）
+  // ③ RCI / MACD チャート生成
   const rci = createRciChart(data);
   const macd = createMacdChart(data);
 
@@ -222,7 +222,7 @@ async function drawChart(ticker, name) {
   // ⑤ リサイズ処理
   setupResize(price.chart, rci.chart, macd.chart);
 
-  // ⑥ デフォルト表示期間（UNIX秒）
+  // ⑥ デフォルト表示期間
   applyDefaultRange(price.chart, rci.chart, macd.chart, data);
 
   chartLoadingOverlay.style.display = "none";
