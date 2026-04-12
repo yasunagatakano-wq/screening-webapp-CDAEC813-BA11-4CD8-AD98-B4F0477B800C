@@ -1,16 +1,11 @@
 // --------------------------------------
-// chart-price.js（修正版）
+// chart-price.js（一目均衡表を完全削除した版）
 // --------------------------------------
 
-// ▼ 価格チャートで使用するシリーズ変数
 let candleSeries;
 let volumeSeries;
 
 let ma5Series, ma25Series, ma50Series, ma75Series, ma100Series;
-
-let tenkanSeries, kijunSeries;
-let span1Series, span2Series, chikouSeries;
-let cloudSeries; // 雲を単一シリーズで管理
 
 let bbMidSeries, bbUpperSeries, bbLowerSeries, bbAreaSeries;
 
@@ -44,13 +39,11 @@ function applyCandleVisibility() {
 }
 
 // --------------------------------------
-// 価格チャート生成（priceChart を外部から受け取る）
+// 価格チャート生成
 // --------------------------------------
 function createPriceChart(priceChart, candleData) {
 
-  // --------------------------------------
   // ローソク足
-  // --------------------------------------
   candleSeries = priceChart.addSeries(LightweightCharts.CandlestickSeries, {
     upColor: 'red',
     downColor: 'blue',
@@ -67,9 +60,7 @@ function createPriceChart(priceChart, candleData) {
 
   applyCandleVisibility();
 
-  // --------------------------------------
   // 出来高
-  // --------------------------------------
   volumeSeries = priceChart.addSeries(LightweightCharts.HistogramSeries, {
     priceFormat: { type: 'volume' },
     priceScaleId: 'volume',
@@ -80,9 +71,7 @@ function createPriceChart(priceChart, candleData) {
     candleData.map(c => ({ time: c.time, value: c.volume }))
   );
 
-  // --------------------------------------
   // 移動平均線
-  // --------------------------------------
   function addMA(color, data) {
     const s = priceChart.addSeries(LightweightCharts.LineSeries, {
       color,
@@ -98,101 +87,7 @@ function createPriceChart(priceChart, candleData) {
   ma75Series  = addMA('#aa00aa', calcMA(candleData, 75));
   ma100Series = addMA('#ffaa00', calcMA(candleData, 100));
 
-  // --------------------------------------
-  // 一目均衡表（TradingView 互換）
-  // --------------------------------------
-  const ichimoku = calcIchimoku(candleData);
-  const shiftSec = 26 * 24 * 60 * 60;
-
-  // 転換線
-  tenkanSeries = priceChart.addSeries(LightweightCharts.LineSeries, {
-    color: '#ff0000',
-    lineWidth: 1,
-  });
-  tenkanSeries.setData(
-    ichimoku.tenkan.filter(p => p.value !== null)
-  );
-
-  // 基準線
-  kijunSeries = priceChart.addSeries(LightweightCharts.LineSeries, {
-    color: '#0000ff',
-    lineWidth: 1,
-  });
-  kijunSeries.setData(
-    ichimoku.kijun.filter(p => p.value !== null)
-  );
-
-  // 先行スパン1（26日先）
-  const span1Shifted = ichimoku.span1
-    .filter(p => p.value !== null)
-    .map(p => ({
-      time: p.time + shiftSec,
-      value: p.value,
-    }));
-
-  span1Series = priceChart.addSeries(LightweightCharts.LineSeries, {
-    color: 'rgba(0, 128, 0, 1)',
-    lineWidth: 1,
-  });
-  span1Series.setData(span1Shifted);
-
-  // 先行スパン2（26日先）
-  const span2Shifted = ichimoku.span2
-    .filter(p => p.value !== null)
-    .map(p => ({
-      time: p.time + shiftSec,
-      value: p.value,
-    }));
-
-  span2Series = priceChart.addSeries(LightweightCharts.LineSeries, {
-    color: 'rgba(128, 0, 128, 1)',
-    lineWidth: 1,
-  });
-  span2Series.setData(span2Shifted);
-
-  // --------------------------------------
-  // 雲（先行スパン1と先行スパン2の「間のみ」を塗る）
-  // --------------------------------------
-  const span2Map = new Map();
-  span2Shifted.forEach(p => span2Map.set(p.time, p.value));
-
-  const cloudData = [];
-  span1Shifted.forEach(p1 => {
-    const v2 = span2Map.get(p1.time);
-    if (v2 == null) return;
-
-    const upper = Math.max(p1.value, v2);
-    const lower = Math.min(p1.value, v2);
-
-    cloudData.push({
-      time: p1.time,
-      value: upper,
-      lowerValue: lower,
-    });
-  });
-
-  if (cloudData.length > 0) {
-    cloudSeries = priceChart.addSeries(LightweightCharts.AreaSeries, {
-      topColor: 'rgba(0, 200, 0, 0.4)',
-      bottomColor: 'rgba(0, 200, 0, 0.1)',
-      lineColor: 'rgba(0,0,0,0)',
-      lineWidth: 0,
-    });
-    cloudSeries.setData(cloudData);
-  }
-
-  // 遅行スパン
-  chikouSeries = priceChart.addSeries(LightweightCharts.LineSeries, {
-    color: '#008080',
-    lineWidth: 1,
-  });
-  chikouSeries.setData(
-    ichimoku.chikou.filter(p => p.value !== null)
-  );
-
-  // --------------------------------------
   // ボリンジャーバンド
-  // --------------------------------------
   const bb = calcBB(candleData, 20, 2);
 
   bbMidSeries = priceChart.addSeries(LightweightCharts.LineSeries, {
@@ -240,9 +135,7 @@ function createPriceChart(priceChart, candleData) {
     bbAreaSeries.setData(bbAreaData);
   }
 
-  // --------------------------------------
-  // ▼ 価格チャート凡例（TradingView風）
-  // --------------------------------------
+  // 凡例（Ichimoku を削除した版）
   const legend = document.createElement("div");
   legend.className = "chart-legend";
   legend.innerHTML = `
@@ -254,10 +147,7 @@ function createPriceChart(priceChart, candleData) {
     <div><span style="color:#0000ff;">■</span> MA(50)</div>
     <div><span style="color:#aa00aa;">■</span> MA(75)</div>
     <div><span style="color:#ffaa00;">■</span> MA(100)</div>
-    <div><span style="color:#ff0000;">■</span> 転換線</div>
-    <div><span style="color:#0000ff;">■</span> 基準線</div>
-    <div><span style="color:rgba(0,200,0,1);">■</span> 先行スパン1</div>
-    <div><span style="color:rgba(128,0,128,1);">■</span> 先行スパン2</div>
+    <div><span style="color:#ffa500;">■</span> ボリンジャーバンド</div>
   `;
   chartContainer.style.position = "relative";
   chartContainer.appendChild(legend);
