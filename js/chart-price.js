@@ -1,5 +1,5 @@
 // --------------------------------------
-// chart-price.js（完全修正版）
+// chart-price.js（UNIX秒統一版）
 // --------------------------------------
 
 let candleSeries;
@@ -49,24 +49,8 @@ function applyCandleVisibility() {
 // --------------------------------------
 function createPriceChart(priceChart, candleDataRaw) {
 
-  // --------------------------------------
-  // 休場日を完全排除（businessDay 形式に変換）
-  // --------------------------------------
-  const candleData = candleDataRaw.map(c => {
-    const d = new Date(c.time * 1000);
-    return {
-      time: {
-        year: d.getFullYear(),
-        month: d.getMonth() + 1,
-        day: d.getDate(),
-      },
-      open: c.open,
-      high: c.high,
-      low: c.low,
-      close: c.close,
-      volume: c.volume,
-    };
-  });
+  // ここでは time を一切変換せず、UNIX秒のまま使う
+  const candleData = candleDataRaw;
 
   // --------------------------------------
   // 凡例
@@ -162,12 +146,14 @@ function createPriceChart(priceChart, candleDataRaw) {
   });
   kijunSeries.setData(ichimoku.kijun.filter(p => p.value !== null));
 
-  // 先行スパン1（26日先）
+  // 先行スパン1（26日先）: time は UNIX秒なので「26日分の秒数」を加算
+  const shiftSec = 26 * 24 * 60 * 60;
+
   const span1Shifted = ichimoku.span1
     .filter(p => p.value !== null)
     .map(p => ({
-      time: addDaysToBusinessDay(p.time, 26),
-      value: p.value
+      time: p.time + shiftSec,
+      value: p.value,
     }));
 
   span1Series = priceChart.addSeries(LightweightCharts.LineSeries, {
@@ -180,8 +166,8 @@ function createPriceChart(priceChart, candleDataRaw) {
   const span2Shifted = ichimoku.span2
     .filter(p => p.value !== null)
     .map(p => ({
-      time: addDaysToBusinessDay(p.time, 26),
-      value: p.value
+      time: p.time + shiftSec,
+      value: p.value,
     }));
 
   span2Series = priceChart.addSeries(LightweightCharts.LineSeries, {
@@ -194,7 +180,7 @@ function createPriceChart(priceChart, candleDataRaw) {
   // 雲（先行スパン1と先行スパン2の間だけ塗る）
   // --------------------------------------
   const span2Map = new Map();
-  span2Shifted.forEach(p => span2Map.set(JSON.stringify(p.time), p.value));
+  span2Shifted.forEach(p => span2Map.set(p.time, p.value));
 
   cloudBullSeriesList = [];
   cloudBearSeriesList = [];
@@ -215,8 +201,7 @@ function createPriceChart(priceChart, candleDataRaw) {
   }
 
   for (const p1 of span1Shifted) {
-    const key = JSON.stringify(p1.time);
-    const v2 = span2Map.get(key);
+    const v2 = span2Map.get(p1.time);
 
     if (v2 == null) {
       flushSegment(cloudBullSeriesList, currentBull, true);
@@ -281,12 +266,11 @@ function createPriceChart(priceChart, candleDataRaw) {
   const bbAreaData = [];
   const upperMap = new Map();
   bb.upper.forEach(p => {
-    if (p.value != null) upperMap.set(JSON.stringify(p.time), p.value);
+    if (p.value != null) upperMap.set(p.time, p.value);
   });
   bb.lower.forEach(p => {
-    const key = JSON.stringify(p.time);
-    if (p.value != null && upperMap.has(key)) {
-      const u = upperMap.get(key);
+    if (p.value != null && upperMap.has(p.time)) {
+      const u = upperMap.get(p.time);
       const l = p.value;
       bbAreaData.push({
         time: p.time,
@@ -307,7 +291,7 @@ function createPriceChart(priceChart, candleDataRaw) {
   }
 
   // --------------------------------------
-  // 価格チャート専用ツールチップ（復活）
+  // 価格チャート専用ツールチップ
   // --------------------------------------
   const tooltip = document.createElement("div");
   tooltip.className = "chart-tooltip";
@@ -333,8 +317,13 @@ function createPriceChart(priceChart, candleDataRaw) {
       return;
     }
 
+    const t = new Date(param.time * 1000);
+    const y = t.getFullYear();
+    const m = String(t.getMonth() + 1).padStart(2, '0');
+    const d = String(t.getDate()).padStart(2, '0');
+
     tooltip.innerHTML = `
-      <div>${param.time.year}/${param.time.month}/${param.time.day}</div>
+      <div>${y}/${m}/${d}</div>
       <div>O: ${candle.open}</div>
       <div>H: ${candle.high}</div>
       <div>L: ${candle.low}</div>
@@ -347,17 +336,4 @@ function createPriceChart(priceChart, candleDataRaw) {
   });
 
   return { chart: priceChart };
-}
-
-// --------------------------------------
-// businessDay に日数を加算する関数
-// --------------------------------------
-function addDaysToBusinessDay(businessDay, days) {
-  const d = new Date(businessDay.year, businessDay.month - 1, businessDay.day);
-  d.setDate(d.getDate() + days);
-  return {
-    year: d.getFullYear(),
-    month: d.getMonth() + 1,
-    day: d.getDate(),
-  };
 }
