@@ -1,5 +1,5 @@
 // --------------------------------------
-// chart-price.js（ツールチップ追加版）
+// chart-price.js（ツールチップ強化版）
 // --------------------------------------
 
 let candleSeries;
@@ -43,7 +43,22 @@ function applyCandleVisibility() {
 // --------------------------------------
 function createPriceChart(priceChart, candleData) {
 
+  // ▼ time → candleData の Map（ツールチップ用）
+  const candleMap = new Map();
+  candleData.forEach(c => candleMap.set(c.time, c));
+
+  // ▼ MA / BB の値を time → value の Map にする
+  const makeValueMap = (arr) => {
+    const m = new Map();
+    arr.forEach(p => {
+      if (p.value != null) m.set(p.time, p.value);
+    });
+    return m;
+  };
+
+  // --------------------------------------
   // ローソク足
+  // --------------------------------------
   candleSeries = priceChart.addSeries(LightweightCharts.CandlestickSeries, {
     upColor: 'red',
     downColor: 'blue',
@@ -60,7 +75,9 @@ function createPriceChart(priceChart, candleData) {
 
   applyCandleVisibility();
 
+  // --------------------------------------
   // 出来高
+  // --------------------------------------
   volumeSeries = priceChart.addSeries(LightweightCharts.HistogramSeries, {
     priceFormat: { type: 'volume' },
     priceScaleId: 'volume',
@@ -71,7 +88,9 @@ function createPriceChart(priceChart, candleData) {
     candleData.map(c => ({ time: c.time, value: c.volume }))
   );
 
+  // --------------------------------------
   // 移動平均線
+  // --------------------------------------
   function addMA(color, data) {
     const s = priceChart.addSeries(LightweightCharts.LineSeries, {
       color,
@@ -81,13 +100,27 @@ function createPriceChart(priceChart, candleData) {
     return s;
   }
 
-  ma5Series   = addMA('#ff1493', calcMA(candleData, 5));
-  ma25Series  = addMA('#00aa00', calcMA(candleData, 25));
-  ma50Series  = addMA('#0000ff', calcMA(candleData, 50));
-  ma75Series  = addMA('#aa00aa', calcMA(candleData, 75));
-  ma100Series = addMA('#ffaa00', calcMA(candleData, 100));
+  const ma5 = calcMA(candleData, 5);
+  const ma25 = calcMA(candleData, 25);
+  const ma50 = calcMA(candleData, 50);
+  const ma75 = calcMA(candleData, 75);
+  const ma100 = calcMA(candleData, 100);
 
+  ma5Series   = addMA('#ff1493', ma5);
+  ma25Series  = addMA('#00aa00', ma25);
+  ma50Series  = addMA('#0000ff', ma50);
+  ma75Series  = addMA('#aa00aa', ma75);
+  ma100Series = addMA('#ffaa00', ma100);
+
+  const ma5Map   = makeValueMap(ma5);
+  const ma25Map  = makeValueMap(ma25);
+  const ma50Map  = makeValueMap(ma50);
+  const ma75Map  = makeValueMap(ma75);
+  const ma100Map = makeValueMap(ma100);
+
+  // --------------------------------------
   // ボリンジャーバンド
+  // --------------------------------------
   const bb = calcBB(candleData, 20, 2);
 
   bbMidSeries = priceChart.addSeries(LightweightCharts.LineSeries, {
@@ -107,6 +140,10 @@ function createPriceChart(priceChart, candleData) {
     lineWidth: 1,
   });
   bbLowerSeries.setData(bb.lower.filter(p => p.value !== null));
+
+  const bbMidMap   = makeValueMap(bb.mid);
+  const bbUpperMap = makeValueMap(bb.upper);
+  const bbLowerMap = makeValueMap(bb.lower);
 
   const bbAreaData = [];
   const upperMap = new Map();
@@ -136,7 +173,7 @@ function createPriceChart(priceChart, candleData) {
   }
 
   // --------------------------------------
-  // ▼ 価格チャートツールチップ
+  // ▼ 価格チャートツールチップ（強化版）
   // --------------------------------------
   const tooltip = document.createElement('div');
   tooltip.style.position = 'absolute';
@@ -158,7 +195,7 @@ function createPriceChart(priceChart, candleData) {
       return;
     }
 
-    const candle = param.seriesData.get(candleSeries);
+    const candle = candleMap.get(param.time);
     if (!candle) {
       tooltip.style.display = 'none';
       return;
@@ -191,6 +228,16 @@ function createPriceChart(priceChart, candleData) {
       <div>安値: ${candle.low}</div>
       <div>終値: ${candle.close}</div>
       <div>出来高: ${candle.volume?.toLocaleString() ?? '-'}</div>
+      <hr>
+      <div>MA(5): ${ma5Map.get(param.time)?.toFixed(2) ?? '-'}</div>
+      <div>MA(25): ${ma25Map.get(param.time)?.toFixed(2) ?? '-'}</div>
+      <div>MA(50): ${ma50Map.get(param.time)?.toFixed(2) ?? '-'}</div>
+      <div>MA(75): ${ma75Map.get(param.time)?.toFixed(2) ?? '-'}</div>
+      <div>MA(100): ${ma100Map.get(param.time)?.toFixed(2) ?? '-'}</div>
+      <hr>
+      <div>BB ミドル: ${bbMidMap.get(param.time)?.toFixed(2) ?? '-'}</div>
+      <div>BB 上限: ${bbUpperMap.get(param.time)?.toFixed(2) ?? '-'}</div>
+      <div>BB 下限: ${bbLowerMap.get(param.time)?.toFixed(2) ?? '-'}</div>
     `;
   });
 
