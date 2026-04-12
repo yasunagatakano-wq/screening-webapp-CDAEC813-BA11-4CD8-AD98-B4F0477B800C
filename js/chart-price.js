@@ -49,7 +49,7 @@ function applyCandleVisibility() {
 function createPriceChart(priceChart, candleData) {
 
   // --------------------------------------
-  // ローソク足（time は 0,1,2,... のインデックス）
+  // ローソク足
   // --------------------------------------
   candleSeries = priceChart.addSeries(LightweightCharts.CandlestickSeries, {
     upColor: 'red',
@@ -99,10 +99,10 @@ function createPriceChart(priceChart, candleData) {
   ma100Series = addMA('#ffaa00', calcMA(candleData, 100));
 
   // --------------------------------------
-  // 一目均衡表（インデックスベース）
+  // 一目均衡表（TradingView 互換）
   // --------------------------------------
   const ichimoku = calcIchimoku(candleData);
-  const shiftBars = 26; // 26本先（インデックス）
+  const shiftSec = 26 * 24 * 60 * 60;
 
   // 転換線
   tenkanSeries = priceChart.addSeries(LightweightCharts.LineSeries, {
@@ -122,11 +122,11 @@ function createPriceChart(priceChart, candleData) {
     ichimoku.kijun.filter(p => p.value !== null)
   );
 
-  // 先行スパン1（26本先）
+  // 先行スパン1（26日先）
   const span1Shifted = ichimoku.span1
     .filter(p => p.value !== null)
     .map(p => ({
-      time: p.time + shiftBars,
+      time: p.time + shiftSec,
       value: p.value,
     }));
 
@@ -136,11 +136,11 @@ function createPriceChart(priceChart, candleData) {
   });
   span1Series.setData(span1Shifted);
 
-  // 先行スパン2（26本先）
+  // 先行スパン2（26日先）
   const span2Shifted = ichimoku.span2
     .filter(p => p.value !== null)
     .map(p => ({
-      time: p.time + shiftBars,
+      time: p.time + shiftSec,
       value: p.value,
     }));
 
