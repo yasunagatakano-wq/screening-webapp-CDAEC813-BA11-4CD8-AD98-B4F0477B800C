@@ -1,5 +1,5 @@
 // --------------------------------------
-// chart-price.js（修正版：BusinessDay対応 + 雲修正 + 凡例追加）
+// chart-price.js（修正版）
 // --------------------------------------
 
 // ▼ 価格チャートで使用するシリーズ変数
@@ -49,7 +49,7 @@ function applyCandleVisibility() {
 function createPriceChart(priceChart, candleData) {
 
   // --------------------------------------
-  // ローソク足（BusinessDay対応）
+  // ローソク足（time は 0,1,2,... のインデックス）
   // --------------------------------------
   candleSeries = priceChart.addSeries(LightweightCharts.CandlestickSeries, {
     upColor: 'red',
@@ -99,10 +99,10 @@ function createPriceChart(priceChart, candleData) {
   ma100Series = addMA('#ffaa00', calcMA(candleData, 100));
 
   // --------------------------------------
-  // 一目均衡表（TradingView 互換）
+  // 一目均衡表（インデックスベース）
   // --------------------------------------
   const ichimoku = calcIchimoku(candleData);
-  const shiftSec = 26 * 24 * 60 * 60;
+  const shiftBars = 26; // 26本先（インデックス）
 
   // 転換線
   tenkanSeries = priceChart.addSeries(LightweightCharts.LineSeries, {
@@ -122,11 +122,11 @@ function createPriceChart(priceChart, candleData) {
     ichimoku.kijun.filter(p => p.value !== null)
   );
 
-  // 先行スパン1（26日先）
+  // 先行スパン1（26本先）
   const span1Shifted = ichimoku.span1
     .filter(p => p.value !== null)
     .map(p => ({
-      time: p.time + shiftSec,
+      time: p.time + shiftBars,
       value: p.value,
     }));
 
@@ -136,11 +136,11 @@ function createPriceChart(priceChart, candleData) {
   });
   span1Series.setData(span1Shifted);
 
-  // 先行スパン2（26日先）
+  // 先行スパン2（26本先）
   const span2Shifted = ichimoku.span2
     .filter(p => p.value !== null)
     .map(p => ({
-      time: p.time + shiftSec,
+      time: p.time + shiftBars,
       value: p.value,
     }));
 
