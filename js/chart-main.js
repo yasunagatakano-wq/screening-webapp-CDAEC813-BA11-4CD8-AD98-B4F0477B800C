@@ -178,9 +178,6 @@ async function drawChart(ticker, name) {
       allowShiftVisibleRangeOnResize: false,
       rightOffset: 0,
       barSpacing: 6,
-  
-      // ★ 追加：存在するデータの日付だけを使う
-      tickMarkStrategy: LightweightCharts.TickMarkStrategy.Time,
     },
     grid: {
       vertLines: { color: '#eee' },
