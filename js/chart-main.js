@@ -195,20 +195,26 @@ async function drawChart(ticker, name) {
     },
   });
 
-  // ❗ UNIX 秒前提の tickMarkFormatter を完全削除
-  priceChart.timeScale().applyOptions({});
+  // time は UNIX秒前提
+  priceChart.timeScale().applyOptions({
+    tickMarkFormatter: (time) => {
+      const date = new Date(time * 1000);
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      const d = String(date.getDate()).padStart(2, '0');
+      return `${m}/${d}`;
+    },
+  });
 
-  // ② シリーズ生成は chart-price.js に任せる
+  // ② シリーズ生成は chart-price.js に任せる（UNIX秒 time のまま）
   createPriceChart(priceChart, data);
 
-  // chart-sync.js と整合させるためのラッパー
   const price = { chart: priceChart };
 
-  // ③ RCI / MACD チャート生成
+  // ③ RCI / MACD チャート生成（どちらも data の time = UNIX秒 を前提）
   const rci = createRciChart(data);
   const macd = createMacdChart(data);
 
-  // ④ 同期処理（businessDay 対応済み）
+  // ④ 同期処理
   bindTimeSync(price.chart, [rci.chart, macd.chart]);
   bindTimeSync(rci.chart, [price.chart, macd.chart]);
   bindTimeSync(macd.chart, [price.chart, rci.chart]);
@@ -216,7 +222,7 @@ async function drawChart(ticker, name) {
   // ⑤ リサイズ処理
   setupResize(price.chart, rci.chart, macd.chart);
 
-  // ⑥ デフォルト表示期間（businessDay 対応済み）
+  // ⑥ デフォルト表示期間（UNIX秒 time 前提）
   applyDefaultRange(price.chart, rci.chart, macd.chart, data);
 
   chartLoadingOverlay.style.display = "none";
