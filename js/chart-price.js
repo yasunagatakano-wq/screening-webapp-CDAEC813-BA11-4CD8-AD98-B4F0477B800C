@@ -1,5 +1,5 @@
 // --------------------------------------
-// chart-price.js（完全再構築版）
+// chart-price.js（修正版）
 // --------------------------------------
 
 // ▼ 価格チャートで使用するシリーズ変数
@@ -10,7 +10,7 @@ let ma5Series, ma25Series, ma50Series, ma75Series, ma100Series;
 
 let tenkanSeries, kijunSeries;
 let span1Series, span2Series, chikouSeries;
-let cloudBullSeries, cloudBearSeries;
+let cloudSeries; // 雲を単一シリーズで管理
 
 let bbMidSeries, bbUpperSeries, bbLowerSeries, bbAreaSeries;
 
@@ -151,48 +151,34 @@ function createPriceChart(priceChart, candleData) {
   span2Series.setData(span2Shifted);
 
   // --------------------------------------
-  // 雲（TradingView と同じロジック）
+  // 雲（先行スパン1と先行スパン2の「間のみ」を塗る）
   // --------------------------------------
-  const span1Map = new Map();
-  span1Shifted.forEach(p => span1Map.set(p.time, p.value));
+  const span2Map = new Map();
+  span2Shifted.forEach(p => span2Map.set(p.time, p.value));
 
-  const bullCloud = [];
-  const bearCloud = [];
+  const cloudData = [];
+  span1Shifted.forEach(p1 => {
+    const v2 = span2Map.get(p1.time);
+    if (v2 == null) return;
 
-  span2Shifted.forEach(p => {
-    const t = p.time;
-    const v2 = p.value;
-    if (!span1Map.has(t)) return;
+    const upper = Math.max(p1.value, v2);
+    const lower = Math.min(p1.value, v2);
 
-    const v1 = span1Map.get(t);
-    const upper = Math.max(v1, v2);
-    const lower = Math.min(v1, v2);
-
-    if (v1 >= v2) {
-      bullCloud.push({ time: t, value: upper, lowerValue: lower });
-    } else {
-      bearCloud.push({ time: t, value: upper, lowerValue: lower });
-    }
+    cloudData.push({
+      time: p1.time,
+      value: upper,
+      lowerValue: lower,
+    });
   });
 
-  if (bullCloud.length > 0) {
-    cloudBullSeries = priceChart.addSeries(LightweightCharts.AreaSeries, {
+  if (cloudData.length > 0) {
+    cloudSeries = priceChart.addSeries(LightweightCharts.AreaSeries, {
       topColor: 'rgba(0, 200, 0, 0.4)',
       bottomColor: 'rgba(0, 200, 0, 0.1)',
       lineColor: 'rgba(0,0,0,0)',
       lineWidth: 0,
     });
-    cloudBullSeries.setData(bullCloud);
-  }
-
-  if (bearCloud.length > 0) {
-    cloudBearSeries = priceChart.addSeries(LightweightCharts.AreaSeries, {
-      topColor: 'rgba(200, 0, 0, 0.4)',
-      bottomColor: 'rgba(200, 0, 0, 0.1)',
-      lineColor: 'rgba(0,0,0,0)',
-      lineWidth: 0,
-    });
-    cloudBearSeries.setData(bearCloud);
+    cloudSeries.setData(cloudData);
   }
 
   // 遅行スパン
@@ -253,6 +239,28 @@ function createPriceChart(priceChart, candleData) {
     });
     bbAreaSeries.setData(bbAreaData);
   }
+
+  // --------------------------------------
+  // ▼ 価格チャート凡例（TradingView風）
+  // --------------------------------------
+  const legend = document.createElement("div");
+  legend.className = "chart-legend";
+  legend.innerHTML = `
+    <div><strong>【価格チャート】</strong></div>
+    <div><span style="color:red;">■</span> 陽線</div>
+    <div><span style="color:blue;">■</span> 陰線</div>
+    <div><span style="color:#ff1493;">■</span> MA(5)</div>
+    <div><span style="color:#00aa00;">■</span> MA(25)</div>
+    <div><span style="color:#0000ff;">■</span> MA(50)</div>
+    <div><span style="color:#aa00aa;">■</span> MA(75)</div>
+    <div><span style="color:#ffaa00;">■</span> MA(100)</div>
+    <div><span style="color:#ff0000;">■</span> 転換線</div>
+    <div><span style="color:#0000ff;">■</span> 基準線</div>
+    <div><span style="color:rgba(0,200,0,1);">■</span> 先行スパン1</div>
+    <div><span style="color:rgba(128,0,128,1);">■</span> 先行スパン2</div>
+  `;
+  chartContainer.style.position = "relative";
+  chartContainer.appendChild(legend);
 
   return { chart: priceChart };
 }
