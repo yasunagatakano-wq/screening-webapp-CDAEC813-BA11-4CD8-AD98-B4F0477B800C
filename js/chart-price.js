@@ -1,5 +1,5 @@
 // --------------------------------------
-// chart-price.js（修正版）
+// chart-price.js（修正版：BusinessDay対応 + 雲修正 + 凡例追加）
 // --------------------------------------
 
 // ▼ 価格チャートで使用するシリーズ変数
@@ -49,7 +49,7 @@ function applyCandleVisibility() {
 function createPriceChart(priceChart, candleData) {
 
   // --------------------------------------
-  // ローソク足
+  // ローソク足（BusinessDay対応）
   // --------------------------------------
   candleSeries = priceChart.addSeries(LightweightCharts.CandlestickSeries, {
     upColor: 'red',
