@@ -3,7 +3,23 @@
 // MACDチャート（MACD・Signal・Histogram）
 // --------------------------------------
 
-function createMacdChart(candleData) {
+function createMacdChart(candleDataRaw) {
+
+  // --------------------------------------
+  // 休場日を完全排除（businessDay 形式に変換）
+  // --------------------------------------
+  const candleData = candleDataRaw.map(c => {
+    const d = new Date(c.time * 1000);
+    return {
+      time: {
+        year: d.getFullYear(),
+        month: d.getMonth() + 1,
+        day: d.getDate(),
+      },
+      value: c.close
+    };
+  });
+
   const mRect = macdContainer.getBoundingClientRect();
 
   macdChart = LightweightCharts.createChart(macdContainer, {
@@ -31,6 +47,7 @@ function createMacdChart(candleData) {
     },
   });
 
+  // businessDay を使うので tickMarkFormatter は不要
   macdChart.applyOptions({
     localization: {
       locale: 'ja-JP',
@@ -38,18 +55,12 @@ function createMacdChart(candleData) {
     },
   });
 
-  macdChart.timeScale().applyOptions({
-    tickMarkFormatter: (time) => {
-      const date = new Date(time * 1000);
-      const m = String(date.getMonth() + 1).padStart(2, '0');
-      const d = String(date.getDate()).padStart(2, '0');
-      return `${m}/${d}`;
-    },
-  });
-
-  // 凡例（色付き）
+  // --------------------------------------
+  // 凡例
+  // --------------------------------------
   const legend = document.createElement("div");
   legend.className = "chart-legend";
+  legend.style.pointerEvents = "none";
   legend.innerHTML = `
     <div><strong>【MACD】</strong></div>
     <div><span style="color:#0000ff;">■</span> MACD</div>
@@ -59,6 +70,9 @@ function createMacdChart(candleData) {
   macdContainer.style.position = "relative";
   macdContainer.appendChild(legend);
 
+  // --------------------------------------
+  // MACD 計算
+  // --------------------------------------
   const macd = calcMACD(candleData, 12, 26, 9);
 
   macdLineSeries = macdChart.addSeries(LightweightCharts.LineSeries, {
@@ -84,6 +98,9 @@ function createMacdChart(candleData) {
     scaleMargins: { top: 0.1, bottom: 0.1 },
   });
 
+  // --------------------------------------
+  // MACD ツールチップ（復活）
+  // --------------------------------------
   const macdTooltip = document.createElement('div');
   macdTooltip.style.position = 'absolute';
   macdTooltip.style.display = 'none';
@@ -95,7 +112,6 @@ function createMacdChart(candleData) {
   macdTooltip.style.pointerEvents = 'none';
   macdTooltip.style.zIndex = '2100';
 
-  macdContainer.style.position = "relative";
   macdContainer.appendChild(macdTooltip);
 
   macdChart.subscribeCrosshairMove(param => {
@@ -108,11 +124,7 @@ function createMacdChart(candleData) {
     const signalVal = param.seriesData.get(macdSignalSeries);
     const histVal   = param.seriesData.get(macdHistSeries);
 
-    const JST_OFFSET = 9 * 60 * 60 * 1000;
-    const date = new Date(param.time * 1000 + JST_OFFSET);
-    const y = date.getFullYear();
-    const m = String(date.getMonth() + 1).padStart(2, '0');
-    const d = String(date.getDate()).padStart(2, '0');
+    const t = param.time; // businessDay
 
     macdTooltip.style.display = 'block';
 
@@ -129,7 +141,7 @@ function createMacdChart(candleData) {
     macdTooltip.style.top  = param.point.y + 20 + 'px';
 
     macdTooltip.innerHTML = `
-      <div>日付: ${y}/${m}/${d}</div>
+      <div>日付: ${t.year}/${t.month}/${t.day}</div>
       <div>MACD: ${macdVal?.value?.toFixed(4) ?? '-'}</div>
       <div>Signal: ${signalVal?.value?.toFixed(4) ?? '-'}</div>
       <div>Hist: ${histVal?.value?.toFixed(4) ?? '-'}</div>
