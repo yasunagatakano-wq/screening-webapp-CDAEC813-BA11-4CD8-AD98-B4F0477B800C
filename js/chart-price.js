@@ -47,13 +47,33 @@ function applyCandleVisibility() {
 // --------------------------------------
 // 価格チャート生成（priceChart を外部から受け取る）
 // --------------------------------------
-function createPriceChart(priceChart, candleData) {
+function createPriceChart(priceChart, candleDataRaw) {
 
   // --------------------------------------
-  // 凡例（復活）
+  // 休場日を完全排除（businessDay 形式に変換）
+  // --------------------------------------
+  const candleData = candleDataRaw.map(c => {
+    const d = new Date(c.time * 1000);
+    return {
+      time: {
+        year: d.getFullYear(),
+        month: d.getMonth() + 1,
+        day: d.getDate(),
+      },
+      open: c.open,
+      high: c.high,
+      low: c.low,
+      close: c.close,
+      volume: c.volume,
+    };
+  });
+
+  // --------------------------------------
+  // 凡例
   // --------------------------------------
   const legend = document.createElement("div");
   legend.className = "chart-legend";
+  legend.style.pointerEvents = "none";
   legend.innerHTML = `
     <div><strong>【価格チャート】</strong></div>
     <div><span style="color:red;">■</span> 陽線　
@@ -127,7 +147,6 @@ function createPriceChart(priceChart, candleData) {
   // 一目均衡表
   // --------------------------------------
   const ichimoku = calcIchimoku(candleData);
-  const shiftSec = 26 * 24 * 60 * 60;
 
   // 転換線
   tenkanSeries = priceChart.addSeries(LightweightCharts.LineSeries, {
@@ -146,7 +165,10 @@ function createPriceChart(priceChart, candleData) {
   // 先行スパン1（26日先）
   const span1Shifted = ichimoku.span1
     .filter(p => p.value !== null)
-    .map(p => ({ time: p.time + shiftSec, value: p.value }));
+    .map(p => ({
+      time: addDaysToBusinessDay(p.time, 26),
+      value: p.value
+    }));
 
   span1Series = priceChart.addSeries(LightweightCharts.LineSeries, {
     color: 'rgba(0, 128, 0, 1)',
@@ -157,7 +179,10 @@ function createPriceChart(priceChart, candleData) {
   // 先行スパン2（26日先）
   const span2Shifted = ichimoku.span2
     .filter(p => p.value !== null)
-    .map(p => ({ time: p.time + shiftSec, value: p.value }));
+    .map(p => ({
+      time: addDaysToBusinessDay(p.time, 26),
+      value: p.value
+    }));
 
   span2Series = priceChart.addSeries(LightweightCharts.LineSeries, {
     color: 'rgba(128, 0, 128, 1)',
@@ -167,54 +192,61 @@ function createPriceChart(priceChart, candleData) {
 
   // --------------------------------------
   // 雲（先行スパン1と先行スパン2の間だけ塗る）
-  // TradingView 完全互換ロジック
   // --------------------------------------
+  const span2Map = new Map();
+  span2Shifted.forEach(p => span2Map.set(JSON.stringify(p.time), p.value));
+
   cloudBullSeriesList = [];
   cloudBearSeriesList = [];
 
   let currentBull = [];
   let currentBear = [];
 
-  for (let i = 0; i < span1Shifted.length; i++) {
-    const p1 = span1Shifted[i];
-    const p2 = span2Shifted[i];
-    if (!p1 || !p2) continue;
-
-    const upper = Math.max(p1.value, p2.value);
-    const lower = Math.min(p1.value, p2.value);
-
-    const isBull = p1.value >= p2.value;
-
-    if (isBull) {
-      if (currentBear.length > 0) {
-        addCloudSeries(priceChart, currentBear, false);
-        currentBear = [];
-      }
-      currentBull.push({ time: p1.time, value: upper, lowerValue: lower });
-    } else {
-      if (currentBull.length > 0) {
-        addCloudSeries(priceChart, currentBull, true);
-        currentBull = [];
-      }
-      currentBear.push({ time: p1.time, value: upper, lowerValue: lower });
-    }
-  }
-
-  if (currentBull.length > 0) addCloudSeries(priceChart, currentBull, true);
-  if (currentBear.length > 0) addCloudSeries(priceChart, currentBear, false);
-
-  function addCloudSeries(chart, data, isBull) {
-    const s = chart.addSeries(LightweightCharts.AreaSeries, {
+  function flushSegment(list, data, isBull) {
+    if (data.length === 0) return;
+    const s = priceChart.addSeries(LightweightCharts.AreaSeries, {
       topColor: isBull ? 'rgba(0,200,0,0.4)' : 'rgba(200,0,0,0.4)',
       bottomColor: isBull ? 'rgba(0,200,0,0.1)' : 'rgba(200,0,0,0.1)',
       lineColor: 'rgba(0,0,0,0)',
       lineWidth: 0,
     });
     s.setData(data);
-
-    if (isBull) cloudBullSeriesList.push(s);
-    else cloudBearSeriesList.push(s);
+    list.push(s);
   }
+
+  for (const p1 of span1Shifted) {
+    const key = JSON.stringify(p1.time);
+    const v2 = span2Map.get(key);
+
+    if (v2 == null) {
+      flushSegment(cloudBullSeriesList, currentBull, true);
+      flushSegment(cloudBearSeriesList, currentBear, false);
+      currentBull = [];
+      currentBear = [];
+      continue;
+    }
+
+    const upper = Math.max(p1.value, v2);
+    const lower = Math.min(p1.value, v2);
+    const isBull = p1.value >= v2;
+
+    if (isBull) {
+      if (currentBear.length) {
+        flushSegment(cloudBearSeriesList, currentBear, false);
+        currentBear = [];
+      }
+      currentBull.push({ time: p1.time, value: upper, lowerValue: lower });
+    } else {
+      if (currentBull.length) {
+        flushSegment(cloudBullSeriesList, currentBull, true);
+        currentBull = [];
+      }
+      currentBear.push({ time: p1.time, value: upper, lowerValue: lower });
+    }
+  }
+
+  flushSegment(cloudBullSeriesList, currentBull, true);
+  flushSegment(cloudBearSeriesList, currentBear, false);
 
   // 遅行スパン
   chikouSeries = priceChart.addSeries(LightweightCharts.LineSeries, {
@@ -249,11 +281,12 @@ function createPriceChart(priceChart, candleData) {
   const bbAreaData = [];
   const upperMap = new Map();
   bb.upper.forEach(p => {
-    if (p.value != null) upperMap.set(p.time, p.value);
+    if (p.value != null) upperMap.set(JSON.stringify(p.time), p.value);
   });
   bb.lower.forEach(p => {
-    if (p.value != null && upperMap.has(p.time)) {
-      const u = upperMap.get(p.time);
+    const key = JSON.stringify(p.time);
+    if (p.value != null && upperMap.has(key)) {
+      const u = upperMap.get(key);
       const l = p.value;
       bbAreaData.push({
         time: p.time,
@@ -273,5 +306,58 @@ function createPriceChart(priceChart, candleData) {
     bbAreaSeries.setData(bbAreaData);
   }
 
+  // --------------------------------------
+  // 価格チャート専用ツールチップ（復活）
+  // --------------------------------------
+  const tooltip = document.createElement("div");
+  tooltip.className = "chart-tooltip";
+  tooltip.style.position = "absolute";
+  tooltip.style.display = "none";
+  tooltip.style.pointerEvents = "none";
+  tooltip.style.background = "rgba(0,0,0,0.7)";
+  tooltip.style.color = "#fff";
+  tooltip.style.padding = "6px 8px";
+  tooltip.style.borderRadius = "4px";
+  tooltip.style.fontSize = "12px";
+  chartContainer.appendChild(tooltip);
+
+  priceChart.subscribeCrosshairMove(param => {
+    if (!param.time || !param.seriesPrices) {
+      tooltip.style.display = "none";
+      return;
+    }
+
+    const candle = param.seriesPrices.get(candleSeries);
+    if (!candle) {
+      tooltip.style.display = "none";
+      return;
+    }
+
+    tooltip.innerHTML = `
+      <div>${param.time.year}/${param.time.month}/${param.time.day}</div>
+      <div>O: ${candle.open}</div>
+      <div>H: ${candle.high}</div>
+      <div>L: ${candle.low}</div>
+      <div>C: ${candle.close}</div>
+    `;
+
+    tooltip.style.left = (param.point.x + 10) + "px";
+    tooltip.style.top = (param.point.y + 10) + "px";
+    tooltip.style.display = "block";
+  });
+
   return { chart: priceChart };
+}
+
+// --------------------------------------
+// businessDay に日数を加算する関数
+// --------------------------------------
+function addDaysToBusinessDay(businessDay, days) {
+  const d = new Date(businessDay.year, businessDay.month - 1, businessDay.day);
+  d.setDate(d.getDate() + days);
+  return {
+    year: d.getFullYear(),
+    month: d.getMonth() + 1,
+    day: d.getDate(),
+  };
 }
