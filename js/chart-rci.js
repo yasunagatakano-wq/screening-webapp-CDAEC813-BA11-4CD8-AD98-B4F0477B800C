@@ -1,6 +1,6 @@
 // --------------------------------------
 // chart-rci.js
-// RCI チャート生成
+// RCI チャート生成（UNIX秒統一版）
 // --------------------------------------
 
 function createRciChart(candleData) {
@@ -36,14 +36,15 @@ function createRciChart(candleData) {
 
   // RCI 計算（UNIX秒 time 前提）
   const rciShort = calcRCI(candleData, 9);
-  const rciLong = calcRCI(candleData, 26);
+  const rciLong  = calcRCI(candleData, 26);
 
-  const shortSeries = rciChart.addLineSeries({
+  // ★ addLineSeries ではなく addSeries を使う（chart-price.js と統一）
+  const shortSeries = rciChart.addSeries(LightweightCharts.LineSeries, {
     color: '#ff0000',
     lineWidth: 2,
   });
 
-  const longSeries = rciChart.addLineSeries({
+  const longSeries = rciChart.addSeries(LightweightCharts.LineSeries, {
     color: '#0000ff',
     lineWidth: 2,
   });
