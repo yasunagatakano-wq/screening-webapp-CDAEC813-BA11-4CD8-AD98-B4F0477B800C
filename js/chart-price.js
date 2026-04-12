@@ -1,5 +1,5 @@
 // --------------------------------------
-// chart-price.js（完全修正版）
+// chart-price.js（完全修正版：BB上限マーカー是正）
 // --------------------------------------
 
 let candleSeries;
@@ -95,12 +95,6 @@ function createPriceChart(priceChart, candleData) {
     const s = priceChart.addSeries(LightweightCharts.LineSeries, {
       color,
       lineWidth: 1,
-
-      // ▼ クロスヘアマーカーの色を明示（白抜き防止）
-      crosshairMarkerVisible: true,
-      crosshairMarkerRadius: 3,
-      crosshairMarkerBorderColor: color,
-      crosshairMarkerBackgroundColor: color,
     });
     s.setData(data.filter(p => p.value !== null));
     return s;
@@ -129,31 +123,21 @@ function createPriceChart(priceChart, candleData) {
   // --------------------------------------
   const bb = calcBB(candleData, 20, 2);
 
-  const bbMarkerOptions = {
-    crosshairMarkerVisible: true,
-    crosshairMarkerRadius: 3,
-    crosshairMarkerBorderColor: '#ffa500',
-    crosshairMarkerBackgroundColor: '#ffa500',
-  };
-
   bbMidSeries = priceChart.addSeries(LightweightCharts.LineSeries, {
     color: '#ffa500',
     lineWidth: 1,
-    ...bbMarkerOptions,
   });
   bbMidSeries.setData(bb.mid.filter(p => p.value !== null));
 
   bbUpperSeries = priceChart.addSeries(LightweightCharts.LineSeries, {
     color: '#ffa500',
     lineWidth: 1,
-    ...bbMarkerOptions,
   });
   bbUpperSeries.setData(bb.upper.filter(p => p.value !== null));
 
   bbLowerSeries = priceChart.addSeries(LightweightCharts.LineSeries, {
     color: '#ffa500',
     lineWidth: 1,
-    ...bbMarkerOptions,
   });
   bbLowerSeries.setData(bb.lower.filter(p => p.value !== null));
 
@@ -161,18 +145,19 @@ function createPriceChart(priceChart, candleData) {
   const bbUpperMap = makeValueMap(bb.upper);
   const bbLowerMap = makeValueMap(bb.lower);
 
+  // ▼ 雲（AreaSeries）は「ミドル〜下限」を塗るように変更
   const bbAreaData = [];
-  const upperMap = new Map();
-  bb.upper.forEach(p => {
-    if (p.value != null) upperMap.set(p.time, p.value);
+  const midMapForArea = new Map();
+  bb.mid.forEach(p => {
+    if (p.value != null) midMapForArea.set(p.time, p.value);
   });
   bb.lower.forEach(p => {
-    if (p.value != null && upperMap.has(p.time)) {
-      const u = upperMap.get(p.time);
-      const l = p.value;
+    if (p.value != null && midMapForArea.has(p.time)) {
+      const mid = midMapForArea.get(p.time);
+      const l   = p.value;
       bbAreaData.push({
         time: p.time,
-        value: u,
+        value: mid,      // 上限ではなくミドルを代表値にする
         lowerValue: l,
       });
     }
