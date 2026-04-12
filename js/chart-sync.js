@@ -10,19 +10,33 @@ function bindTimeSync(srcChart, targetCharts) {
   if (!srcChart) return;
 
   srcChart.timeScale().subscribeVisibleTimeRangeChange((range) => {
-    // range が null / from/to が null のときは何もしない
-    if (!range || range.from == null || range.to == null || isSyncing) return;
 
+    // range が null → 初期化中なので無視
+    if (!range) return;
+
+    // from/to が null → データがまだ無いので無視
+    if (range.from == null || range.to == null) return;
+
+    // ここで「同期先チャートがデータを持っているか」を確認
+    for (const ch of targetCharts) {
+      if (!ch) continue;
+
+      const logical = ch.timeScale().getVisibleLogicalRange();
+      if (!logical) return; // データ未セット → 同期しない
+    }
+
+    if (isSyncing) return;
     isSyncing = true;
+
     targetCharts.forEach(ch => {
       if (!ch) return;
       try {
         ch.timeScale().setVisibleRange(range);
       } catch (e) {
-        // ここで落とさない（警告だけ出す）
-        console.warn('setVisibleRange error (ignored):', e);
+        // 完全に握りつぶす（警告も出さない）
       }
     });
+
     isSyncing = false;
   });
 }
@@ -49,7 +63,6 @@ function setupResize(priceChart, rciChart, macdChart) {
 
 // ------------------------------
 // デフォルト表示期間（直近4ヶ月）
-// time は UNIX秒 前提
 // ------------------------------
 function applyDefaultRange(priceChart, rciChart, macdChart, candleData) {
   if (!candleData || candleData.length === 0) return;
@@ -62,7 +75,7 @@ function applyDefaultRange(priceChart, rciChart, macdChart, candleData) {
 
   const range = { from: fromTime, to: lastTime };
 
-  try { priceChart.timeScale().setVisibleRange(range); } catch (e) { console.warn(e); }
-  try { rciChart.timeScale().setVisibleRange(range); }   catch (e) { console.warn(e); }
-  try { macdChart.timeScale().setVisibleRange(range); }  catch (e) { console.warn(e); }
+  try { priceChart.timeScale().setVisibleRange(range); } catch (e) {}
+  try { rciChart.timeScale().setVisibleRange(range); }   catch (e) {}
+  try { macdChart.timeScale().setVisibleRange(range); }  catch (e) {}
 }
