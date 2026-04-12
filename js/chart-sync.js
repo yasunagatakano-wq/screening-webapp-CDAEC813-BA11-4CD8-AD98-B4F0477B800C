@@ -10,45 +10,63 @@ function bindTimeSync(srcChart, targetCharts) {
   if (!srcChart) return;
 
   srcChart.timeScale().subscribeVisibleTimeRangeChange((range) => {
-    if (!range || isSyncing) return;
+    // range が null / from/to が null のときは何もしない
+    if (!range || range.from == null || range.to == null || isSyncing) return;
 
     isSyncing = true;
     targetCharts.forEach(ch => {
       if (!ch) return;
-      ch.timeScale().setVisibleRange(range);
+      try {
+        ch.timeScale().setVisibleRange(range);
+      } catch (e) {
+        // ここで落とさない
+        console.warn('setVisibleRange error (ignored):', e);
+      }
     });
     isSyncing = false;
   });
 }
 
 // ------------------------------
-// businessDay に日数を加算する関数
+// リサイズ処理
 // ------------------------------
-function addDaysBD(bd, days) {
-  const d = new Date(bd.year, bd.month - 1, bd.day);
-  d.setDate(d.getDate() + days);
-  return {
-    year: d.getFullYear(),
-    month: d.getMonth() + 1,
-    day: d.getDate(),
-  };
+function setupResize(priceChart, rciChart, macdChart) {
+  window.addEventListener('resize', () => {
+    if (priceChart) {
+      const r = chartContainer.getBoundingClientRect();
+      priceChart.applyOptions({ width: r.width, height: r.height });
+    }
+    if (rciChart) {
+      const r = rciContainer.getBoundingClientRect();
+      rciChart.applyOptions({ width: r.width, height: r.height });
+    }
+    if (macdChart) {
+      const r = macdContainer.getBoundingClientRect();
+      macdChart.applyOptions({ width: r.width, height: r.height });
+    }
+  });
 }
 
 // ------------------------------
-// デフォルト表示期間（直近4ヶ月）
+// デフォルト表示期間（直近 N 本）
+// 「time の型に一切手を出さない」安全版
 // ------------------------------
 function applyDefaultRange(priceChart, rciChart, macdChart, candleData) {
   if (!candleData || candleData.length === 0) return;
 
-  // candleData は businessDay
-  const lastBD = candleData[candleData.length - 1].time;
+  const len = candleData.length;
+  const visibleCount = 80; // 直近80本くらい
+  const fromIndex = Math.max(0, len - visibleCount);
 
-  // 4ヶ月 ≒ 120日
-  const fromBD = addDaysBD(lastBD, -120);
+  const from = candleData[fromIndex].time;
+  const to   = candleData[len - 1].time;
 
-  const range = { from: fromBD, to: lastBD };
+  // from / to が null / undefined なら何もしない
+  if (from == null || to == null) return;
 
-  priceChart.timeScale().setVisibleRange(range);
-  rciChart.timeScale().setVisibleRange(range);
-  macdChart.timeScale().setVisibleRange(range);
+  const range = { from, to };
+
+  try { priceChart.timeScale().setVisibleRange(range); } catch (e) { console.warn(e); }
+  try { rciChart.timeScale().setVisibleRange(range); }   catch (e) { console.warn(e); }
+  try { macdChart.timeScale().setVisibleRange(range); }  catch (e) { console.warn(e); }
 }
