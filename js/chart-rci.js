@@ -3,7 +3,23 @@
 // RCIチャート（短期9・長期26）
 // --------------------------------------
 
-function createRciChart(candleData) {
+function createRciChart(candleDataRaw) {
+
+  // --------------------------------------
+  // 休場日を完全排除（businessDay 形式に変換）
+  // --------------------------------------
+  const candleData = candleDataRaw.map(c => {
+    const d = new Date(c.time * 1000);
+    return {
+      time: {
+        year: d.getFullYear(),
+        month: d.getMonth() + 1,
+        day: d.getDate(),
+      },
+      value: c.close
+    };
+  });
+
   const rRect = rciContainer.getBoundingClientRect();
 
   rciChart = LightweightCharts.createChart(rciContainer, {
@@ -31,6 +47,7 @@ function createRciChart(candleData) {
     },
   });
 
+  // businessDay を使うので tickMarkFormatter は不要
   rciChart.applyOptions({
     localization: {
       locale: 'ja-JP',
@@ -38,18 +55,12 @@ function createRciChart(candleData) {
     },
   });
 
-  rciChart.timeScale().applyOptions({
-    tickMarkFormatter: (time) => {
-      const date = new Date(time * 1000);
-      const m = String(date.getMonth() + 1).padStart(2, '0');
-      const d = String(date.getDate()).padStart(2, '0');
-      return `${m}/${d}`;
-    },
-  });
-
-  // 凡例（色付き）
+  // --------------------------------------
+  // 凡例
+  // --------------------------------------
   const legend = document.createElement("div");
   legend.className = "chart-legend";
+  legend.style.pointerEvents = "none";
   legend.innerHTML = `
     <div><strong>【RCI】</strong></div>
     <div><span style="color:#ff1493;">■</span> RCI(9)</div>
@@ -58,6 +69,9 @@ function createRciChart(candleData) {
   rciContainer.style.position = "relative";
   rciContainer.appendChild(legend);
 
+  // --------------------------------------
+  // RCI 計算
+  // --------------------------------------
   const rciShort = calcRCI(candleData, 9);
   const rciLong  = calcRCI(candleData, 26);
 
@@ -77,6 +91,9 @@ function createRciChart(candleData) {
     scaleMargins: { top: 0.1, bottom: 0.1 },
   });
 
+  // --------------------------------------
+  // RCI ツールチップ（復活）
+  // --------------------------------------
   const rciTooltip = document.createElement('div');
   rciTooltip.style.position = 'absolute';
   rciTooltip.style.display = 'none';
@@ -88,7 +105,6 @@ function createRciChart(candleData) {
   rciTooltip.style.pointerEvents = 'none';
   rciTooltip.style.zIndex = '2100';
 
-  rciContainer.style.position = "relative";
   rciContainer.appendChild(rciTooltip);
 
   rciChart.subscribeCrosshairMove(param => {
@@ -100,11 +116,7 @@ function createRciChart(candleData) {
     const shortVal = param.seriesData.get(rciShortSeries);
     const longVal  = param.seriesData.get(rciLongSeries);
 
-    const JST_OFFSET = 9 * 60 * 60 * 1000;
-    const date = new Date(param.time * 1000 + JST_OFFSET);
-    const y = date.getFullYear();
-    const m = String(date.getMonth() + 1).padStart(2, '0');
-    const d = String(date.getDate()).padStart(2, '0');
+    const t = param.time; // businessDay
 
     rciTooltip.style.display = 'block';
 
@@ -121,7 +133,7 @@ function createRciChart(candleData) {
     rciTooltip.style.top  = param.point.y + 20 + 'px';
 
     rciTooltip.innerHTML = `
-      <div>日付: ${y}/${m}/${d}</div>
+      <div>日付: ${t.year}/${t.month}/${t.day}</div>
       <div>RCI(9): ${shortVal?.value?.toFixed(2) ?? '-'}</div>
       <div>RCI(26): ${longVal?.value?.toFixed(2) ?? '-'}</div>
     `;
