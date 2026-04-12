@@ -254,5 +254,29 @@ function createPriceChart(priceChart, candleData) {
     bbAreaSeries.setData(bbAreaData);
   }
 
+  // --------------------------------------
+  // 凡例
+  // --------------------------------------
+  const legend = document.createElement("div");
+  legend.className = "chart-legend";
+  legend.innerHTML = `
+    <div><strong>【価格】</strong></div>
+    <div><span style="color:red;">■</span> ローソク足（陽線）</div>
+    <div><span style="color:blue;">■</span> ローソク足（陰線）</div>
+    <div><span style="color:#ff1493;">■</span> MA(5)</div>
+    <div><span style="color:#00aa00;">■</span> MA(25)</div>
+    <div><span style="color:#0000ff;">■</span> MA(50)</div>
+    <div><span style="color:#aa00aa;">■</span> MA(75)</div>
+    <div><span style="color:#ffaa00;">■</span> MA(100)</div>
+    <div><span style="color:#ff0000;">■</span> 転換線</div>
+    <div><span style="color:#0000ff;">■</span> 基準線</div>
+    <div><span style="color:rgba(0,128,0,1);">■</span> 先行スパン1</div>
+    <div><span style="color:rgba(128,0,128,1);">■</span> 先行スパン2</div>
+    <div><span style="color:#008080;">■</span> 遅行スパン</div>
+    <div><span style="color:#ffa500;">■</span> ボリンジャー（ミドル・上下）</div>
+  `;
+  chartContainer.style.position = "relative";
+  chartContainer.appendChild(legend);
+
   return { chart: priceChart };
 }
