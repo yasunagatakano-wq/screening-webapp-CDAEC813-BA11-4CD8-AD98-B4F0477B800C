@@ -195,14 +195,8 @@ async function drawChart(ticker, name) {
     },
   });
 
-  priceChart.timeScale().applyOptions({
-    tickMarkFormatter: (time) => {
-      const date = new Date(time * 1000);
-      const m = String(date.getMonth() + 1).padStart(2, '0');
-      const d = String(date.getDate()).padStart(2, '0');
-      return `${m}/${d}`;
-    },
-  });
+  // ❗ tickMarkFormatter は削除（businessDay のため）
+  priceChart.timeScale().applyOptions({});
 
   // ② シリーズ生成は chart-price.js に任せる
   createPriceChart(priceChart, data);
