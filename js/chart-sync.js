@@ -19,6 +19,7 @@ function bindTimeSync(srcChart, targetCharts) {
       try {
         ch.timeScale().setVisibleRange(range);
       } catch (e) {
+        // ここで落とさない（警告だけ出す）
         console.warn('setVisibleRange error (ignored):', e);
       }
     });
@@ -47,22 +48,19 @@ function setupResize(priceChart, rciChart, macdChart) {
 }
 
 // ------------------------------
-// デフォルト表示期間（直近 N 本）
-// time の型（UNIX秒 / businessDay）に一切依存しない安全版
+// デフォルト表示期間（直近4ヶ月）
+// time は UNIX秒 前提
 // ------------------------------
 function applyDefaultRange(priceChart, rciChart, macdChart, candleData) {
   if (!candleData || candleData.length === 0) return;
 
-  const len = candleData.length;
-  const visibleCount = 80; // 直近80本
-  const fromIndex = Math.max(0, len - visibleCount);
+  const lastTime = candleData[candleData.length - 1].time;
+  if (lastTime == null) return;
 
-  const from = candleData[fromIndex].time;
-  const to   = candleData[len - 1].time;
+  const fourMonthsSec = 60 * 60 * 24 * 30 * 4;
+  const fromTime = lastTime - fourMonthsSec;
 
-  if (from == null || to == null) return;
-
-  const range = { from, to };
+  const range = { from: fromTime, to: lastTime };
 
   try { priceChart.timeScale().setVisibleRange(range); } catch (e) { console.warn(e); }
   try { rciChart.timeScale().setVisibleRange(range); }   catch (e) { console.warn(e); }
