@@ -22,23 +22,16 @@ function bindTimeSync(srcChart, targetCharts) {
 }
 
 // ------------------------------
-// リサイズ処理
+// businessDay に日数を加算する関数
 // ------------------------------
-function setupResize(priceChart, rciChart, macdChart) {
-  window.addEventListener('resize', () => {
-    if (priceChart) {
-      const r = chartContainer.getBoundingClientRect();
-      priceChart.applyOptions({ width: r.width, height: r.height });
-    }
-    if (rciChart) {
-      const r = rciContainer.getBoundingClientRect();
-      rciChart.applyOptions({ width: r.width, height: r.height });
-    }
-    if (macdChart) {
-      const r = macdContainer.getBoundingClientRect();
-      macdChart.applyOptions({ width: r.width, height: r.height });
-    }
-  });
+function addDaysBD(bd, days) {
+  const d = new Date(bd.year, bd.month - 1, bd.day);
+  d.setDate(d.getDate() + days);
+  return {
+    year: d.getFullYear(),
+    month: d.getMonth() + 1,
+    day: d.getDate(),
+  };
 }
 
 // ------------------------------
@@ -47,11 +40,15 @@ function setupResize(priceChart, rciChart, macdChart) {
 function applyDefaultRange(priceChart, rciChart, macdChart, candleData) {
   if (!candleData || candleData.length === 0) return;
 
-  const lastTime = candleData[candleData.length - 1].time;
-  const fourMonthsSec = 60 * 60 * 24 * 30 * 4;
-  const fromTime = lastTime - fourMonthsSec;
+  // candleData は businessDay
+  const lastBD = candleData[candleData.length - 1].time;
 
-  priceChart.timeScale().setVisibleRange({ from: fromTime, to: lastTime });
-  rciChart.timeScale().setVisibleRange({ from: fromTime, to: lastTime });
-  macdChart.timeScale().setVisibleRange({ from: fromTime, to: lastTime });
+  // 4ヶ月 ≒ 120日
+  const fromBD = addDaysBD(lastBD, -120);
+
+  const range = { from: fromBD, to: lastBD };
+
+  priceChart.timeScale().setVisibleRange(range);
+  rciChart.timeScale().setVisibleRange(range);
+  macdChart.timeScale().setVisibleRange(range);
 }
