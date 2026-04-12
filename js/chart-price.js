@@ -1,5 +1,5 @@
 // --------------------------------------
-// chart-price.js（完全修正版：BB上限マーカー是正）
+// chart-price.js（BB塗りつぶし削除・完全修正版）
 // --------------------------------------
 
 let candleSeries;
@@ -7,7 +7,7 @@ let volumeSeries;
 
 let ma5Series, ma25Series, ma50Series, ma75Series, ma100Series;
 
-let bbMidSeries, bbUpperSeries, bbLowerSeries, bbAreaSeries;
+let bbMidSeries, bbUpperSeries, bbLowerSeries;
 
 let showCandles = true;
 
@@ -119,7 +119,7 @@ function createPriceChart(priceChart, candleData) {
   const ma100Map = makeValueMap(ma100);
 
   // --------------------------------------
-  // ボリンジャーバンド
+  // ボリンジャーバンド（塗りつぶしなし）
   // --------------------------------------
   const bb = calcBB(candleData, 20, 2);
 
@@ -145,36 +145,8 @@ function createPriceChart(priceChart, candleData) {
   const bbUpperMap = makeValueMap(bb.upper);
   const bbLowerMap = makeValueMap(bb.lower);
 
-  // ▼ 雲（AreaSeries）は「ミドル〜下限」を塗るように変更
-  const bbAreaData = [];
-  const midMapForArea = new Map();
-  bb.mid.forEach(p => {
-    if (p.value != null) midMapForArea.set(p.time, p.value);
-  });
-  bb.lower.forEach(p => {
-    if (p.value != null && midMapForArea.has(p.time)) {
-      const mid = midMapForArea.get(p.time);
-      const l   = p.value;
-      bbAreaData.push({
-        time: p.time,
-        value: mid,      // 上限ではなくミドルを代表値にする
-        lowerValue: l,
-      });
-    }
-  });
-
-  if (bbAreaData.length > 0) {
-    bbAreaSeries = priceChart.addSeries(LightweightCharts.AreaSeries, {
-      topColor: 'rgba(255,165,0,0.2)',
-      bottomColor: 'rgba(255,165,0,0.05)',
-      lineColor: 'rgba(0,0,0,0)',
-      lineWidth: 0,
-    });
-    bbAreaSeries.setData(bbAreaData);
-  }
-
   // --------------------------------------
-  // ▼ 価格チャートツールチップ（強化版）
+  // ▼ 価格チャートツールチップ
   // --------------------------------------
   const tooltip = document.createElement('div');
   tooltip.style.position = 'absolute';
