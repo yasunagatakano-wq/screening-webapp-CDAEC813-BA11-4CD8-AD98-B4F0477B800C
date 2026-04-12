@@ -195,7 +195,7 @@ async function drawChart(ticker, name) {
     },
   });
 
-  // ❗ tickMarkFormatter は削除（businessDay のため）
+  // ❗ UNIX 秒前提の tickMarkFormatter を完全削除
   priceChart.timeScale().applyOptions({});
 
   // ② シリーズ生成は chart-price.js に任せる
@@ -208,7 +208,7 @@ async function drawChart(ticker, name) {
   const rci = createRciChart(data);
   const macd = createMacdChart(data);
 
-  // ④ 同期処理
+  // ④ 同期処理（businessDay 対応済み）
   bindTimeSync(price.chart, [rci.chart, macd.chart]);
   bindTimeSync(rci.chart, [price.chart, macd.chart]);
   bindTimeSync(macd.chart, [price.chart, rci.chart]);
@@ -216,7 +216,7 @@ async function drawChart(ticker, name) {
   // ⑤ リサイズ処理
   setupResize(price.chart, rci.chart, macd.chart);
 
-  // ⑥ デフォルト表示期間
+  // ⑥ デフォルト表示期間（businessDay 対応済み）
   applyDefaultRange(price.chart, rci.chart, macd.chart, data);
 
   chartLoadingOverlay.style.display = "none";
