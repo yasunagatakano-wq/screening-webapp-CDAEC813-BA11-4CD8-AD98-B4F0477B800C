@@ -150,6 +150,14 @@ async function drawChart(ticker, name) {
     return;
   }
 
+  // ▼ 休場日（出来高0など）を除外し、営業日のみを使用
+  const tradingData = data.filter(d => d.volume != null && d.volume > 0);
+  if (tradingData.length === 0) {
+    alert("有効なチャートデータがありません。");
+    chartLoadingOverlay.style.display = "none";
+    return;
+  }
+
   // 既存チャート破棄
   if (priceChart) priceChart.remove();
   if (rciChart) rciChart.remove();
@@ -204,15 +212,15 @@ async function drawChart(ticker, name) {
     },
   });
 
-  // ② シリーズ生成は chart-price.js に任せる
-  createPriceChart(priceChart, data);
+  // ② シリーズ生成は chart-price.js に任せる（営業日のみ）
+  createPriceChart(priceChart, tradingData);
 
   // chart-sync.js と整合させるためのラッパー
   const price = { chart: priceChart };
 
-  // ③ RCI / MACD チャート生成
-  const rci = createRciChart(data);
-  const macd = createMacdChart(data);
+  // ③ RCI / MACD チャート生成（同じ tradingData を使用）
+  const rci = createRciChart(tradingData);
+  const macd = createMacdChart(tradingData);
 
   // ④ 同期処理
   bindTimeSync(price.chart, [rci.chart, macd.chart]);
@@ -223,7 +231,7 @@ async function drawChart(ticker, name) {
   setupResize(price.chart, rci.chart, macd.chart);
 
   // ⑥ デフォルト表示期間
-  applyDefaultRange(price.chart, rci.chart, macd.chart, data);
+  applyDefaultRange(price.chart, rci.chart, macd.chart, tradingData);
 
   chartLoadingOverlay.style.display = "none";
 }
