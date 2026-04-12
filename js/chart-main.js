@@ -35,9 +35,10 @@ let priceChart = null;
 let rciChart = null;
 let macdChart = null;
 
-// RCI / MACD のシリーズ（他ファイルで代入）
+// RCI / MACD のシリーズ
 let rciShortSeries = null;
 let rciLongSeries = null;
+
 let macdLineSeries = null;
 let macdSignalSeries = null;
 let macdHistSeries = null;
@@ -149,22 +150,13 @@ async function drawChart(ticker, name) {
     return;
   }
 
-  // yfinance 由来のデータから、出来高がある営業日のみを使用
-  const tradingData = data.filter(d => d.volume != null && d.volume > 0);
+  // yfinance 由来なので、基本的に営業日のみ
+  const tradingData = data.filter(d => d.volume != null);
   if (tradingData.length === 0) {
     alert("有効なチャートデータがありません。");
     chartLoadingOverlay.style.display = "none";
     return;
   }
-
-  // 元の time（UNIX秒）を保持しておく（ラベル用）
-  const originalTimes = tradingData.map(d => d.time);
-
-  // ▼ time を「0,1,2,3,...」の連番に圧縮（営業日だけの連続インデックス）
-  const compressedData = tradingData.map((d, i) => ({
-    ...d,
-    time: i,
-  }));
 
   // 既存チャート破棄
   if (priceChart) priceChart.remove();
@@ -175,7 +167,7 @@ async function drawChart(ticker, name) {
   rciContainer.innerHTML = "";
   macdContainer.innerHTML = "";
 
-  // ① 価格チャートの箱を先に作る
+  // ① 価格チャート
   const rect = chartContainer.getBoundingClientRect();
   priceChart = LightweightCharts.createChart(chartContainer, {
     width: rect.width,
@@ -202,19 +194,6 @@ async function drawChart(ticker, name) {
     },
   });
 
-  // 日付ラベルは「インデックス → 元の UNIX time」を参照して表示
-  priceChart.timeScale().applyOptions({
-    tickMarkFormatter: (index) => {
-      const i = typeof index === 'number' ? index : index;
-      const ts = originalTimes[i];
-      if (!ts) return '';
-      const date = new Date(ts * 1000);
-      const m = String(date.getMonth() + 1).padStart(2, '0');
-      const d = String(date.getDate()).padStart(2, '0');
-      return `${m}/${d}`;
-    },
-  });
-
   priceChart.applyOptions({
     localization: {
       locale: 'ja-JP',
@@ -222,14 +201,23 @@ async function drawChart(ticker, name) {
     },
   });
 
-  // ② シリーズ生成は chart-price.js に任せる（圧縮済み time を渡す）
-  createPriceChart(priceChart, compressedData);
+  priceChart.timeScale().applyOptions({
+    tickMarkFormatter: (time) => {
+      const date = new Date(time * 1000);
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      const d = String(date.getDate()).padStart(2, '0');
+      return `${m}/${d}`;
+    },
+  });
+
+  // ② 価格チャートシリーズ生成
+  createPriceChart(priceChart, tradingData);
 
   const price = { chart: priceChart };
 
-  // ③ RCI / MACD チャート生成（同じ compressedData を使用）
-  const rci = createRciChart(compressedData);
-  const macd = createMacdChart(compressedData);
+  // ③ RCI / MACD チャート生成（元のまま）
+  const rci = createRciChart(tradingData);
+  const macd = createMacdChart(tradingData);
 
   // ④ 同期処理
   bindTimeSync(price.chart, [rci.chart, macd.chart]);
@@ -239,8 +227,8 @@ async function drawChart(ticker, name) {
   // ⑤ リサイズ処理
   setupResize(price.chart, rci.chart, macd.chart);
 
-  // ⑥ デフォルト表示期間（直近 N 本）
-  applyDefaultRange(price.chart, rci.chart, macd.chart, compressedData);
+  // ⑥ デフォルト表示期間
+  applyDefaultRange(price.chart, rci.chart, macd.chart, tradingData);
 
   chartLoadingOverlay.style.display = "none";
 }
