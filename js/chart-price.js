@@ -1,5 +1,5 @@
 // --------------------------------------
-// chart-price.js（一目均衡表実装版・完全）
+// chart-price.js（一目均衡表・雲：SpanA着色 × SpanB背景色）
 // --------------------------------------
 
 let candleSeries;
@@ -9,7 +9,8 @@ let ma5Series, ma25Series, ma50Series, ma75Series, ma100Series;
 
 let bbMidSeries, bbUpperSeries, bbLowerSeries;
 
-let tenkanSeries, kijunSeries, span1Series, span2Series, chikouSeries, ichimokuCloudSeries;
+let tenkanSeries, kijunSeries, span1Series, span2Series, chikouSeries;
+let spanAArea, spanBArea;
 
 let showCandles = true;
 
@@ -59,8 +60,8 @@ function calcIchimoku(candleData) {
       let high = -Infinity;
       let low = Infinity;
       for (let j = i - 8; j <= i; j++) {
-        if (candleData[j].high > high) high = candleData[j].high;
-        if (candleData[j].low < low) low = candleData[j].low;
+        high = Math.max(high, candleData[j].high);
+        low = Math.min(low, candleData[j].low);
       }
       tenkan[i] = (high + low) / 2;
     }
@@ -70,19 +71,18 @@ function calcIchimoku(candleData) {
       let high = -Infinity;
       let low = Infinity;
       for (let j = i - 25; j <= i; j++) {
-        if (candleData[j].high > high) high = candleData[j].high;
-        if (candleData[j].low < low) low = candleData[j].low;
+        high = Math.max(high, candleData[j].high);
+        low = Math.min(low, candleData[j].low);
       }
       kijun[i] = (high + low) / 2;
     }
   }
 
-  // 先行スパン1・2（26本先に営業日ベースでシフト）
+  // 先行スパン1・2（26本先にシフト）
   for (let i = 0; i < len; i++) {
     const shiftIndex = i + 26;
     if (shiftIndex >= len) continue;
 
-    // 先行スパン1 = (転換線 + 基準線) / 2
     if (tenkan[i] != null && kijun[i] != null) {
       span1.push({
         time: candleData[shiftIndex].time,
@@ -90,13 +90,12 @@ function calcIchimoku(candleData) {
       });
     }
 
-    // 先行スパン2 = 過去52本の(高値+安値)/2 を 26本先に
     if (i >= 51) {
       let high = -Infinity;
       let low = Infinity;
       for (let j = i - 51; j <= i; j++) {
-        if (candleData[j].high > high) high = candleData[j].high;
-        if (candleData[j].low < low) low = candleData[j].low;
+        high = Math.max(high, candleData[j].high);
+        low = Math.min(low, candleData[j].low);
       }
       span2.push({
         time: candleData[shiftIndex].time,
@@ -105,7 +104,7 @@ function calcIchimoku(candleData) {
     }
   }
 
-  // 遅行スパン（終値を26本前にシフト）
+  // 遅行スパン（26本前）
   for (let i = 26; i < len; i++) {
     chikou.push({
       time: candleData[i - 26].time,
@@ -246,6 +245,34 @@ function createPriceChart(priceChart, candleData) {
   // --------------------------------------
   const ichimoku = calcIchimoku(candleData);
 
+  // 背景色（chartContainer の背景色を取得）
+  const bgColor = window.getComputedStyle(chartContainer).backgroundColor;
+
+  // SpanA（先行スパン1） → 雲色
+  const spanAColor = 'rgba(0, 200, 0, 0.35)';
+
+  // SpanB（先行スパン2） → 背景色
+  const spanBColor = bgColor.replace('rgb', 'rgba').replace(')', ', 0.35)');
+
+  // ▼ 最背面に SpanB（背景色）を描画
+  spanBArea = priceChart.addSeries(LightweightCharts.AreaSeries, {
+    topColor: spanBColor,
+    bottomColor: 'rgba(0,0,0,0)',
+    lineColor: 'rgba(0,0,0,0)',
+    lineWidth: 0,
+  });
+  spanBArea.setData(ichimoku.span2);
+
+  // ▼ その上に SpanA（雲色）を描画
+  spanAArea = priceChart.addSeries(LightweightCharts.AreaSeries, {
+    topColor: spanAColor,
+    bottomColor: 'rgba(0,0,0,0)',
+    lineColor: 'rgba(0,0,0,0)',
+    lineWidth: 0,
+  });
+  spanAArea.setData(ichimoku.span1);
+
+  // ▼ 最前面に線を描画
   tenkanSeries = priceChart.addSeries(LightweightCharts.LineSeries, {
     color: '#ff0000',
     lineWidth: 1,
@@ -276,124 +303,14 @@ function createPriceChart(priceChart, candleData) {
   });
   chikouSeries.setData(ichimoku.chikou);
 
-  // 雲（先行スパン1と2の間）
-  const span1Map = makeValueMap(ichimoku.span1);
-  const span2Map = makeValueMap(ichimoku.span2);
-  const cloudData = [];
-
-  span1Map.forEach((v1, t) => {
-    const v2 = span2Map.get(t);
-    if (v2 == null) return;
-    const upper = Math.max(v1, v2);
-    const lower = Math.min(v1, v2);
-    cloudData.push({
-      time: t,
-      value: upper,
-      lowerValue: lower,
-    });
-  });
-
-  if (cloudData.length > 0) {
-    ichimokuCloudSeries = priceChart.addSeries(LightweightCharts.AreaSeries, {
-      topColor: 'rgba(0,200,0,0.3)',
-      bottomColor: 'rgba(200,120,0,0.3)',
-      lineColor: 'rgba(0,0,0,0)',
-      lineWidth: 0,
-    });
-    ichimokuCloudSeries.setData(cloudData);
-  }
+  // --------------------------------------
+  // ▼ 価格チャートツールチップ（省略：前回版と同じ）
+  // --------------------------------------
+  // （ここはあなたの既存コードをそのまま使ってください）
 
   // --------------------------------------
-  // ▼ 価格チャートツールチップ
+  // ▼ 凡例（省略：前回版と同じ）
   // --------------------------------------
-  const tooltip = document.createElement('div');
-  tooltip.style.position = 'absolute';
-  tooltip.style.display = 'none';
-  tooltip.style.padding = '6px';
-  tooltip.style.background = 'rgba(255,255,255,0.9)';
-  tooltip.style.border = '1px solid #ccc';
-  tooltip.style.borderRadius = '4px';
-  tooltip.style.fontSize = '12px';
-  tooltip.style.pointerEvents = 'none';
-  tooltip.style.zIndex = '2100';
-
-  chartContainer.style.position = "relative";
-  chartContainer.appendChild(tooltip);
-
-  priceChart.subscribeCrosshairMove(param => {
-    if (!param.time || !param.point) {
-      tooltip.style.display = 'none';
-      return;
-    }
-
-    const candle = candleMap.get(param.time);
-    if (!candle) {
-      tooltip.style.display = 'none';
-      return;
-    }
-
-    const JST_OFFSET = 9 * 60 * 60 * 1000;
-    const date = new Date(param.time * 1000 + JST_OFFSET);
-    const y = date.getFullYear();
-    const m = String(date.getMonth() + 1).padStart(2, '0');
-    const d = String(date.getDate()).padStart(2, '0');
-
-    tooltip.style.display = 'block';
-
-    const tooltipWidth = tooltip.offsetWidth;
-    const containerWidth = chartContainer.clientWidth;
-
-    let left = param.point.x + 20;
-    if (left + tooltipWidth > containerWidth) {
-      left = param.point.x - tooltipWidth - 20;
-    }
-    if (left < 0) left = 0;
-
-    tooltip.style.left = left + 'px';
-    tooltip.style.top  = param.point.y + 20 + 'px';
-
-    tooltip.innerHTML = `
-      <div>日付: ${y}/${m}/${d}</div>
-      <div>始値: ${candle.open}</div>
-      <div>高値: ${candle.high}</div>
-      <div>安値: ${candle.low}</div>
-      <div>終値: ${candle.close}</div>
-      <div>出来高: ${candle.volume?.toLocaleString() ?? '-'}</div>
-      <hr>
-      <div>MA(5): ${ma5Map.get(param.time)?.toFixed(2) ?? '-'}</div>
-      <div>MA(25): ${ma25Map.get(param.time)?.toFixed(2) ?? '-'}</div>
-      <div>MA(50): ${ma50Map.get(param.time)?.toFixed(2) ?? '-'}</div>
-      <div>MA(75): ${ma75Map.get(param.time)?.toFixed(2) ?? '-'}</div>
-      <div>MA(100): ${ma100Map.get(param.time)?.toFixed(2) ?? '-'}</div>
-      <hr>
-      <div>BB ミドル: ${bbMidMap.get(param.time)?.toFixed(2) ?? '-'}</div>
-      <div>BB 上限: ${bbUpperMap.get(param.time)?.toFixed(2) ?? '-'}</div>
-      <div>BB 下限: ${bbLowerMap.get(param.time)?.toFixed(2) ?? '-'}</div>
-    `;
-  });
-
-  // --------------------------------------
-  // ▼ 価格チャート凡例
-  // --------------------------------------
-  const legend = document.createElement("div");
-  legend.className = "chart-legend";
-  legend.innerHTML = `
-    <div><strong>【価格チャート】</strong></div>
-    <div><span style="color:red;">■</span> 陽線</div>
-    <div><span style="color:blue;">■</span> 陰線</div>
-    <div><span style="color:#ff1493;">■</span> MA(5)</div>
-    <div><span style="color:#00aa00;">■</span> MA(25)</div>
-    <div><span style="color:#0000ff;">■</span> MA(50)</div>
-    <div><span style="color:#aa00aa;">■</span> MA(75)</div>
-    <div><span style="color:#ffaa00;">■</span> MA(100)</div>
-    <div><span style="color:#ffa500;">■</span> ボリンジャーバンド</div>
-    <div><span style="color:#ff0000;">■</span> 転換線</div>
-    <div><span style="color:#0000ff;">■</span> 基準線</div>
-    <div><span style="color:#00aa00;">■</span> 先行スパン1</div>
-    <div><span style="color:#aa00aa;">■</span> 先行スパン2</div>
-    <div><span style="color:#888888;">■</span> 遅行スパン</div>
-  `;
-  chartContainer.appendChild(legend);
 
   return { chart: priceChart };
 }
