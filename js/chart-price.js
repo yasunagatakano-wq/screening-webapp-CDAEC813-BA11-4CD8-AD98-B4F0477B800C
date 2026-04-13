@@ -2,9 +2,6 @@
 // chart-price.js（一目均衡表・雲：SpanA最背面 × SpanB背景色）
 // --------------------------------------
 
-// ▼ chartContainer を明示的に取得（凡例・ツールチップが消える問題の修正）
-const chartContainer = document.getElementById("price-chart-container");
-
 let candleSeries;
 let volumeSeries;
 
