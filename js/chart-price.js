@@ -2,6 +2,9 @@
 // chart-price.js（一目均衡表・雲：SpanA最背面 × SpanB背景色）
 // --------------------------------------
 
+// ▼ chartContainer を明示的に取得（凡例・ツールチップが消える問題の修正）
+const chartContainer = document.getElementById("price-chart-container");
+
 let candleSeries;
 let volumeSeries;
 
@@ -283,12 +286,96 @@ function createPriceChart(priceChart, candleData) {
   chikouSeries.setData(ichimoku.chikou);
 
   // --------------------------------------
-  // ツールチップ（省略：既存コードと同じ）
+  // ツールチップ
   // --------------------------------------
+  const tooltip = document.createElement('div');
+  tooltip.style.position = 'absolute';
+  tooltip.style.display = 'none';
+  tooltip.style.padding = '6px';
+  tooltip.style.background = 'rgba(255,255,255,0.9)';
+  tooltip.style.border = '1px solid #ccc';
+  tooltip.style.borderRadius = '4px';
+  tooltip.style.fontSize = '12px';
+  tooltip.style.pointerEvents = 'none';
+  tooltip.style.zIndex = '2100';
+
+  chartContainer.style.position = "relative";
+  chartContainer.appendChild(tooltip);
+
+  priceChart.subscribeCrosshairMove(param => {
+    if (!param.time || !param.point) {
+      tooltip.style.display = 'none';
+      return;
+    }
+
+    const candle = candleMap.get(param.time);
+    if (!candle) {
+      tooltip.style.display = 'none';
+      return;
+    }
+
+    const JST_OFFSET = 9 * 60 * 60 * 1000;
+    const date = new Date(param.time * 1000 + JST_OFFSET);
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+
+    tooltip.style.display = 'block';
+
+    const tooltipWidth = tooltip.offsetWidth;
+    const containerWidth = chartContainer.clientWidth;
+
+    let left = param.point.x + 20;
+    if (left + tooltipWidth > containerWidth) {
+      left = param.point.x - tooltipWidth - 20;
+    }
+    if (left < 0) left = 0;
+
+    tooltip.style.left = left + 'px';
+    tooltip.style.top  = param.point.y + 20 + 'px';
+
+    tooltip.innerHTML = `
+      <div>日付: ${y}/${m}/${d}</div>
+      <div>始値: ${candle.open}</div>
+      <div>高値: ${candle.high}</div>
+      <div>安値: ${candle.low}</div>
+      <div>終値: ${candle.close}</div>
+      <div>出来高: ${candle.volume?.toLocaleString() ?? '-'}</div>
+      <hr>
+      <div>MA(5): ${ma5Map.get(param.time)?.toFixed(2) ?? '-'}</div>
+      <div>MA(25): ${ma25Map.get(param.time)?.toFixed(2) ?? '-'}</div>
+      <div>MA(50): ${ma50Map.get(param.time)?.toFixed(2) ?? '-'}</div>
+      <div>MA(75): ${ma75Map.get(param.time)?.toFixed(2) ?? '-'}</div>
+      <div>MA(100): ${ma100Map.get(param.time)?.toFixed(2) ?? '-'}</div>
+      <hr>
+      <div>BB ミドル: ${bbMidMap.get(param.time)?.toFixed(2) ?? '-'}</div>
+      <div>BB 上限: ${bbUpperMap.get(param.time)?.toFixed(2) ?? '-'}</div>
+      <div>BB 下限: ${bbLowerMap.get(param.time)?.toFixed(2) ?? '-'}</div>
+    `;
+  });
 
   // --------------------------------------
-  // 凡例（省略：既存コードと同じ）
+  // 凡例
   // --------------------------------------
+  const legend = document.createElement("div");
+  legend.className = "chart-legend";
+  legend.innerHTML = `
+    <div><strong>【価格チャート】</strong></div>
+    <div><span style="color:red;">■</span> 陽線</div>
+    <div><span style="color:blue;">■</span> 陰線</div>
+    <div><span style="color:#ff1493;">■</span> MA(5)</div>
+    <div><span style="color:#00aa00;">■</span> MA(25)</div>
+    <div><span style="color:#0000ff;">■</span> MA(50)</div>
+    <div><span style="color:#aa00aa;">■</span> MA(75)</div>
+    <div><span style="color:#ffaa00;">■</span> MA(100)</div>
+    <div><span style="color:#ffa500;">■</span> ボリンジャーバンド</div>
+    <div><span style="color:#ff0000;">■</span> 転換線</div>
+    <div><span style="color:#0000ff;">■</span> 基準線</div>
+    <div><span style="color:#00aa00;">■</span> 先行スパン1</div>
+    <div><span style="color:#aa00aa;">■</span> 先行スパン2</div>
+    <div><span style="color:#888888;">■</span> 遅行スパン</div>
+  `;
+  chartContainer.appendChild(legend);
 
   return { chart: priceChart };
 }
