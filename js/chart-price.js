@@ -15,6 +15,22 @@ let spanAArea, spanBArea;
 let showCandles = true;
 
 // --------------------------------------
+// 背景色を rgba(...) に正規化して透明度を付与する関数
+// --------------------------------------
+function toRGBAWithAlpha(color, alpha) {
+  const ctx = document.createElement('canvas').getContext('2d');
+  ctx.fillStyle = color;                 // CSS カラーとして解釈
+  const rgba = ctx.fillStyle;            // 常に rgba(r,g,b,a) 形式になる
+  return rgba.replace(/rgba?\(([^)]+)\)/, (match, inner) => {
+    const parts = inner.split(',').map(v => v.trim());
+    const r = parts[0];
+    const g = parts[1];
+    const b = parts[2];
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  });
+}
+
+// --------------------------------------
 // ローソク足の表示／非表示
 // --------------------------------------
 function applyCandleVisibility() {
@@ -83,6 +99,7 @@ function calcIchimoku(candleData) {
     const shiftIndex = i + 26;
     if (shiftIndex >= len) continue;
 
+    // 先行スパン1 = (転換線 + 基準線) / 2
     if (tenkan[i] != null && kijun[i] != null) {
       span1.push({
         time: candleData[shiftIndex].time,
@@ -90,6 +107,7 @@ function calcIchimoku(candleData) {
       });
     }
 
+    // 先行スパン2 = 過去52本の(高値+安値)/2 を 26本先に
     if (i >= 51) {
       let high = -Infinity;
       let low = Infinity;
@@ -104,7 +122,7 @@ function calcIchimoku(candleData) {
     }
   }
 
-  // 遅行スパン（26本前）
+  // 遅行スパン（終値を26本前にシフト）
   for (let i = 26; i < len; i++) {
     chikou.push({
       time: candleData[i - 26].time,
@@ -142,7 +160,7 @@ function createPriceChart(priceChart, candleData) {
   const candleMap = new Map();
   candleData.forEach(c => candleMap.set(c.time, c));
 
-  // ▼ MA / BB / Ichimoku の値を time → value の Map にする
+  // ▼ 値配列を time → value の Map にする
   const makeValueMap = (arr) => {
     const m = new Map();
     arr.forEach(p => {
@@ -215,7 +233,7 @@ function createPriceChart(priceChart, candleData) {
 
   // --------------------------------------
   // ボリンジャーバンド（塗りつぶしなし）
-  // --------------------------------------
+// --------------------------------------
   const bb = calcBB(candleData, 20, 2);
 
   bbMidSeries = priceChart.addSeries(LightweightCharts.LineSeries, {
@@ -245,14 +263,14 @@ function createPriceChart(priceChart, candleData) {
   // --------------------------------------
   const ichimoku = calcIchimoku(candleData);
 
-  // 背景色（chartContainer の背景色を取得）
+  // 背景色取得
   const bgColor = window.getComputedStyle(chartContainer).backgroundColor;
 
-  // SpanA（先行スパン1） → 雲色
+  // SpanA（先行スパン1） → 雲色（任意で変更可）
   const spanAColor = 'rgba(0, 200, 0, 0.35)';
 
-  // SpanB（先行スパン2） → 背景色
-  const spanBColor = bgColor.replace('rgb', 'rgba').replace(')', ', 0.35)');
+  // SpanB（先行スパン2） → 背景色に透明度を付与
+  const spanBColor = toRGBAWithAlpha(bgColor, 0.35);
 
   // ▼ 最背面に SpanB（背景色）を描画
   spanBArea = priceChart.addSeries(LightweightCharts.AreaSeries, {
@@ -272,7 +290,7 @@ function createPriceChart(priceChart, candleData) {
   });
   spanAArea.setData(ichimoku.span1);
 
-  // ▼ 最前面に線を描画
+  // ▼ 線を前面に描画
   tenkanSeries = priceChart.addSeries(LightweightCharts.LineSeries, {
     color: '#ff0000',
     lineWidth: 1,
@@ -304,13 +322,96 @@ function createPriceChart(priceChart, candleData) {
   chikouSeries.setData(ichimoku.chikou);
 
   // --------------------------------------
-  // ▼ 価格チャートツールチップ（省略：前回版と同じ）
+  // ツールチップ
   // --------------------------------------
-  // （ここはあなたの既存コードをそのまま使ってください）
+  const tooltip = document.createElement('div');
+  tooltip.style.position = 'absolute';
+  tooltip.style.display = 'none';
+  tooltip.style.padding = '6px';
+  tooltip.style.background = 'rgba(255,255,255,0.9)';
+  tooltip.style.border = '1px solid #ccc';
+  tooltip.style.borderRadius = '4px';
+  tooltip.style.fontSize = '12px';
+  tooltip.style.pointerEvents = 'none';
+  tooltip.style.zIndex = '2100';
+
+  chartContainer.style.position = "relative";
+  chartContainer.appendChild(tooltip);
+
+  priceChart.subscribeCrosshairMove(param => {
+    if (!param.time || !param.point) {
+      tooltip.style.display = 'none';
+      return;
+    }
+
+    const candle = candleMap.get(param.time);
+    if (!candle) {
+      tooltip.style.display = 'none';
+      return;
+    }
+
+    const JST_OFFSET = 9 * 60 * 60 * 1000;
+    const date = new Date(param.time * 1000 + JST_OFFSET);
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+
+    tooltip.style.display = 'block';
+
+    const tooltipWidth = tooltip.offsetWidth;
+    const containerWidth = chartContainer.clientWidth;
+
+    let left = param.point.x + 20;
+    if (left + tooltipWidth > containerWidth) {
+      left = param.point.x - tooltipWidth - 20;
+    }
+    if (left < 0) left = 0;
+
+    tooltip.style.left = left + 'px';
+    tooltip.style.top  = param.point.y + 20 + 'px';
+
+    tooltip.innerHTML = `
+      <div>日付: ${y}/${m}/${d}</div>
+      <div>始値: ${candle.open}</div>
+      <div>高値: ${candle.high}</div>
+      <div>安値: ${candle.low}</div>
+      <div>終値: ${candle.close}</div>
+      <div>出来高: ${candle.volume?.toLocaleString() ?? '-'}</div>
+      <hr>
+      <div>MA(5): ${ma5Map.get(param.time)?.toFixed(2) ?? '-'}</div>
+      <div>MA(25): ${ma25Map.get(param.time)?.toFixed(2) ?? '-'}</div>
+      <div>MA(50): ${ma50Map.get(param.time)?.toFixed(2) ?? '-'}</div>
+      <div>MA(75): ${ma75Map.get(param.time)?.toFixed(2) ?? '-'}</div>
+      <div>MA(100): ${ma100Map.get(param.time)?.toFixed(2) ?? '-'}</div>
+      <hr>
+      <div>BB ミドル: ${bbMidMap.get(param.time)?.toFixed(2) ?? '-'}</div>
+      <div>BB 上限: ${bbUpperMap.get(param.time)?.toFixed(2) ?? '-'}</div>
+      <div>BB 下限: ${bbLowerMap.get(param.time)?.toFixed(2) ?? '-'}</div>
+    `;
+  });
 
   // --------------------------------------
-  // ▼ 凡例（省略：前回版と同じ）
+  // 凡例
   // --------------------------------------
+  const legend = document.createElement("div");
+  legend.className = "chart-legend";
+  legend.innerHTML = `
+    <div><strong>【価格チャート】</strong></div>
+    <div><span style="color:red;">■</span> 陽線</div>
+    <div><span style="color:blue;">■</span> 陰線</div>
+    <div><span style="color:#ff1493;">■</span> MA(5)</div>
+    <div><span style="color:#00aa00;">■</span> MA(25)</div>
+    <div><span style="color:#0000ff;">■</span> MA(50)</div>
+    <div><span style="color:#aa00aa;">■</span> MA(75)</div>
+    <div><span style="color:#ffaa00;">■</span> MA(100)</div>
+    <div><span style="color:#ffa500;">■</span> ボリンジャーバンド</div>
+    <div><span style="color:#ff0000;">■</span> 転換線</div>
+    <div><span style="color:#0000ff;">■</span> 基準線</div>
+    <div><span style="color:#00aa00;">■</span> 先行スパン1</div>
+    <div><span style="color:#aa00aa;">■</span> 先行スパン2</div>
+    <div><span style="color:#888888;">■</span> 遅行スパン</div>
+  `;
+  chartContainer.appendChild(legend);
 
   return { chart: priceChart };
 }
