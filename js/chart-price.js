@@ -163,8 +163,8 @@ function createPriceChart(priceChart, candleData) {
   // ▼ ★最背面：SpanA（動的色）
   spanAArea = priceChart.addSeries(LightweightCharts.AreaSeries, {
     topColor: bullColor,
-    bottomColor: "rgba(0,0,0,0)",
-    lineColor: "rgba(0,0,0,0)",
+    bottomColor: "rgba(255,255,255,1)",
+    lineColor: "rgba(255,255,255,1)",
     lineWidth: 0,
   });
   spanAArea.setData(spanAColored);
@@ -173,7 +173,7 @@ function createPriceChart(priceChart, candleData) {
   spanBArea = priceChart.addSeries(LightweightCharts.AreaSeries, {
     topColor: bearColor,
     bottomColor: "rgba(255,255,255,1)",
-    lineColor: "rgba(0,0,0,0)",
+    lineColor: "rgba(255,255,255,1)",
     lineWidth: 0,
   });
   spanBArea.setData(spanBColored);
