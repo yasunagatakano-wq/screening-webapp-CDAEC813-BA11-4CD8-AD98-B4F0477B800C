@@ -139,8 +139,7 @@ function createPriceChart(priceChart, candleData) {
   const bgRGBA = "rgba(255,255,255,1)";
 
   const bullColor = "rgba(0,200,0,0.35)";
-  // const bearColor = "rgba(200,0,0,0.35)";
-  const bearColor = "rgba(255,255,255,1)";
+  const bearColor = "rgba(200,0,0,0.35)";
 
   const spanAColored = [];
   const spanBColored = [];
@@ -150,6 +149,8 @@ function createPriceChart(priceChart, candleData) {
     const b = ichimoku.span2[i];
     if (!a || !b) continue;
 
+    console.log(a.time +':' + a.value + '|' + b.time + ':' + b.value);
+    
     if (a.value > b.value) {
       // 強気 → SpanA 緑、SpanB 白
       spanAColored.push({ time: a.time, value: a.value, color: bullColor });
