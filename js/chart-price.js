@@ -130,6 +130,58 @@ function createPriceChart(priceChart, candleData) {
     return m;
   };
 
+  // --------------------------------------
+  // 一目均衡表（先に計算して雲を“最背面”に描画）
+// --------------------------------------
+  const ichimoku = calcIchimoku(candleData);
+
+  // テスト用：背景色は常に白
+  const bgRGBA = "rgba(255,255,255,1)";
+
+  const bullColor = "rgba(0,200,0,0.35)";
+  const bearColor = "rgba(200,0,0,0.35)";
+
+  const spanAColored = [];
+  const spanBColored = [];
+
+  for (let i = 0; i < ichimoku.span1.length; i++) {
+    const a = ichimoku.span1[i];
+    const b = ichimoku.span2[i];
+    if (!a || !b) continue;
+
+    if (a.value > b.value) {
+      // 強気 → SpanA 緑、SpanB 白
+      spanAColored.push({ time: a.time, value: a.value, color: bullColor });
+      spanBColored.push({ time: b.time, value: b.value, color: bgRGBA });
+    } else {
+      // 弱気 → SpanB 赤、SpanA 白
+      spanAColored.push({ time: a.time, value: a.value, color: bgRGBA });
+      spanBColored.push({ time: b.time, value: b.value, color: bearColor });
+    }
+  }
+
+  // ▼ ★最背面：SpanA（動的色）
+  spanAArea = priceChart.addSeries(LightweightCharts.AreaSeries, {
+    topColor: bullColor,
+    bottomColor: "rgba(0,0,0,0)",
+    lineColor: "rgba(0,0,0,0)",
+    lineWidth: 0,
+  });
+  spanAArea.setData(spanAColored);
+
+  // ▼ ★その前：SpanB（動的色）
+  spanBArea = priceChart.addSeries(LightweightCharts.AreaSeries, {
+    topColor: bearColor,
+    bottomColor: "rgba(255,255,255,1)",
+    lineColor: "rgba(0,0,0,0)",
+    lineWidth: 0,
+  });
+  spanBArea.setData(spanBColored);
+
+  // --------------------------------------
+  // ここから先に、ローソク足・出来高・MA・BB・線を“上に”重ねていく
+  // --------------------------------------
+
   candleSeries = priceChart.addSeries(LightweightCharts.CandlestickSeries, {
     upColor: 'red',
     downColor: 'blue',
@@ -207,55 +259,7 @@ function createPriceChart(priceChart, candleData) {
   const bbUpperMap = makeValueMap(bb.upper);
   const bbLowerMap = makeValueMap(bb.lower);
 
-  // --------------------------------------
-  // 一目均衡表（動的雲）
-  // --------------------------------------
-  const ichimoku = calcIchimoku(candleData);
-
-  // テスト用：背景色は常に白
-  const bgRGBA = "rgba(255,255,255,1)";
-
-  const bullColor = "rgba(0,200,0,0.35)";
-  const bearColor = "rgba(200,0,0,0.35)";
-
-  const spanAColored = [];
-  const spanBColored = [];
-
-  for (let i = 0; i < ichimoku.span1.length; i++) {
-    const a = ichimoku.span1[i];
-    const b = ichimoku.span2[i];
-    if (!a || !b) continue;
-
-    if (a.value > b.value) {
-      // 強気 → SpanA 緑、SpanB 白
-      spanAColored.push({ time: a.time, value: a.value, color: bullColor });
-      spanBColored.push({ time: b.time, value: b.value, color: bgRGBA });
-    } else {
-      // 弱気 → SpanB 赤、SpanA 白
-      spanAColored.push({ time: a.time, value: a.value, color: bgRGBA });
-      spanBColored.push({ time: b.time, value: b.value, color: bearColor });
-    }
-  }
-
-  // ▼ 最背面：SpanA（動的色）
-  spanAArea = priceChart.addSeries(LightweightCharts.AreaSeries, {
-    topColor: bullColor,
-    bottomColor: "rgba(0,0,0,0)",
-    lineColor: "rgba(0,0,0,0)",
-    lineWidth: 0,
-  });
-  spanAArea.setData(spanAColored);
-
-  // ▼ その前：SpanB（動的色）
-  spanBArea = priceChart.addSeries(LightweightCharts.AreaSeries, {
-    topColor: bearColor,
-    bottomColor: "rgba(255,255,255,1)",
-    lineColor: "rgba(0,0,0,0)",
-    lineWidth: 0,
-  });
-  spanBArea.setData(spanBColored);
-
-  // ▼ 線を前面に描画
+  // ▼ 一目の線はローソク足より前面に
   tenkanSeries = priceChart.addSeries(LightweightCharts.LineSeries, {
     color: "#ff0000",
     lineWidth: 1,
