@@ -135,38 +135,42 @@ function createPriceChart(priceChart, candleData) {
 // --------------------------------------
   const ichimoku = calcIchimoku(candleData);
 
-  // テスト用：背景色は常に白
+  // 背景色は常に白
   const bgRGBA = "rgba(255,255,255,1)";
 
   const bullColor = "rgba(0,200,0,0.35)";
   const bearColor = "rgba(200,0,0,0.35)";
 
+  // ▼ SpanB を time → value の Map にする（正しい比較のため）
+  const spanBMap = new Map();
+  for (const b of ichimoku.span2) {
+    spanBMap.set(b.time, b.value);
+  }
+
   const spanAColored = [];
   const spanBColored = [];
 
-  for (let i = 0; i < ichimoku.span1.length; i++) {
-    const a = ichimoku.span1[i];
-    const b = ichimoku.span2[i];
-    if (!a || !b) continue;
+  // ▼ SpanA の time と一致する SpanB を探して比較
+  for (const a of ichimoku.span1) {
+    const bValue = spanBMap.get(a.time);
+    if (bValue === undefined) continue;
 
-    console.log(new Date(a.time * 1000).toLocaleString('ja-JP') +':' + a.value + '|' + new Date(b.time * 1000).toLocaleString('ja-JP') + ':' + b.value);
-    
-    if (a.value > b.value) {
+    if (a.value > bValue) {
       // 強気 → SpanA 緑、SpanB 白
       spanAColored.push({ time: a.time, value: a.value, color: bullColor });
-      spanBColored.push({ time: b.time, value: b.value, color: bgRGBA });
+      spanBColored.push({ time: a.time, value: bValue, color: bgRGBA });
     } else {
       // 弱気 → SpanB 赤、SpanA 白
       spanAColored.push({ time: a.time, value: a.value, color: bgRGBA });
-      spanBColored.push({ time: b.time, value: b.value, color: bearColor });
+      spanBColored.push({ time: a.time, value: bValue, color: bearColor });
     }
   }
 
   // ▼ ★最背面：SpanA（動的色）
   spanAArea = priceChart.addSeries(LightweightCharts.AreaSeries, {
     topColor: bullColor,
-    bottomColor: "rgba(255,255,255,1)",
-    lineColor: "rgba(255,255,255,1)",
+    bottomColor: bgRGBA,
+    lineColor: "rgba(0,0,0,0)",
     lineWidth: 0,
   });
   spanAArea.setData(spanAColored);
@@ -174,8 +178,8 @@ function createPriceChart(priceChart, candleData) {
   // ▼ ★その前：SpanB（動的色）
   spanBArea = priceChart.addSeries(LightweightCharts.AreaSeries, {
     topColor: bearColor,
-    bottomColor: "rgba(255,255,255,1)",
-    lineColor: "rgba(255,255,255,1)",
+    bottomColor: bgRGBA,
+    lineColor: "rgba(0,0,0,0)",
     lineWidth: 0,
   });
   spanBArea.setData(spanBColored);
