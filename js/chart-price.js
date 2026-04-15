@@ -217,7 +217,8 @@ function createPriceChart(priceChart, candleData) {
   // const bgRGBA = "rgba(255,255,255,0.35)";
 
   const bullColor = "rgba(0,200,0,0.35)";
-  const bearColor = "rgba(200,0,0,0.35)";
+  // const bearColor = "rgba(200,0,0,0.35)";
+  const bearColor = "rgba(255,255,255,1)";
 
   const spanAColored = [];
   const spanBColored = [];
