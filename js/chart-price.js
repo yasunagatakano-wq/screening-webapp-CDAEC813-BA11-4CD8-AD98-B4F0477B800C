@@ -213,7 +213,8 @@ function createPriceChart(priceChart, candleData) {
   const ichimoku = calcIchimoku(candleData);
 
   // テスト用：背景色は常に白
-  const bgRGBA = "rgba(255,255,255,0.35)";
+  const bgRGBA = "rgba(255,255,255,0)";
+  // const bgRGBA = "rgba(255,255,255,0.35)";
 
   const bullColor = "rgba(0,200,0,0.35)";
   const bearColor = "rgba(200,0,0,0.35)";
