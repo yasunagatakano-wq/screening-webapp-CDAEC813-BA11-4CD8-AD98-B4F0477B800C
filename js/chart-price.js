@@ -149,7 +149,7 @@ function createPriceChart(priceChart, candleData) {
     const b = ichimoku.span2[i];
     if (!a || !b) continue;
 
-    console.log(a.time +':' + a.value + '|' + b.time + ':' + b.value);
+    console.log(new Date(a.time * 1000).toLocaleString('ja-JP') +':' + a.value + '|' + new Date(b.time * 1000).toLocaleString('ja-JP') + ':' + b.value);
     
     if (a.value > b.value) {
       // 強気 → SpanA 緑、SpanB 白
