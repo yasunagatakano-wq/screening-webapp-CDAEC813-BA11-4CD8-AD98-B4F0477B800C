@@ -251,7 +251,7 @@ function createPriceChart(priceChart, candleData) {
   // ▼ その前：SpanB（動的色）
   spanBArea = priceChart.addSeries(LightweightCharts.AreaSeries, {
     topColor: bearColor,
-    bottomColor: "rgba(0,0,0,0)",
+    bottomColor: "rgba(255,255,255,1)",
     lineColor: "rgba(0,0,0,0)",
     lineWidth: 0,
   });
