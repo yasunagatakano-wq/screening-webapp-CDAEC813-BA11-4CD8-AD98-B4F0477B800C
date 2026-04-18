@@ -1,5 +1,5 @@
 // --------------------------------------
-// chart-price.js（一目均衡表・動的雲：SpanA最背面 × SpanB前面）
+// chart-price.js（TradingView雲：Canvas描画版）
 // --------------------------------------
 
 let candleSeries;
@@ -10,7 +10,6 @@ let ma5Series, ma25Series, ma50Series, ma75Series, ma100Series;
 let bbMidSeries, bbUpperSeries, bbLowerSeries;
 
 let tenkanSeries, kijunSeries, span1Series, span2Series, chikouSeries;
-let spanAArea, spanBArea;
 
 // ▼ 追加：MA と BB の表示状態
 let showCandles = true;
@@ -45,7 +44,7 @@ function applyCandleVisibility() {
 }
 
 // --------------------------------------
-// ▼ 追加：MA の表示／非表示
+// MA の表示／非表示
 // --------------------------------------
 function applyMAVisibility() {
   if (!ma5Series) return;
@@ -58,7 +57,7 @@ function applyMAVisibility() {
 }
 
 // --------------------------------------
-// ▼ 追加：BB の表示／非表示
+// BB の表示／非表示
 // --------------------------------------
 function applyBBVisibility() {
   if (!bbMidSeries) return;
@@ -69,7 +68,7 @@ function applyBBVisibility() {
 }
 
 // --------------------------------------
-// 一目均衡表の計算（営業日インデックスベース）
+// 一目均衡表の計算
 // --------------------------------------
 function calcIchimoku(candleData) {
   const len = candleData.length;
@@ -142,181 +141,62 @@ function calcIchimoku(candleData) {
 }
 
 // --------------------------------------
-// 価格チャート生成
+// ▼ TradingView と同じ雲を Canvas で描画
 // --------------------------------------
-function createPriceChart(priceChart, candleData) {
+function drawIchimokuCloud(ctx, renderParams, chart, spanA, spanB) {
+  const pixelRatio = renderParams.pixelRatio;
 
-  const candleMap = new Map();
-  candleData.forEach(c => candleMap.set(c.time, c));
+  ctx.save();
+  ctx.scale(pixelRatio, pixelRatio);
 
-  const makeValueMap = (arr) => {
-    const m = new Map();
-    arr.forEach(p => {
-      if (p.value != null) m.set(p.time, p.value);
-    });
-    return m;
-  };
+  const timeScale = chart.timeScale();
+  const priceScale = chart.priceScale('right');
 
-  // --------------------------------------
-  // 一目均衡表（先に計算して雲を“最背面”に描画）
-// --------------------------------------
-  const ichimoku = calcIchimoku(candleData);
+  const bullColor = "rgba(76, 175, 80, 0.35)";  // 緑雲
+  const bearColor = "rgba(244, 67, 54, 0.35)";  // 赤雲
 
-  const bgRGBA = "rgba(255,255,255,1)";
-  const bullColor = "rgba(0,200,0,0.35)";
-  const bearColor = "rgba(200,0,0,0.35)";
+  for (let i = 0; i < spanA.length - 1; i++) {
+    const a1 = spanA[i];
+    const a2 = spanA[i + 1];
+    const b1 = spanB[i];
+    const b2 = spanB[i + 1];
 
-  const spanBMap = new Map();
-  for (const b of ichimoku.span2) {
-    spanBMap.set(b.time, b.value);
+    if (!a1 || !a2 || !b1 || !b2) continue;
+
+    const xA1 = timeScale.timeToCoordinate(a1.time);
+    const xA2 = timeScale.timeToCoordinate(a2.time);
+    const xB1 = timeScale.timeToCoordinate(b1.time);
+    const xB2 = timeScale.timeToCoordinate(b2.time);
+
+    const yA1 = priceScale.priceToCoordinate(a1.value);
+    const yA2 = priceScale.priceToCoordinate(a2.value);
+    const yB1 = priceScale.priceToCoordinate(b1.value);
+    const yB2 = priceScale.priceToCoordinate(b2.value);
+
+    if (
+      xA1 == null || xA2 == null ||
+      xB1 == null || xB2 == null ||
+      yA1 == null || yA2 == null ||
+      yB1 == null || yB2 == null
+    ) continue;
+
+    const isBull = a1.value > b1.value;
+    ctx.fillStyle = isBull ? bullColor : bearColor;
+
+    ctx.beginPath();
+    ctx.moveTo(xA1, yA1);
+    ctx.lineTo(xA2, yA2);
+    ctx.lineTo(xB2, yB2);
+    ctx.lineTo(xB1, yB1);
+    ctx.closePath();
+    ctx.fill();
   }
 
-  const spanAColored = [];
-  const spanBColored = [];
-
-  for (const a of ichimoku.span1) {
-    const bValue = spanBMap.get(a.time);
-    if (bValue === undefined) continue;
-
-    if (a.value > bValue) {
-      spanAColored.push({ time: a.time, value: a.value, color: bullColor });
-      spanBColored.push({ time: a.time, value: bValue, color: bgRGBA });
-    } else {
-      spanAColored.push({ time: a.time, value: a.value, color: bgRGBA });
-      spanBColored.push({ time: a.time, value: bValue, color: bearColor });
-    }
-  }
-
-  spanAArea = priceChart.addSeries(LightweightCharts.AreaSeries, {
-    topColor: bullColor,
-    bottomColor: bgRGBA,
-    lineColor: "rgba(0,0,0,0)",
-    lineWidth: 0,
-  });
-  spanAArea.setData(spanAColored);
-
-  spanBArea = priceChart.addSeries(LightweightCharts.AreaSeries, {
-    topColor: bearColor,
-    bottomColor: bgRGBA,
-    lineColor: "rgba(0,0,0,0)",
-    lineWidth: 0,
-  });
-  spanBArea.setData(spanBColored);
+  ctx.restore();
+}
 
   // --------------------------------------
-  // ローソク足・出来高・MA・BB・線を“上に”重ねる
-  // --------------------------------------
-
-  candleSeries = priceChart.addSeries(LightweightCharts.CandlestickSeries, {
-    upColor: 'red',
-    downColor: 'blue',
-    borderUpColor: 'red',
-    borderDownColor: 'blue',
-    wickUpColor: 'red',
-    wickDownColor: 'blue',
-  });
-  candleSeries.setData(candleData);
-
-  candleSeries.priceScale().applyOptions({
-    scaleMargins: { top: 0.05, bottom: 0.25 },
-  });
-
-  applyCandleVisibility();
-
-  volumeSeries = priceChart.addSeries(LightweightCharts.HistogramSeries, {
-    priceFormat: { type: 'volume' },
-    priceScaleId: 'volume',
-    scaleMargins: { top: 0.8, bottom: 0 },
-    color: 'rgba(128,128,128,0.6)',
-  });
-  volumeSeries.setData(
-    candleData.map(c => ({ time: c.time, value: c.volume }))
-  );
-
-  function addMA(color, data) {
-    const s = priceChart.addSeries(LightweightCharts.LineSeries, {
-      color,
-      lineWidth: 1,
-    });
-    s.setData(data.filter(p => p.value !== null));
-    return s;
-  }
-
-  const ma5 = calcMA(candleData, 5);
-  const ma25 = calcMA(candleData, 25);
-  const ma50 = calcMA(candleData, 50);
-  const ma75 = calcMA(candleData, 75);
-  const ma100 = calcMA(candleData, 100);
-
-  ma5Series   = addMA('#ff1493', ma5);
-  ma25Series  = addMA('#00aa00', ma25);
-  ma50Series  = addMA('#0000ff', ma50);
-  ma75Series  = addMA('#aa00aa', ma75);
-  ma100Series = addMA('#ffaa00', ma100);
-
-  const ma5Map   = makeValueMap(ma5);
-  const ma25Map  = makeValueMap(ma25);
-  const ma50Map  = makeValueMap(ma50);
-  const ma75Map  = makeValueMap(ma75);
-  const ma100Map = makeValueMap(ma100);
-
-  const bb = calcBB(candleData, 20, 2);
-
-  bbMidSeries = priceChart.addSeries(LightweightCharts.LineSeries, {
-    color: '#ffa500',
-    lineWidth: 1,
-  });
-  bbMidSeries.setData(bb.mid.filter(p => p.value !== null));
-
-  bbUpperSeries = priceChart.addSeries(LightweightCharts.LineSeries, {
-    color: '#ffa500',
-    lineWidth: 1,
-  });
-  bbUpperSeries.setData(bb.upper.filter(p => p.value !== null));
-
-  bbLowerSeries = priceChart.addSeries(LightweightCharts.LineSeries, {
-    color: '#ffa500',
-    lineWidth: 1,
-  });
-  bbLowerSeries.setData(bb.lower.filter(p => p.value !== null));
-
-  const bbMidMap   = makeValueMap(bb.mid);
-  const bbUpperMap = makeValueMap(bb.upper);
-  const bbLowerMap = makeValueMap(bb.lower);
-  
-  // ▼ 一目の線
-  tenkanSeries = priceChart.addSeries(LightweightCharts.LineSeries, {
-    color: "#ff0000",
-    lineWidth: 1,
-  });
-  tenkanSeries.setData(ichimoku.tenkanLine);
-
-  kijunSeries = priceChart.addSeries(LightweightCharts.LineSeries, {
-    color: "#0000ff",
-    lineWidth: 1,
-  });
-  kijunSeries.setData(ichimoku.kijunLine);
-
-  span1Series = priceChart.addSeries(LightweightCharts.LineSeries, {
-    color: "#00aa00",
-    lineWidth: 1,
-  });
-  span1Series.setData(ichimoku.span1);
-
-  span2Series = priceChart.addSeries(LightweightCharts.LineSeries, {
-    color: "#aa00aa",
-    lineWidth: 1,
-  });
-  span2Series.setData(ichimoku.span2);
-
-  chikouSeries = priceChart.addSeries(LightweightCharts.LineSeries, {
-    color: "#888888",
-    lineWidth: 1,
-  });
-  chikouSeries.setData(ichimoku.chikou);
-
-  // --------------------------------------
-  // ▼ 一目均衡表の値をツールチップで使うための Map を作成
+  // ▼ 一目均衡表の値をツールチップで使うための Map
   // --------------------------------------
   const tenkanMap = makeValueMap(ichimoku.tenkanLine);
   const kijunMap  = makeValueMap(ichimoku.kijunLine);
@@ -423,7 +303,7 @@ function createPriceChart(priceChart, candleData) {
   chartContainer.appendChild(legend);
 
   // --------------------------------------
-  // ▼ 追加：MA / BB の初期反映
+  // MA / BB の初期反映
   // --------------------------------------
   applyMAVisibility();
   applyBBVisibility();
