@@ -191,13 +191,11 @@ function createPriceChart(priceChart, candleData) {
     if (bValue === undefined) continue;
 
     if (a.value > bValue) {
-//      spanAColored.push({ time: a.time, value: a.value, color: bullColor });
-      spanAColored.push({ time: a.time, value: a.value, color: bgRGBA });
+      spanAColored.push({ time: a.time, value: a.value, color: bullColor });
       spanBColored.push({ time: a.time, value: bValue, color: bgRGBA });
     } else {
       spanAColored.push({ time: a.time, value: a.value, color: bgRGBA });
-//      spanBColored.push({ time: a.time, value: bValue, color: bearColor });
-      spanBColored.push({ time: a.time, value: bValue, color: bgRGBA });
+      spanBColored.push({ time: a.time, value: bValue, color: bearColor });
     }
   }
 
