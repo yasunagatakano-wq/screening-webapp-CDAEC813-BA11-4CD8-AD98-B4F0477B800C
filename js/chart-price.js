@@ -183,8 +183,7 @@ function createPriceChart(priceChart, candleData) {
       spanBColored.push({ time: a.time, value: bValue, color: bgRGBA });
     } else {
       spanAColored.push({ time: a.time, value: a.value, color: bgRGBA });
-      // spanBColored.push({ time: a.time, value: bValue, color: bearColor });
-      spanBColored.push({ time: a.time, value: bValue, color: bgRGBA });
+      spanBColored.push({ time: a.time, value: bValue, color: bearColor });
     }
   }
 
