@@ -312,6 +312,21 @@ tr:hover {
 }
 
 /* ------------------------------
+   ★ チェックボックス縦並び（追加）
+------------------------------ */
+.settings-content {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.settings-content label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ------------------------------
    チャートローディング
 ------------------------------ */
 .modal #chartLoadingOverlay {
