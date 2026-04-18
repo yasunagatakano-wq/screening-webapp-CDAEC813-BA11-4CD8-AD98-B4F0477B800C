@@ -195,6 +195,148 @@ function drawIchimokuCloud(ctx, renderParams, chart, spanA, spanB) {
   ctx.restore();
 }
 
+// --------------------------------------
+// 価格チャート生成（前半）
+// --------------------------------------
+function createPriceChart(priceChart, candleData) {
+
+  const candleMap = new Map();
+  candleData.forEach(c => candleMap.set(c.time, c));
+
+  const makeValueMap = (arr) => {
+    const m = new Map();
+    arr.forEach(p => {
+      if (p.value != null) m.set(p.time, p.value);
+    });
+    return m;
+  };
+
+  // 一目均衡表
+  const ichimoku = calcIchimoku(candleData);
+
+  // ▼ 雲（Canvas描画） → AreaSeries は使わない
+  priceChart.subscribeDraw((ctx, renderParams) => {
+    drawIchimokuCloud(
+      ctx,
+      renderParams,
+      priceChart,
+      ichimoku.span1,
+      ichimoku.span2
+    );
+  });
+
+  // --------------------------------------
+  // ▼ ローソク足・出来高・MA・BB・線を“上に”重ねる
+  // --------------------------------------
+
+  candleSeries = priceChart.addSeries(LightweightCharts.CandlestickSeries, {
+    upColor: 'red',
+    downColor: 'blue',
+    borderUpColor: 'red',
+    borderDownColor: 'blue',
+    wickUpColor: 'red',
+    wickDownColor: 'blue',
+  });
+  candleSeries.setData(candleData);
+
+  candleSeries.priceScale().applyOptions({
+    scaleMargins: { top: 0.05, bottom: 0.25 },
+  });
+
+  applyCandleVisibility();
+
+  volumeSeries = priceChart.addSeries(LightweightCharts.HistogramSeries, {
+    priceFormat: { type: 'volume' },
+    priceScaleId: 'volume',
+    scaleMargins: { top: 0.8, bottom: 0 },
+    color: 'rgba(128,128,128,0.6)',
+  });
+  volumeSeries.setData(
+    candleData.map(c => ({ time: c.time, value: c.volume }))
+  );
+
+  function addMA(color, data) {
+    const s = priceChart.addSeries(LightweightCharts.LineSeries, {
+      color,
+      lineWidth: 1,
+    });
+    s.setData(data.filter(p => p.value !== null));
+    return s;
+  }
+
+  const ma5 = calcMA(candleData, 5);
+  const ma25 = calcMA(candleData, 25);
+  const ma50 = calcMA(candleData, 50);
+  const ma75 = calcMA(candleData, 75);
+  const ma100 = calcMA(candleData, 100);
+
+  ma5Series   = addMA('#ff1493', ma5);
+  ma25Series  = addMA('#00aa00', ma25);
+  ma50Series  = addMA('#0000ff', ma50);
+  ma75Series  = addMA('#aa00aa', ma75);
+  ma100Series = addMA('#ffaa00', ma100);
+
+  const ma5Map   = makeValueMap(ma5);
+  const ma25Map  = makeValueMap(ma25);
+  const ma50Map  = makeValueMap(ma50);
+  const ma75Map  = makeValueMap(ma75);
+  const ma100Map = makeValueMap(ma100);
+
+  const bb = calcBB(candleData, 20, 2);
+
+  bbMidSeries = priceChart.addSeries(LightweightCharts.LineSeries, {
+    color: '#ffa500',
+    lineWidth: 1,
+  });
+  bbMidSeries.setData(bb.mid.filter(p => p.value !== null));
+
+  bbUpperSeries = priceChart.addSeries(LightweightCharts.LineSeries, {
+    color: '#ffa500',
+    lineWidth: 1,
+  });
+  bbUpperSeries.setData(bb.upper.filter(p => p.value !== null));
+
+  bbLowerSeries = priceChart.addSeries(LightweightCharts.LineSeries, {
+    color: '#ffa500',
+    lineWidth: 1,
+  });
+  bbLowerSeries.setData(bb.lower.filter(p => p.value !== null));
+
+  const bbMidMap   = makeValueMap(bb.mid);
+  const bbUpperMap = makeValueMap(bb.upper);
+  const bbLowerMap = makeValueMap(bb.lower);
+
+  // ▼ 一目の線
+  tenkanSeries = priceChart.addSeries(LightweightCharts.LineSeries, {
+    color: "#ff0000",
+    lineWidth: 1,
+  });
+  tenkanSeries.setData(ichimoku.tenkanLine);
+
+  kijunSeries = priceChart.addSeries(LightweightCharts.LineSeries, {
+    color: "#0000ff",
+    lineWidth: 1,
+  });
+  kijunSeries.setData(ichimoku.kijunLine);
+
+  span1Series = priceChart.addSeries(LightweightCharts.LineSeries, {
+    color: "#00aa00",
+    lineWidth: 1,
+  });
+  span1Series.setData(ichimoku.span1);
+
+  span2Series = priceChart.addSeries(LightweightCharts.LineSeries, {
+    color: "#aa00aa",
+    lineWidth: 1,
+  });
+  span2Series.setData(ichimoku.span2);
+
+  chikouSeries = priceChart.addSeries(LightweightCharts.LineSeries, {
+    color: "#888888",
+    lineWidth: 1,
+  });
+  chikouSeries.setData(ichimoku.chikou);
+
   // --------------------------------------
   // ▼ 一目均衡表の値をツールチップで使うための Map
   // --------------------------------------
