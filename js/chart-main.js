@@ -26,6 +26,8 @@ const nextBtn = document.getElementById("nextChartBtn");
 const settingsBtn = document.getElementById("chartSettingsBtn");
 const settingsModal = document.getElementById("chartSettingsModal");
 const toggleCandlesCheckbox = document.getElementById("toggleCandles");
+const toggleMACheckbox = document.getElementById("toggleMA");
+const toggleBBCheckbox = document.getElementById("toggleBB");
 
 // 初期状態ではモーダル非表示
 modal.style.display = "none";
@@ -136,7 +138,19 @@ document.addEventListener("click", (e) => {
 // ローソク足の見た目切り替え
 toggleCandlesCheckbox.addEventListener("change", (e) => {
   showCandles = e.target.checked;
-  if (candleSeries) applyCandleVisibility();
+  if (typeof applyCandleVisibility === "function") applyCandleVisibility();
+});
+
+// ▼ MA の表示/非表示
+toggleMACheckbox.addEventListener("change", (e) => {
+  showMA = e.target.checked;
+  if (typeof applyMAVisibility === "function") applyMAVisibility();
+});
+
+// ▼ BB の表示/非表示
+toggleBBCheckbox.addEventListener("change", (e) => {
+  showBB = e.target.checked;
+  if (typeof applyBBVisibility === "function") applyBBVisibility();
 });
 
 // ------------------------------
@@ -215,7 +229,7 @@ async function drawChart(ticker, name) {
 
   const price = { chart: priceChart };
 
-  // ③ RCI / MACD チャート生成（元のまま）
+  // ③ RCI / MACD チャート生成
   const rci = createRciChart(tradingData);
   const macd = createMacdChart(tradingData);
 
