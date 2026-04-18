@@ -28,6 +28,7 @@ const settingsModal = document.getElementById("chartSettingsModal");
 const toggleCandlesCheckbox = document.getElementById("toggleCandles");
 const toggleMACheckbox = document.getElementById("toggleMA");
 const toggleBBCheckbox = document.getElementById("toggleBB");
+const toggleIchimokuCheckbox = document.getElementById("toggleIchimoku");   // ★ 追加
 
 // 初期状態ではモーダル非表示
 modal.style.display = "none";
@@ -151,6 +152,12 @@ toggleMACheckbox.addEventListener("change", (e) => {
 toggleBBCheckbox.addEventListener("change", (e) => {
   showBB = e.target.checked;
   if (typeof applyBBVisibility === "function") applyBBVisibility();
+});
+
+// ▼ 一目均衡表の表示/非表示（★ 追加）
+toggleIchimokuCheckbox.addEventListener("change", (e) => {
+  showIchimoku = e.target.checked;
+  if (typeof applyIchimokuVisibility === "function") applyIchimokuVisibility();
 });
 
 // ------------------------------
