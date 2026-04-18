@@ -1,5 +1,5 @@
 // --------------------------------------
-// chart-price.js（TradingView雲：Custom Series版 / v5.1.0対応）
+// chart-price.js（一目均衡表・動的雲：SpanA最背面 × SpanB前面）
 // --------------------------------------
 
 let candleSeries;
@@ -10,83 +10,66 @@ let ma5Series, ma25Series, ma50Series, ma75Series, ma100Series;
 let bbMidSeries, bbUpperSeries, bbLowerSeries;
 
 let tenkanSeries, kijunSeries, span1Series, span2Series, chikouSeries;
+let spanAArea, spanBArea;
 
-// ▼ MA / BB の表示状態
+// ▼ 追加：MA と BB の表示状態
 let showCandles = true;
 let showMA = true;
 let showBB = true;
 
 // --------------------------------------
-// ▼ Custom Series：一目雲（TradingView風）
+// ローソク足の表示／非表示
 // --------------------------------------
-const IchimokuCloudSeries = {
-  createPaneView: (chart, series) => {
-    return {
-      update: () => {},
-      renderer: {
-        draw: (ctx, renderParams) => {
-          const data = series._data;
-          if (!data || !data.spanA || !data.spanB) return;
+function applyCandleVisibility() {
+  if (!candleSeries) return;
 
-          const pixelRatio = renderParams.pixelRatio;
-          ctx.save();
-          ctx.scale(pixelRatio, pixelRatio);
-
-          const timeScale = chart.timeScale();
-          const priceScale = chart.priceScale('right');
-
-          const bullColor = "rgba(76, 175, 80, 0.35)";
-          const bearColor = "rgba(244, 67, 54, 0.35)";
-
-          const spanA = data.spanA;
-          const spanB = data.spanB;
-
-          for (let i = 0; i < spanA.length - 1; i++) {
-            const a1 = spanA[i];
-            const a2 = spanA[i + 1];
-            const b1 = spanB[i];
-            const b2 = spanB[i + 1];
-
-            if (!a1 || !a2 || !b1 || !b2) continue;
-
-            const xA1 = timeScale.timeToCoordinate(a1.time);
-            const xA2 = timeScale.timeToCoordinate(a2.time);
-            const xB1 = timeScale.timeToCoordinate(b1.time);
-            const xB2 = timeScale.timeToCoordinate(b2.time);
-
-            const yA1 = priceScale.priceToCoordinate(a1.value);
-            const yA2 = priceScale.priceToCoordinate(a2.value);
-            const yB1 = priceScale.priceToCoordinate(b1.value);
-            const yB2 = priceScale.priceToCoordinate(b2.value);
-
-            if (
-              xA1 == null || xA2 == null ||
-              xB1 == null || xB2 == null ||
-              yA1 == null || yA2 == null ||
-              yB1 == null || yB2 == null
-            ) continue;
-
-            const isBull = a1.value > b1.value;
-            ctx.fillStyle = isBull ? bullColor : bearColor;
-
-            ctx.beginPath();
-            ctx.moveTo(xA1, yA1);
-            ctx.lineTo(xA2, yA2);
-            ctx.lineTo(xB2, yB2);
-            ctx.lineTo(xB1, yB1);
-            ctx.closePath();
-            ctx.fill();
-          }
-
-          ctx.restore();
-        }
-      }
-    };
+  if (showCandles) {
+    candleSeries.applyOptions({
+      upColor: 'red',
+      downColor: 'blue',
+      borderUpColor: 'red',
+      borderDownColor: 'blue',
+      wickUpColor: 'red',
+      wickDownColor: 'blue',
+    });
+  } else {
+    candleSeries.applyOptions({
+      upColor: 'rgba(0,0,0,0)',
+      downColor: 'rgba(0,0,0,0)',
+      borderUpColor: 'rgba(0,0,0,0)',
+      borderDownColor: 'rgba(0,0,0,0)',
+      wickUpColor: 'rgba(0,0,0,0)',
+      wickDownColor: 'rgba(0,0,0,0)',
+    });
   }
-};
+}
 
 // --------------------------------------
-// 一目均衡表の計算
+// ▼ 追加：MA の表示／非表示
+// --------------------------------------
+function applyMAVisibility() {
+  if (!ma5Series) return;
+
+  ma5Series.applyOptions({ visible: showMA });
+  ma25Series.applyOptions({ visible: showMA });
+  ma50Series.applyOptions({ visible: showMA });
+  ma75Series.applyOptions({ visible: showMA });
+  ma100Series.applyOptions({ visible: showMA });
+}
+
+// --------------------------------------
+// ▼ 追加：BB の表示／非表示
+// --------------------------------------
+function applyBBVisibility() {
+  if (!bbMidSeries) return;
+
+  bbMidSeries.applyOptions({ visible: showBB });
+  bbUpperSeries.applyOptions({ visible: showBB });
+  bbLowerSeries.applyOptions({ visible: showBB });
+}
+
+// --------------------------------------
+// 一目均衡表の計算（営業日インデックスベース）
 // --------------------------------------
 function calcIchimoku(candleData) {
   const len = candleData.length;
@@ -159,7 +142,7 @@ function calcIchimoku(candleData) {
 }
 
 // --------------------------------------
-// ▼ createPriceChart（前半）
+// 価格チャート生成
 // --------------------------------------
 function createPriceChart(priceChart, candleData) {
 
@@ -174,21 +157,54 @@ function createPriceChart(priceChart, candleData) {
     return m;
   };
 
-  // 一目均衡表
+  // --------------------------------------
+  // 一目均衡表（先に計算して雲を“最背面”に描画）
+// --------------------------------------
   const ichimoku = calcIchimoku(candleData);
 
-  // ▼ 一目雲（Custom Series）
-  const cloudSeries = priceChart.addCustomSeries(IchimokuCloudSeries, {
-    pane: 0, // 最背面
-  });
+  const bgRGBA = "rgba(255,255,255,1)";
+  const bullColor = "rgba(0,200,0,0.35)";
+  const bearColor = "rgba(200,0,0,0.35)";
 
-  cloudSeries.setData({
-    spanA: ichimoku.span1,
-    spanB: ichimoku.span2,
+  const spanBMap = new Map();
+  for (const b of ichimoku.span2) {
+    spanBMap.set(b.time, b.value);
+  }
+
+  const spanAColored = [];
+  const spanBColored = [];
+
+  for (const a of ichimoku.span1) {
+    const bValue = spanBMap.get(a.time);
+    if (bValue === undefined) continue;
+
+    if (a.value > bValue) {
+      spanAColored.push({ time: a.time, value: a.value, color: bullColor });
+      spanBColored.push({ time: a.time, value: bValue, color: bgRGBA });
+    } else {
+      spanAColored.push({ time: a.time, value: a.value, color: bgRGBA });
+      spanBColored.push({ time: a.time, value: bValue, color: bearColor });
+    }
+  }
+
+  spanAArea = priceChart.addSeries(LightweightCharts.AreaSeries, {
+    topColor: bullColor,
+    bottomColor: bgRGBA,
+    lineColor: "rgba(0,0,0,0)",
+    lineWidth: 0,
   });
+  spanAArea.setData(spanAColored);
+
+  spanBArea = priceChart.addSeries(LightweightCharts.AreaSeries, {
+    topColor: bearColor,
+    bottomColor: bgRGBA,
+    lineColor: "rgba(0,0,0,0)",
+    lineWidth: 0,
+  });
+  spanBArea.setData(spanBColored);
 
   // --------------------------------------
-  // ▼ ローソク足・出来高・MA・BB・線を“上に”重ねる
+  // ローソク足・出来高・MA・BB・線を“上に”重ねる
   // --------------------------------------
 
   candleSeries = priceChart.addSeries(LightweightCharts.CandlestickSeries, {
@@ -267,7 +283,7 @@ function createPriceChart(priceChart, candleData) {
   const bbMidMap   = makeValueMap(bb.mid);
   const bbUpperMap = makeValueMap(bb.upper);
   const bbLowerMap = makeValueMap(bb.lower);
-
+  
   // ▼ 一目の線
   tenkanSeries = priceChart.addSeries(LightweightCharts.LineSeries, {
     color: "#ff0000",
@@ -300,7 +316,7 @@ function createPriceChart(priceChart, candleData) {
   chikouSeries.setData(ichimoku.chikou);
 
   // --------------------------------------
-  // ▼ 一目均衡表の値をツールチップで使うための Map
+  // ▼ 一目均衡表の値をツールチップで使うための Map を作成
   // --------------------------------------
   const tenkanMap = makeValueMap(ichimoku.tenkanLine);
   const kijunMap  = makeValueMap(ichimoku.kijunLine);
@@ -407,7 +423,7 @@ function createPriceChart(priceChart, candleData) {
   chartContainer.appendChild(legend);
 
   // --------------------------------------
-  // MA / BB の初期反映
+  // ▼ 追加：MA / BB の初期反映
   // --------------------------------------
   applyMAVisibility();
   applyBBVisibility();
