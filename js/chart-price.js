@@ -185,7 +185,7 @@ function createPriceChart(priceChart, candleData) {
     const m = String(date.getMonth() + 1).padStart(2, "0");
     const d = String(date.getDate()).padStart(2, "0");
   
-    console.log(`${y}/${m}/${d}：`+ (bValue === undefined) + ` a.value = ${a.value}, b.value = ${b.value}`);
+    console.log(`${y}/${m}/${d}：`+ (bValue === undefined) + ` a.value = ${a.value}, b.value = ${bValue}`);
     
                 
     if (bValue === undefined) continue;
