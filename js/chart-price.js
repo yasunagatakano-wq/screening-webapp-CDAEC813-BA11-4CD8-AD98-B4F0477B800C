@@ -12,7 +12,10 @@ let bbMidSeries, bbUpperSeries, bbLowerSeries;
 let tenkanSeries, kijunSeries, span1Series, span2Series, chikouSeries;
 let spanAArea, spanBArea;
 
+// ▼ 追加：MA と BB の表示状態
 let showCandles = true;
+let showMA = true;
+let showBB = true;
 
 // --------------------------------------
 // ローソク足の表示／非表示
@@ -39,6 +42,30 @@ function applyCandleVisibility() {
       wickDownColor: 'rgba(0,0,0,0)',
     });
   }
+}
+
+// --------------------------------------
+// ▼ 追加：MA の表示／非表示
+// --------------------------------------
+function applyMAVisibility() {
+  if (!ma5Series) return;
+
+  ma5Series.applyOptions({ visible: showMA });
+  ma25Series.applyOptions({ visible: showMA });
+  ma50Series.applyOptions({ visible: showMA });
+  ma75Series.applyOptions({ visible: showMA });
+  ma100Series.applyOptions({ visible: showMA });
+}
+
+// --------------------------------------
+// ▼ 追加：BB の表示／非表示
+// --------------------------------------
+function applyBBVisibility() {
+  if (!bbMidSeries) return;
+
+  bbMidSeries.applyOptions({ visible: showBB });
+  bbUpperSeries.applyOptions({ visible: showBB });
+  bbLowerSeries.applyOptions({ visible: showBB });
 }
 
 // --------------------------------------
@@ -135,13 +162,10 @@ function createPriceChart(priceChart, candleData) {
 // --------------------------------------
   const ichimoku = calcIchimoku(candleData);
 
-  // 背景色は常に白
   const bgRGBA = "rgba(255,255,255,1)";
-
   const bullColor = "rgba(0,200,0,0.35)";
   const bearColor = "rgba(200,0,0,0.35)";
 
-  // ▼ SpanB を time → value の Map にする（正しい比較のため）
   const spanBMap = new Map();
   for (const b of ichimoku.span2) {
     spanBMap.set(b.time, b.value);
@@ -150,23 +174,19 @@ function createPriceChart(priceChart, candleData) {
   const spanAColored = [];
   const spanBColored = [];
 
-  // ▼ SpanA の time と一致する SpanB を探して比較
   for (const a of ichimoku.span1) {
     const bValue = spanBMap.get(a.time);
     if (bValue === undefined) continue;
 
     if (a.value > bValue) {
-      // 強気 → SpanA 緑、SpanB 白
       spanAColored.push({ time: a.time, value: a.value, color: bullColor });
       spanBColored.push({ time: a.time, value: bValue, color: bgRGBA });
     } else {
-      // 弱気 → SpanB 赤、SpanA 白
       spanAColored.push({ time: a.time, value: a.value, color: bgRGBA });
       spanBColored.push({ time: a.time, value: bValue, color: bearColor });
     }
   }
 
-  // ▼ ★最背面：SpanA（動的色）
   spanAArea = priceChart.addSeries(LightweightCharts.AreaSeries, {
     topColor: bullColor,
     bottomColor: bgRGBA,
@@ -175,7 +195,6 @@ function createPriceChart(priceChart, candleData) {
   });
   spanAArea.setData(spanAColored);
 
-  // ▼ ★その前：SpanB（動的色）
   spanBArea = priceChart.addSeries(LightweightCharts.AreaSeries, {
     topColor: bearColor,
     bottomColor: bgRGBA,
@@ -185,7 +204,7 @@ function createPriceChart(priceChart, candleData) {
   spanBArea.setData(spanBColored);
 
   // --------------------------------------
-  // ここから先に、ローソク足・出来高・MA・BB・線を“上に”重ねていく
+  // ローソク足・出来高・MA・BB・線を“上に”重ねる
   // --------------------------------------
 
   candleSeries = priceChart.addSeries(LightweightCharts.CandlestickSeries, {
@@ -265,7 +284,7 @@ function createPriceChart(priceChart, candleData) {
   const bbUpperMap = makeValueMap(bb.upper);
   const bbLowerMap = makeValueMap(bb.lower);
 
-  // ▼ 一目の線はローソク足より前面に
+  // ▼ 一目の線
   tenkanSeries = priceChart.addSeries(LightweightCharts.LineSeries, {
     color: "#ff0000",
     lineWidth: 1,
@@ -394,14 +413,4 @@ function createPriceChart(priceChart, candleData) {
     <div><span style="color:#0000ff;">■</span> MA(50)</div>
     <div><span style="color:#aa00aa;">■</span> MA(75)</div>
     <div><span style="color:#ffaa00;">■</span> MA(100)</div>
-    <div><span style="color:#ffa500;">■</span> ボリンジャーバンド</div>
-    <div><span style="color:#ff0000;">■</span> 転換線</div>
-    <div><span style="color:#0000ff;">■</span> 基準線</div>
-    <div><span style="color:#00aa00;">■</span> 先行スパン1</div>
-    <div><span style="color:#aa00aa;">■</span> 先行スパン2</div>
-    <div><span style="color:#888888;">■</span> 遅行スパン</div>
-  `;
-  chartContainer.appendChild(legend);
-
-  return { chart: priceChart };
-}
+    <div><span
