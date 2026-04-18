@@ -12,10 +12,11 @@ let bbMidSeries, bbUpperSeries, bbLowerSeries;
 let tenkanSeries, kijunSeries, span1Series, span2Series, chikouSeries;
 let spanAArea, spanBArea;
 
-// ▼ 追加：MA と BB の表示状態
+// ▼ 追加：MA / BB / 一目均衡表 の表示状態
 let showCandles = true;
 let showMA = true;
 let showBB = true;
+let showIchimoku = true;   // ★ 追加
 
 // --------------------------------------
 // ローソク足の表示／非表示
@@ -45,7 +46,7 @@ function applyCandleVisibility() {
 }
 
 // --------------------------------------
-// ▼ 追加：MA の表示／非表示
+// MA の表示／非表示
 // --------------------------------------
 function applyMAVisibility() {
   if (!ma5Series) return;
@@ -58,7 +59,7 @@ function applyMAVisibility() {
 }
 
 // --------------------------------------
-// ▼ 追加：BB の表示／非表示
+// BB の表示／非表示
 // --------------------------------------
 function applyBBVisibility() {
   if (!bbMidSeries) return;
@@ -66,6 +67,23 @@ function applyBBVisibility() {
   bbMidSeries.applyOptions({ visible: showBB });
   bbUpperSeries.applyOptions({ visible: showBB });
   bbLowerSeries.applyOptions({ visible: showBB });
+}
+
+// --------------------------------------
+// ★ 一目均衡表の表示／非表示
+// --------------------------------------
+function applyIchimokuVisibility() {
+  if (!tenkanSeries) return;
+
+  tenkanSeries.applyOptions({ visible: showIchimoku });
+  kijunSeries.applyOptions({ visible: showIchimoku });
+  span1Series.applyOptions({ visible: showIchimoku });
+  span2Series.applyOptions({ visible: showIchimoku });
+  chikouSeries.applyOptions({ visible: showIchimoku });
+
+  // 雲（AreaSeries）
+  spanAArea.applyOptions({ visible: showIchimoku });
+  spanBArea.applyOptions({ visible: showIchimoku });
 }
 
 // --------------------------------------
@@ -142,7 +160,7 @@ function calcIchimoku(candleData) {
 }
 
 // --------------------------------------
-// 価格チャート生成
+// 価格チャート生成（前半）
 // --------------------------------------
 function createPriceChart(priceChart, candleData) {
 
@@ -159,7 +177,7 @@ function createPriceChart(priceChart, candleData) {
 
   // --------------------------------------
   // 一目均衡表（先に計算して雲を“最背面”に描画）
-// --------------------------------------
+  // --------------------------------------
   const ichimoku = calcIchimoku(candleData);
 
   const bgRGBA = "rgba(255,255,255,1)";
@@ -423,10 +441,11 @@ function createPriceChart(priceChart, candleData) {
   chartContainer.appendChild(legend);
 
   // --------------------------------------
-  // ▼ 追加：MA / BB の初期反映
+  // ▼ 追加：MA / BB / 一目均衡表 の初期反映
   // --------------------------------------
   applyMAVisibility();
   applyBBVisibility();
+  applyIchimokuVisibility();   // ★ 追加
 
   return { chart: priceChart };
 }
