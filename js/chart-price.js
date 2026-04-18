@@ -283,7 +283,7 @@ function createPriceChart(priceChart, candleData) {
   const bbMidMap   = makeValueMap(bb.mid);
   const bbUpperMap = makeValueMap(bb.upper);
   const bbLowerMap = makeValueMap(bb.lower);
-
+  
   // ▼ 一目の線
   tenkanSeries = priceChart.addSeries(LightweightCharts.LineSeries, {
     color: "#ff0000",
@@ -413,4 +413,20 @@ function createPriceChart(priceChart, candleData) {
     <div><span style="color:#0000ff;">■</span> MA(50)</div>
     <div><span style="color:#aa00aa;">■</span> MA(75)</div>
     <div><span style="color:#ffaa00;">■</span> MA(100)</div>
-    <div><span
+    <div><span style="color:#ffa500;">■</span> ボリンジャーバンド</div>
+    <div><span style="color:#ff0000;">■</span> 転換線</div>
+    <div><span style="color:#0000ff;">■</span> 基準線</div>
+    <div><span style="color:#00aa00;">■</span> 先行スパン1</div>
+    <div><span style="color:#aa00aa;">■</span> 先行スパン2</div>
+    <div><span style="color:#888888;">■</span> 遅行スパン</div>
+  `;
+  chartContainer.appendChild(legend);
+
+  // --------------------------------------
+  // ▼ 追加：MA / BB の初期反映
+  // --------------------------------------
+  applyMAVisibility();
+  applyBBVisibility();
+
+  return { chart: priceChart };
+}
