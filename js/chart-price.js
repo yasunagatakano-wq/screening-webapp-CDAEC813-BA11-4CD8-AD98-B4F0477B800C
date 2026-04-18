@@ -297,6 +297,15 @@ function createPriceChart(priceChart, candleData) {
   chikouSeries.setData(ichimoku.chikou);
 
   // --------------------------------------
+  // ▼ 一目均衡表の値をツールチップで使うための Map を作成
+  // --------------------------------------
+  const tenkanMap = makeValueMap(ichimoku.tenkanLine);
+  const kijunMap  = makeValueMap(ichimoku.kijunLine);
+  const span1Map  = makeValueMap(ichimoku.span1);
+  const span2Map  = makeValueMap(ichimoku.span2);
+  const chikouMap = makeValueMap(ichimoku.chikou);
+
+  // --------------------------------------
   // ツールチップ
   // --------------------------------------
   const tooltip = document.createElement("div");
@@ -362,6 +371,12 @@ function createPriceChart(priceChart, candleData) {
       <div>BB ミドル: ${bbMidMap.get(param.time)?.toFixed(2) ?? "-"}</div>
       <div>BB 上限: ${bbUpperMap.get(param.time)?.toFixed(2) ?? "-"}</div>
       <div>BB 下限: ${bbLowerMap.get(param.time)?.toFixed(2) ?? "-"}</div>
+      <hr>
+      <div>転換線: ${tenkanMap.get(param.time)?.toFixed(2) ?? "-"}</div>
+      <div>基準線: ${kijunMap.get(param.time)?.toFixed(2) ?? "-"}</div>
+      <div>先行スパン1: ${span1Map.get(param.time)?.toFixed(2) ?? "-"}</div>
+      <div>先行スパン2: ${span2Map.get(param.time)?.toFixed(2) ?? "-"}</div>
+      <div>遅行スパン: ${chikouMap.get(param.time)?.toFixed(2) ?? "-"}</div>
     `;
   });
 
