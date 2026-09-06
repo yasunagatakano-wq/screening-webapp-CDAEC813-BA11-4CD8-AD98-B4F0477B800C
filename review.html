@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>学びの棚 ｜ スクリーニング</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <link rel="icon" href="assets/favicon.ico">
+
+  <!-- 既存アプリと同じデザイントークン（色・フォント・シャドウ等）を再利用する -->
+  <link rel="stylesheet" href="assets/fonts/fonts.css">
+  <link rel="stylesheet" href="style.css">
+  <!-- 本ページ固有のレイアウトのみ、別ファイルへ分離する（style.css自体は変更しない） -->
+  <link rel="stylesheet" href="review.css">
+
+  <script defer src="review.js"></script>
+</head>
+
+<body>
+  <div class="app-container">
+
+    <header class="app-header">
+      <h1>学びの棚</h1>
+      <nav class="app-header-nav">
+        <a href="index.html">← スクリーニングへ戻る</a>
+      </nav>
+    </header>
+
+    <!-- ============================
+         表示モード切替（読む／しおり一覧）
+    ============================ -->
+    <section class="card review-tabs-card">
+      <div class="review-tabs" role="tablist">
+        <button id="reviewTabRead" class="btn secondary review-tab-btn" data-current>読む</button>
+        <button id="reviewTabBookmarks" class="btn secondary review-tab-btn">しおり一覧</button>
+      </div>
+    </section>
+
+    <!-- ============================
+         「読む」ビュー
+    ============================ -->
+    <div id="reviewViewRead" class="review-view">
+      <div class="review-layout">
+
+        <!-- 目次 -->
+        <nav class="card review-toc-card">
+          <h2>目次</h2>
+          <div id="chapterNavEl"></div>
+        </nav>
+
+        <!-- 本文 -->
+        <section class="card review-reader-card">
+
+          <div id="reviewLoadingOverlay" class="loading-overlay hidden">
+            <div class="spinner"></div>
+            <p>読み込み中…</p>
+          </div>
+
+          <div class="review-reader-head">
+            <p id="chapterBreadcrumbEl" class="review-breadcrumb"></p>
+            <div class="review-reader-headline">
+              <h2 id="chapterTitleEl" class="review-chapter-title"></h2>
+              <button id="bookmarkToggleBtn" class="btn ghost review-bookmark-btn" title="しおりを挟む">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                     fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <path d="M6 2h12v20l-6-4-6 4V2Z"/>
+                </svg>
+              </button>
+            </div>
+            <p id="chapterMetaEl" class="review-meta"></p>
+          </div>
+
+          <article id="chapterBodyEl" class="review-prose"></article>
+
+          <div class="review-reader-foot">
+            <button id="chapterPrevBtn" class="btn secondary small">← 前の章</button>
+            <button id="chapterNextBtn" class="btn secondary small">次の章 →</button>
+          </div>
+
+          <div class="review-memo-block">
+            <h3>この章のメモ</h3>
+            <textarea id="memoTextareaEl" placeholder="気づいたことを書き留める…"></textarea>
+            <div class="review-memo-actions">
+              <button id="memoSaveBtn" class="btn primary small">メモを保存</button>
+              <span id="memoStatusEl" class="review-memo-status" aria-live="polite"></span>
+            </div>
+          </div>
+
+        </section>
+      </div>
+    </div>
+
+    <!-- ============================
+         「しおり一覧」ビュー
+    ============================ -->
+    <div id="reviewViewBookmarks" class="review-view hidden">
+      <section class="card review-bookmarks-card">
+        <h2>しおり一覧</h2>
+        <p class="hint">しおりを挟んだ章の一覧です。タップするとその章を開きます。</p>
+        <div id="bookmarkListEl"></div>
+        <p id="bookmarkEmptyEl" class="review-bookmark-empty hidden">まだしおりはありません。「読む」タブで気になる章にしおりを挟んでみましょう。</p>
+      </section>
+    </div>
+
+  </div>
+</body>
+</html>

@@ -1605,3 +1605,24 @@ button:disabled {
     font-size: 10px;
   }
 }
+
+/* ============================================================
+   復習ページへの導線（2026-09 追加）
+   学びの棚（review.html）へのリンクを app-header 内に追加した際のスタイル。
+   .app-header 自体の既存ルールは変更していない（追加のみ）。
+   ============================================================ */
+.app-header-nav {
+  margin-top: 8px;
+}
+
+.app-header-nav a {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  border-bottom: 1px dotted var(--color-border-input);
+}
+
+.app-header-nav a:hover {
+  color: var(--color-accent-primary);
+}
