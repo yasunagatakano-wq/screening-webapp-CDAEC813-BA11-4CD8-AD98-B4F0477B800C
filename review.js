@@ -288,7 +288,8 @@ function renderBookmarkList() {
   });
 }
 
-function showChapter(chapterId) {
+function showChapter(chapterId, options = {}) {
+  const { scroll = true } = options;
   const chapter = CHAPTERS_BY_ID[chapterId];
   if (!chapter) return;
 
@@ -308,6 +309,19 @@ function showChapter(chapterId) {
 
   renderChapterNav();
   renderBookmarkButton();
+
+  // 目次クリック・前後章移動時は、screening.js の showResults() 後のスクロール
+  // （#resultSection へ smooth スクロール、offset -10）と同じUXにする。
+  // 初回読み込み時（window load）は options.scroll=false を渡し、
+  // ページを開いた瞬間に勝手にスクロールしないようにする。
+  if (scroll) {
+    const target = document.getElementById("reviewReaderSection");
+    const offset = -10;
+    window.scrollTo({
+      top: target.getBoundingClientRect().top + window.pageYOffset + offset,
+      behavior: "smooth",
+    });
+  }
 }
 
 function switchTab(tab) {
@@ -359,6 +373,6 @@ window.addEventListener("load", async () => {
   const hashId = location.hash.replace("#", "");
   const initialChapterId = CHAPTERS_BY_ID[hashId] ? hashId : CHAPTERS[0].id;
 
-  showChapter(initialChapterId);
+  showChapter(initialChapterId, { scroll: false });
   renderBookmarkList();
 });
