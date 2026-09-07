@@ -1,7 +1,110 @@
 // --------------------------------------
-// chart-price.js（一目均衡表・動的雲：SpanA最背面 × SpanB前面）
+// chart-price.js（一目均衡表・動的雲：Series Primitiveによる2線間塗りつぶし）
 // --------------------------------------
 import { calcMA, calcBB } from "./chart-indicators.js";
+
+// --------------------------------------
+// 一目均衡表の雲（Ichimoku Cloud）Series Primitive
+// Lightweight Chartsには2本のライン（先行スパン1・先行スパン2）の間を
+// 直接塗りつぶすネイティブなシリーズ型が存在しないため、Series Primitive
+// （ISeriesPrimitive）として自作し、先行スパン1・先行スパン2で挟まれた
+// 領域をポリゴンとして描画する。
+// 公式のバンド系プラグイン例（bands-indicator）と同様、Custom Series
+// （addCustomSeries）ではなく Primitive（attachPrimitive）で実装する
+// （Custom Seriesは新しいシリーズ型そのものを定義する重い仕組みであり、
+// 既存シリーズの上に帯・塗りつぶしを重ねるだけの用途にはPrimitiveが適切、
+// というLightweight Charts公式の使い分け方針に沿った）。
+// --------------------------------------
+class IchimokuCloudPrimitive {
+  constructor(data, options) {
+    this._data = data;                 // [{ time, spanA, spanB }]
+    this._options = options;           // { bullColor, bearColor }
+    this._visible = true;
+    this._chart = null;
+    this._series = null;
+    this._requestUpdate = null;
+    this._points = [];                 // ピクセル座標へ変換済みの点列
+
+    this._paneView = {
+      renderer: () => ({ draw: (target) => this._draw(target) }),
+      zOrder: () => "bottom",          // ローソク足・各ラインより背面に描画
+    };
+  }
+
+  attached({ chart, series, requestUpdate }) {
+    this._chart = chart;
+    this._series = series;
+    this._requestUpdate = requestUpdate;
+  }
+
+  detached() {
+    this._chart = null;
+    this._series = null;
+    this._requestUpdate = null;
+  }
+
+  paneViews() {
+    return [this._paneView];
+  }
+
+  // 表示範囲・スケールが変わるたびに呼ばれる。ここで価格・時刻をピクセル座標へ変換する。
+  updateAllViews() {
+    if (!this._chart || !this._series) {
+      this._points = [];
+      return;
+    }
+    const timeScale = this._chart.timeScale();
+    const points = [];
+    for (const d of this._data) {
+      const x = timeScale.timeToCoordinate(d.time);
+      const yA = this._series.priceToCoordinate(d.spanA);
+      const yB = this._series.priceToCoordinate(d.spanB);
+      if (x === null || yA === null || yB === null) continue;
+      points.push({ x, yA, yB, bull: d.spanA >= d.spanB });
+    }
+    this._points = points;
+  }
+
+  setData(data) {
+    this._data = data;
+    if (this._requestUpdate) this._requestUpdate();
+  }
+
+  setVisible(visible) {
+    this._visible = visible;
+    if (this._requestUpdate) this._requestUpdate();
+  }
+
+  // 陽転（先行スパン1＞先行スパン2）／陰転で連続する区間ごとに
+  // 「上端＝先行スパン1を forward」「下端＝先行スパン2を backward」で
+  // ポリゴンを組み立てて塗りつぶす。
+  _draw(target) {
+    if (!this._visible) return;
+    const pts = this._points;
+    if (pts.length < 2) return;
+
+    target.useBitmapCoordinateSpace((scope) => {
+      const { context: ctx, horizontalPixelRatio: hr, verticalPixelRatio: vr } = scope;
+      let i = 0;
+      while (i < pts.length - 1) {
+        const bull = pts[i].bull;
+        let j = i;
+        while (j < pts.length - 1 && pts[j + 1].bull === bull) j++;
+
+        if (j > i) {
+          ctx.beginPath();
+          ctx.fillStyle = bull ? this._options.bullColor : this._options.bearColor;
+          ctx.moveTo(pts[i].x * hr, pts[i].yA * vr);
+          for (let k = i; k <= j; k++) ctx.lineTo(pts[k].x * hr, pts[k].yA * vr);
+          for (let k = j; k >= i; k--) ctx.lineTo(pts[k].x * hr, pts[k].yB * vr);
+          ctx.closePath();
+          ctx.fill();
+        }
+        i = j > i ? j : i + 1;
+      }
+    });
+  }
+}
 
 let candleSeries;
 let volumeSeries;
@@ -11,7 +114,7 @@ let ma5Series, ma25Series, ma50Series, ma75Series, ma100Series;
 let bbMidSeries, bbUpperSeries, bbLowerSeries;
 
 let tenkanSeries, kijunSeries, span1Series, span2Series, chikouSeries;
-let spanAArea, spanBArea;
+let ichimokuCloud;
 
 // ▼ 表示状態フラグ
 let showCandles = true;
@@ -82,8 +185,7 @@ function applyIchimokuVisibility() {
   span2Series.applyOptions({ visible: showIchimoku });
   chikouSeries.applyOptions({ visible: showIchimoku });
 
-  spanAArea.applyOptions({ visible: showIchimoku });
-  spanBArea.applyOptions({ visible: showIchimoku });
+  if (ichimokuCloud) ichimokuCloud.setVisible(showIchimoku);
 }
 
 // --------------------------------------
@@ -206,7 +308,6 @@ export function createPriceChart(priceChart, chartContainer, candleData) {
   // 一目均衡表の計算
   const ichimoku = calcIchimoku(candleData);
 
-  const bgRGBA = "rgba(255,255,255,1)";
   const bullColor = "rgba(0,200,0,0.35)";
   const bearColor = "rgba(200,0,0,0.35)";
 
@@ -215,42 +316,14 @@ export function createPriceChart(priceChart, chartContainer, candleData) {
     spanBMap.set(b.time, b.value);
   }
 
-  const spanAColored = [];
-  const spanBColored = [];
-
+  // 雲（先行スパン1・先行スパン2で挟まれた領域）の元データ。
+  // Series Primitive（IchimokuCloudPrimitive）へそのまま渡す。
+  const cloudData = [];
   for (const a of ichimoku.span1) {
     const bValue = spanBMap.get(a.time);
     if (bValue === undefined) continue;
-
-    if (a.value > bValue) {
-      spanAColored.push({ time: a.time, value: a.value, color: bullColor });
-      spanBColored.push({ time: a.time, value: bValue, color: bgRGBA });
-    } else {
-      spanAColored.push({ time: a.time, value: a.value, color: bgRGBA });
-      spanBColored.push({ time: a.time, value: bValue, color: bearColor });
-    }
+    cloudData.push({ time: a.time, spanA: a.value, spanB: bValue });
   }
-
-  // 雲（AreaSeries）※スケールはローソク足と同じ、ラベルだけ消す
-  spanAArea = priceChart.addSeries(LightweightCharts.AreaSeries, {
-    topColor: bullColor,
-    bottomColor: bgRGBA,
-    lineColor: "rgba(0,0,0,0)",
-    lineWidth: 0,
-    lastValueVisible: false,
-    priceLineVisible: false,
-  });
-  spanAArea.setData(spanAColored);
-
-  spanBArea = priceChart.addSeries(LightweightCharts.AreaSeries, {
-    topColor: bearColor,
-    bottomColor: bgRGBA,
-    lineColor: "rgba(0,0,0,0)",
-    lineWidth: 0,
-    lastValueVisible: false,
-    priceLineVisible: false,
-  });
-  spanBArea.setData(spanBColored);
 
   // ローソク足（最新値だけ y軸に表示）
   candleSeries = priceChart.addSeries(LightweightCharts.CandlestickSeries, {
@@ -269,6 +342,13 @@ export function createPriceChart(priceChart, chartContainer, candleData) {
   });
 
   applyCandleVisibility();
+
+  // 雲（Ichimoku Cloud）Series Primitiveをローソク足シリーズへアタッチする。
+  // zOrder: "bottom" のため、アタッチ先の series は候補のうちどれでもよく
+  // （priceToCoordinateは同じ右軸価格スケールを共有する全シリーズで同じ結果になる）、
+  // 生成順が最も早いcandleSeriesへアタッチしている。
+  ichimokuCloud = new IchimokuCloudPrimitive(cloudData, { bullColor, bearColor });
+  candleSeries.attachPrimitive(ichimokuCloud);
 
   // 出来高
   volumeSeries = priceChart.addSeries(LightweightCharts.HistogramSeries, {
