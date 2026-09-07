@@ -4,26 +4,49 @@
    ・style.css 自体は変更していない（本ファイルは追加のみ）。
    ============================================================ */
 
-/* --- タブ切り替え --- */
+/* --- タブ切り替え ---
+   style.css の .mode-tabs / .mode-tab（スクリーニングページの検索モードタブ）
+   と同じ見た目・挙動にする。非アクティブは背景・影なしの完全フラット、
+   アクティブのみ下線＋淡い背景＋インセット影を付ける。 */
 .review-tabs-card {
-  padding: 10px;
+  padding: 0 12px;
 }
 
 .review-tabs {
   display: flex;
-  gap: 8px;
+  flex-wrap: wrap;
+  gap: 4px;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .review-tab-btn {
-  flex: none;
+  position: relative;
+  padding: 10px 16px;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: var(--radius-input) var(--radius-input) 0 0;
+  margin-bottom: -1px; /* .review-tabs の border-bottom に重ねて表示する */
+  cursor: pointer;
+  user-select: none;
+  transition: color var(--transition-base), border-color var(--transition-base), background var(--transition-base);
+}
+
+.review-tab-btn:hover {
+  color: var(--color-text-secondary);
 }
 
 /* data-current はJSが付け外しするフラグ属性（domHookAttributesのdata-<用途名>パターン）。
    現在選択中のタブを見た目で示すためのCSS専用フック。 */
 .review-tab-btn[data-current] {
+  color: var(--color-accent-primary-hover);
+  border-bottom-color: var(--color-accent-primary);
   background: var(--color-accent-primary-bg);
-  color: var(--color-accent-primary);
-  box-shadow: var(--shadow-neumo-inset);
+  box-shadow: var(--shadow-neumo-inset-tab);
 }
 
 /* --- 読むビューのレイアウト --- */
@@ -131,9 +154,18 @@
   padding: 4px;
 }
 
-/* data-bookmarked: 現在開いている章にしおりが付いているかどうか（CSS専用フック） */
+.review-bookmark-btn svg {
+  transition: fill var(--transition-base), color var(--transition-base);
+}
+
+/* data-bookmarked: 現在開いている章にしおりが付いているかどうか（CSS専用フック）。
+   枠線の色だけでなく内側も currentColor で塗りつぶし、視認性を上げる。 */
 .review-bookmark-btn[data-bookmarked] {
   color: var(--color-accent-secondary);
+}
+
+.review-bookmark-btn[data-bookmarked] svg {
+  fill: currentColor;
 }
 
 .review-meta {
@@ -263,4 +295,11 @@
   font-family: var(--font-serif);
   font-size: 15px;
   color: var(--color-accent-primary);
+}
+
+.review-memo-item-preview {
+  font-size: 12.5px;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+  white-space: pre-wrap;
 }

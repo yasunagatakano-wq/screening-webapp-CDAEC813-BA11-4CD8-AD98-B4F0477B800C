@@ -27,13 +27,16 @@
     </header>
 
     <!-- ============================
-         表示モード切替（読む／しおり一覧）
+         表示モード切替（読む／しおり一覧／メモ一覧）
+         スクリーニングページの .mode-tabs と同じ「非アクティブ＝フラット」
+         デザインに合わせるため、.btn は使わず review.css で個別にスタイルする。
     ============================ -->
     <section class="card review-tabs-card">
-      <div class="review-tabs" role="tablist">
-        <button id="reviewTabRead" class="btn secondary review-tab-btn" data-current>読む</button>
-        <button id="reviewTabBookmarks" class="btn secondary review-tab-btn">しおり一覧</button>
-      </div>
+      <nav class="review-tabs" role="tablist">
+        <button id="reviewTabRead" class="review-tab-btn" data-current>読む</button>
+        <button id="reviewTabBookmarks" class="review-tab-btn">しおり一覧</button>
+        <button id="reviewTabMemos" class="review-tab-btn">メモ一覧</button>
+      </nav>
     </section>
 
     <!-- ============================
@@ -99,6 +102,18 @@
         <p class="hint">しおりを挟んだ章の一覧です。タップするとその章を開きます。</p>
         <div id="bookmarkListEl"></div>
         <p id="bookmarkEmptyEl" class="review-bookmark-empty hidden">まだしおりはありません。「読む」タブで気になる章にしおりを挟んでみましょう。</p>
+      </section>
+    </div>
+
+    <!-- ============================
+         「メモ一覧」ビュー
+    ============================ -->
+    <div id="reviewViewMemos" class="review-view hidden">
+      <section class="card review-memos-card">
+        <h2>メモ一覧</h2>
+        <p class="hint">メモを書き込んだ章の一覧です。タップするとその章を開きます。</p>
+        <div id="memoListEl"></div>
+        <p id="memoListEmptyEl" class="review-bookmark-empty hidden">まだメモはありません。「読む」タブで気づいたことを書き留めてみましょう。</p>
       </section>
     </div>
 

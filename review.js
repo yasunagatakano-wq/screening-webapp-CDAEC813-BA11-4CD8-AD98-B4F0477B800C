@@ -63,8 +63,10 @@ async function loadChapters() {
 // ------------------------------------------------------------------
 const reviewTabReadBtn = document.getElementById("reviewTabRead");
 const reviewTabBookmarksBtn = document.getElementById("reviewTabBookmarks");
+const reviewTabMemosBtn = document.getElementById("reviewTabMemos");
 const reviewViewRead = document.getElementById("reviewViewRead");
 const reviewViewBookmarks = document.getElementById("reviewViewBookmarks");
+const reviewViewMemos = document.getElementById("reviewViewMemos");
 
 const chapterNavEl = document.getElementById("chapterNavEl");
 const chapterBreadcrumbEl = document.getElementById("chapterBreadcrumbEl");
@@ -77,6 +79,9 @@ const chapterNextBtn = document.getElementById("chapterNextBtn");
 const bookmarkToggleBtn = document.getElementById("bookmarkToggleBtn");
 const bookmarkListEl = document.getElementById("bookmarkListEl");
 const bookmarkEmptyEl = document.getElementById("bookmarkEmptyEl");
+
+const memoListEl = document.getElementById("memoListEl");
+const memoListEmptyEl = document.getElementById("memoListEmptyEl");
 
 const memoTextareaEl = document.getElementById("memoTextareaEl");
 const memoSaveBtn = document.getElementById("memoSaveBtn");
@@ -288,6 +293,48 @@ function renderBookmarkList() {
   });
 }
 
+function renderMemoList() {
+  memoListEl.innerHTML = "";
+
+  const memoChapters = Object.keys(notes.memos)
+    .filter((id) => (notes.memos[id] || "").trim() !== "")
+    .map((id) => CHAPTERS_BY_ID[id])
+    .filter(Boolean);
+
+  memoListEmptyEl.classList.toggle("hidden", memoChapters.length > 0);
+
+  memoChapters.forEach((chapter) => {
+    const memoText = notes.memos[chapter.id] || "";
+
+    const itemEl = document.createElement("div");
+    itemEl.className = "review-bookmark-item";
+    itemEl.dataset.chapterId = chapter.id;
+
+    const partEl = document.createElement("div");
+    partEl.className = "review-bookmark-item-part";
+    partEl.textContent = chapter.part;
+
+    const titleEl = document.createElement("div");
+    titleEl.className = "review-bookmark-item-title";
+    titleEl.textContent = chapter.title;
+
+    const previewEl = document.createElement("div");
+    previewEl.className = "review-memo-item-preview";
+    previewEl.textContent = memoText.length > 60 ? `${memoText.slice(0, 60)}…` : memoText;
+
+    itemEl.appendChild(partEl);
+    itemEl.appendChild(titleEl);
+    itemEl.appendChild(previewEl);
+
+    itemEl.addEventListener("click", () => {
+      showChapter(chapter.id);
+      switchTab("read");
+    });
+
+    memoListEl.appendChild(itemEl);
+  });
+}
+
 function showChapter(chapterId, options = {}) {
   const { scroll = true } = options;
   const chapter = CHAPTERS_BY_ID[chapterId];
@@ -326,16 +373,25 @@ function showChapter(chapterId, options = {}) {
 
 function switchTab(tab) {
   const isRead = tab === "read";
+  const isBookmarks = tab === "bookmarks";
+  const isMemos = tab === "memos";
+
   reviewViewRead.classList.toggle("hidden", !isRead);
-  reviewViewBookmarks.classList.toggle("hidden", isRead);
+  reviewViewBookmarks.classList.toggle("hidden", !isBookmarks);
+  reviewViewMemos.classList.toggle("hidden", !isMemos);
+
+  [reviewTabReadBtn, reviewTabBookmarksBtn, reviewTabMemosBtn].forEach((btn) => {
+    btn.removeAttribute("data-current");
+  });
 
   if (isRead) {
     reviewTabReadBtn.setAttribute("data-current", "");
-    reviewTabBookmarksBtn.removeAttribute("data-current");
-  } else {
+  } else if (isBookmarks) {
     reviewTabBookmarksBtn.setAttribute("data-current", "");
-    reviewTabReadBtn.removeAttribute("data-current");
     renderBookmarkList();
+  } else if (isMemos) {
+    reviewTabMemosBtn.setAttribute("data-current", "");
+    renderMemoList();
   }
 }
 
@@ -344,6 +400,7 @@ function switchTab(tab) {
 // ------------------------------------------------------------------
 reviewTabReadBtn.addEventListener("click", () => switchTab("read"));
 reviewTabBookmarksBtn.addEventListener("click", () => switchTab("bookmarks"));
+reviewTabMemosBtn.addEventListener("click", () => switchTab("memos"));
 bookmarkToggleBtn.addEventListener("click", toggleBookmark);
 memoSaveBtn.addEventListener("click", saveMemo);
 
