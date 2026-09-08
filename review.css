@@ -72,10 +72,81 @@
 @media (max-width: 900px) {
   .review-layout {
     flex-direction: column;
+    /* align-items: flex-start のままだと各カードが内容幅にしか広がらず、
+       .review-toc-card 側の width:100% と box-sizing（content-box）の
+       組み合わせでカード横幅がコンテナ幅をはみ出していた（iPhone等の
+       狭い画面で顕在化）。stretch に変えることで、box-sizing を問わず
+       正しくコンテナ幅いっぱいに揃う。 */
+    align-items: stretch;
   }
   .review-toc-card {
-    width: 100%;
+    width: auto; /* デスクトップ用の width: 260px を打ち消し、stretch を効かせる */
     position: static;
+  }
+}
+
+/* ----------------------------------------
+   スマホ対応（style.css の --bp-mobile: 600px に合わせる。iPhone 12 Pro
+   （390×844、CSSピクセル基準）での表示崩れの実機確認・修正、2026-09 追加）
+---------------------------------------- */
+@media (max-width: 600px) {
+
+  /* --- タブ：3タブ化に伴い、折り返しではなく style.css の .mode-tabs と
+     同じ横スクロール方式に統一する（日本語ラベルの折り返しで縦長になるのを防ぐ） --- */
+  .review-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .review-tab-btn {
+    flex-shrink: 0;
+    white-space: nowrap;
+    padding: 10px 14px;
+    font-size: 13px;
+  }
+
+  /* --- 本文見出し：しおりボタンとタイトルが並ぶ行で、長いタイトルでも
+     ボタンが潰れず、タイトル側だけが折り返すようにする --- */
+  .review-reader-headline {
+    align-items: flex-start;
+  }
+
+  .review-chapter-title {
+    font-size: 20px;
+    line-height: 1.4;
+  }
+
+  .review-bookmark-btn {
+    flex: none;
+    margin-top: 2px;
+  }
+
+  /* --- 目次項目：タイトルが2行になった場合に先頭ドットが中央寄せのまま
+     ずれて見えるため、先頭に揃える --- */
+  .review-chapter-item {
+    align-items: flex-start;
+  }
+
+  .review-chapter-item-bookmark {
+    margin-top: 6px;
+  }
+
+  /* --- 前後の章移動：ラベルが長め（例：「← 前の章」）のため、
+     横幅ギリギリで詰まらないようフォントサイズを少し落とす --- */
+  .review-reader-foot {
+    font-size: 13px;
+  }
+
+  .review-reader-foot .btn {
+    padding: 8px 10px;
+  }
+
+  /* --- メモ操作行：保存ボタンとステータス文言が同じ行で詰まりやすいため
+     折り返しを許可する --- */
+  .review-memo-actions {
+    flex-wrap: wrap;
+    row-gap: 6px;
   }
 }
 
@@ -250,6 +321,7 @@
   font-size: 13.5px;
   padding: 10px;
   resize: vertical;
+  box-sizing: border-box; /* width:100% + padding/border による横はみ出し防止（iPhone等で顕在化） */
 }
 
 .review-memo-actions {
