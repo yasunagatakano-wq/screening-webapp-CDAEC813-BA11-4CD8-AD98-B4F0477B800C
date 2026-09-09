@@ -4,5 +4,7 @@
     "hills-007",
     "hills-123"
   ],
-  "memos": {}
+  "memos": {
+    "hills-007": "メモテスト"
+  }
 }
