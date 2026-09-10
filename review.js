@@ -11,6 +11,39 @@
 const API_BASE_URL = "https://yfinance-api-fe86988c-d3b4-f1c6-640d.onrender.com";
 
 // ------------------------------------------------------------------
+// 章コンテンツ・しおり/メモの「読み取り」は、Render（コールドスタートで
+// 数十秒待たされることがある）を経由せず、GitHub Raw
+// （raw.githubusercontent.com）へ直接 fetch する（2026-09 変更）。
+//
+// - raw.githubusercontent.com は CORS が全面的に開放されており
+//   （Access-Control-Allow-Origin: *）、GitHub Pages 上の静的JSから
+//   直接読みに行ける。
+// - キャッシュは GitHub 側の CDN（Fastly）で cache-control: max-age=300
+//   （5分固定）。これは main.py 側が同じ raw URL を経由して読んでいた
+//   従来の実装と同じ挙動であり、Renderを外したことで新たに生じる
+//   制約ではない。
+// - 一方、しおり登録・メモ保存・章の追加編集などの「書き込み」は、
+//   GitHubへコミットするための REVIEW_GITHUB_TOKEN をサーバー側に
+//   秘匿する必要があるため、引き続き Render（/review/bookmark・
+//   /review/memo・/review/chapter）を経由する。
+//
+// リポジトリ情報は main.py の REVIEW_NOTES_REPO_OWNER /
+// REVIEW_NOTES_REPO_NAME / REVIEW_NOTES_REPO_BRANCH と同じ値を
+// ここに直接持つ（バックエンドとフロントエンドでの二重管理。
+// リポジトリ名やブランチを変更する場合は両方を修正すること）。
+const REVIEW_REPO_OWNER = "yt-f6d34a22-537c-e881-530f-f9e7a956a78b";
+const REVIEW_REPO_NAME = "webapp-frontend";
+const REVIEW_REPO_BRANCH = "main";
+
+const REVIEW_CHAPTERS_RAW_URL =
+  `https://raw.githubusercontent.com/${REVIEW_REPO_OWNER}/${REVIEW_REPO_NAME}` +
+  `/refs/heads/${REVIEW_REPO_BRANCH}/data/review_chapters.json`;
+
+const REVIEW_NOTES_RAW_URL =
+  `https://raw.githubusercontent.com/${REVIEW_REPO_OWNER}/${REVIEW_REPO_NAME}` +
+  `/refs/heads/${REVIEW_REPO_BRANCH}/data/review_notes.json`;
+
+// ------------------------------------------------------------------
 // 章コンテンツ
 //
 // 本文自体は data/review_chapters.json（webapp-frontend リポジトリ）で
@@ -46,12 +79,18 @@ function setChapters(chapters) {
 
 async function loadChapters() {
   try {
-    const res = await fetch(`${API_BASE_URL}/review/chapters`);
-    const data = await res.json();
-    if (data.error) {
-      console.error("章コンテンツの読み込みに失敗しました:", data.detail || data.error);
+    const res = await fetch(REVIEW_CHAPTERS_RAW_URL);
+    if (res.status === 404) {
+      // data/review_chapters.json がまだ存在しない（章を一度も
+      // 追加・編集していない）場合。DEFAULT_CHAPTERS のフォールバック
+      // 表示のまま続行する（main.py の REVIEW_CHAPTERS_DEFAULT に
+      // 相当する挙動をクライアント側でも再現）。
       return;
     }
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}`);
+    }
+    const data = await res.json();
     setChapters(data.chapters);
   } catch (e) {
     console.error("章コンテンツの読み込みに失敗しました:", e);
@@ -132,12 +171,17 @@ function clearReviewSecret() {
 // ------------------------------------------------------------------
 async function loadNotes() {
   try {
-    const res = await fetch(`${API_BASE_URL}/review/notes`);
-    const data = await res.json();
-    if (data.error) {
-      console.error("しおり・メモの読み込みに失敗しました:", data.detail || data.error);
+    const res = await fetch(REVIEW_NOTES_RAW_URL);
+    if (res.status === 404) {
+      // data/review_notes.json がまだ存在しない（一度もしおり・メモを
+      // 保存していない）場合。初期値のまま続行する。
+      notes = { bookmarks: [], memos: {} };
       return;
     }
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}`);
+    }
+    const data = await res.json();
     notes = { bookmarks: data.bookmarks || [], memos: data.memos || {} };
   } catch (e) {
     console.error("しおり・メモの読み込みに失敗しました:", e);
@@ -285,8 +329,12 @@ function renderBookmarkList() {
     itemEl.appendChild(titleEl);
 
     itemEl.addEventListener("click", () => {
-      showChapter(chapter.id);
+      // switchTab を先に呼び、#reviewReaderSection を可視化してから
+      // showChapter() のスクロール計算（getBoundingClientRect）を行う。
+      // 逆順だと本文エリアがまだ hidden（display:none）のままで
+      // 座標が正しく取れず、目次付近にしかスクロールしなかった。
       switchTab("read");
+      showChapter(chapter.id);
     });
 
     bookmarkListEl.appendChild(itemEl);
@@ -327,8 +375,9 @@ function renderMemoList() {
     itemEl.appendChild(previewEl);
 
     itemEl.addEventListener("click", () => {
-      showChapter(chapter.id);
+      // しおり一覧と同じ理由で、先にタブを切り替えてから showChapter() を呼ぶ。
       switchTab("read");
+      showChapter(chapter.id);
     });
 
     memoListEl.appendChild(itemEl);
