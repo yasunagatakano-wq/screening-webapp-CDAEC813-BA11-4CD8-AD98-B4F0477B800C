@@ -1,0 +1,1628 @@
+/* ============================================================
+   CSS カスタムプロパティ（設計トークン）
+   ・色・サイズ・ブレークポイントをここで一元管理する
+   ・値を変えるときはここだけ修正すればよい
+   ============================================================ */
+:root {
+  /* --- カラーパレット ---
+     デザイン方向性「W案」：クリーム紙 + バーガンディ + カッパー
+     （エディトリアル・マガジン調の配色 × ソフトな凹凸の質感）
+     ページ全体をわずかに沈めた紙色にし、カードを一段明るくして
+     ニューモーフィズム的な浮き上がり感を出す */
+  --color-bg-page:          #F1EBDD;
+  --color-bg-card:          #FBF8F1;
+  --color-bg-input:         #FBF8F1;
+  --color-bg-mode-block:    #F5F0E5;
+  --color-bg-table-header1: #F5F0E5;
+  --color-bg-table-header2: #F9F5EC;
+  --color-bg-table-fixed:   #EDE5D3;
+  --color-bg-table-fixed-mobile: #F0EADC;
+  --color-bg-table-row:     #FBF8F1;
+  --color-bg-table-hover:   #F3DFC9;
+  --color-bg-table-error:   #EDE5D3;
+  --color-bg-disabled:      #E7E0D3;
+  --color-bg-overlay:       rgba(43, 32, 26, 0.45);
+  --color-bg-chart-loading: rgba(43, 32, 26, 0.5);
+  --color-bg-legend:        rgba(251, 248, 241, 0.9);
+  --color-bg-settings:      #FBF8F1;
+  --color-bg-timeframe:     rgba(251, 248, 241, 0.75);
+
+  --color-text-primary:     #2B231D;
+  --color-text-secondary:   #5C5142;
+  --color-text-muted:       #8A7F6C;
+  --color-text-disabled:    #B3A88F;
+  --color-text-error-row:   #6B5F4E;
+  --color-text-white:       #FBF8F1;
+  --color-text-chart:       #2B231D;
+  --color-text-legend:      #2B231D;
+
+  --color-border:           #E4DCC9;
+  --color-border-input:     #D8CEB4;
+
+  --color-accent-primary:      #7A2E3A; /* バーガンディ：見出し・タブ・罫線に使用 */
+  --color-accent-primary-hover:#5E2129; /* 新規：ホバー／アクティブ時の濃色 */
+  --color-accent-primary-bg:   #F3E3E0; /* バーガンディの薄いティント（選択中タブの背景等） */
+  --color-accent-secondary:    #B5652C; /* 新規：カッパー。主要アクション（ボタン）に使用 */
+  --color-accent-secondary-hover:#9C531F; /* 新規 */
+  --color-accent-elapsed:      #7A2E3A;
+
+  --color-trend-up-bg:      #F0D9D3;  /* 上昇：ダスティローズ（バーガンディ系） */
+  --color-trend-up-border:  #7A2E3A;  /* 新規：上昇行の左アクセント線 */
+  --color-trend-down-bg:    #DCE8CB;  /* 下降：くすみセージ */
+  --color-trend-down-border:#5B6E52;  /* 新規：下降行の左アクセント線 */
+
+  --color-tech-true:        #4B7F4F;
+
+  /* --- フォント（新規カテゴリ）
+     見出し・テーブルヘッダ: Noto Serif JP（エディトリアルな品格）
+     本文・UI操作系: Noto Sans JP（可読性優先）
+     数値セル: Inter + tabular-nums（桁揃え）
+     index.html で Google Fonts を読み込む。フォールバックは system-ui 系 --- */
+  --font-sans:    "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-serif:   "Noto Serif JP", var(--font-sans);
+  --font-numeric: "Inter", var(--font-sans);
+
+  /* --- シャドウ（ニューモーフィズム：明暗2方向のソフトシャドウ） --- */
+  --shadow-card:            3px 3px 10px rgba(122, 46, 58, 0.16), -3px -3px 10px rgba(255, 255, 255, 0.85);
+  --shadow-card-hover:      5px 5px 18px rgba(122, 46, 58, 0.20), -4px -4px 16px rgba(255, 255, 255, 0.9); /* 新規：ホバー／出現時 */
+  --shadow-legend:          0 0 4px rgba(43, 32, 26, 0.15);
+  --shadow-settings:        5px 5px 18px rgba(122, 46, 58, 0.20), -4px -4px 16px rgba(255, 255, 255, 0.9);
+  --shadow-neumo-inset:     inset 3px 3px 7px rgba(122, 46, 58, 0.22), inset -3px -3px 7px rgba(255, 255, 255, 0.95); /* 新規：凹（押し込まれた）表現 */
+  --shadow-neumo-outset:    4px 4px 10px rgba(122, 46, 58, 0.18), -4px -4px 10px rgba(255, 255, 255, 0.95); /* 新規：凸（浮き出た）表現 */
+  /* 新規：選択中モードタブ専用の凹表現（アクセントカラー濃色トーン）。
+     --shadow-neumo-inset と同じ凹方向・同じ距離/ぼかしだが、影の不透明度を
+     0.22→0.35、ハイライトを0.95→0.9に強めることで、入力欄等の一般的な
+     凹表現より一段濃く見せ、選択中タブであることを差別化する。
+     濃さを調整したい場合はこのrgba値のアルファ（0.35 / 0.9）のみを
+     変更すればよい（他ファイルへの影響なし）。 */
+  --shadow-neumo-inset-tab: inset 4px 4px 9px rgba(122, 46, 58, 0.42), inset -4px -4px 9px rgba(255, 255, 255, 0.88);
+
+  /* --- ボーダー半径（丸みを強めた柔らかい印象） --- */
+  --radius-card:            20px;
+  --radius-modal:           20px;
+  --radius-btn:             14px;
+  --radius-input:           10px;
+  --radius-mode-block:      14px;
+  --radius-fieldset:        10px;
+  --radius-legend:          6px;
+  --radius-settings:        14px;
+  --radius-csv-btn:         10px;
+
+  /* --- トランジション（新規カテゴリ） --- */
+  --transition-base:       0.18s cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* --- サイズ・余白 --- */
+  --container-max-width:    1500px;
+  --card-padding:           20px;
+  --mode-block-min-width:   260px;   /* PC 時の mode-block 最小幅 */
+  --rci-macd-height:        160px;   /* PC 時の RCI / MACD チャート高さ */
+  --rci-macd-height-mobile: 120px;   /* スマホ時の RCI / MACD チャート高さ */
+
+  /* --- z-index 体系 --- */
+  --z-fixed-col:            45;
+  --z-table-header:         50;
+  --z-table-header-fixed:   70;
+  --z-modal:                1000;
+  --z-modal-content:        10;
+  --z-loading-overlay:      9999;
+  --z-chart-tooltip:        2100;
+  --z-chart-settings-btn:   2000;
+  --z-chart-settings-modal: 3000;
+  --z-chart-loading:        3000;
+  --z-chart-legend:         3000;
+
+  /* --- ブレークポイント（メディアクエリ内で直接使用） ---
+     CSS カスタムプロパティはメディアクエリ条件内では使えないため
+     コメントで定義値を明示し、下部の @media と値を統一する。
+     変更時はこのコメントと @media の数値を同時に修正すること。
+       --bp-mobile: 600px   → @media (max-width: 600px)
+       --bp-landscape-phone: (orientation: landscape) and (max-height: 500px)
+         → iPhone 12 Pro 横持ち（約844×390のCSS px）を想定。
+           対象デバイスはPC・iPhone 12 Pro（縦持ち／横持ち）のみのため、
+           高さでの判定とし、高さ768px以上あるiPadなどのタブレット横持ちは
+           対象に含まれないようにしている（2026-07追加）。
+  ---------------------------------------------------------------- */
+}
+
+/* ============================================================
+   全体レイアウト
+   ============================================================ */
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  background: var(--color-bg-page);
+  color: var(--color-text-primary);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  /* 2026-07 追加：チェックボックス・ラジオボタンのチェックマーク/ドット色は
+     accent-colorを指定しない場合ブラウザ既定の青色になる。exclude-markets-fieldset
+     のチェックボックスやcompare-source-optionのラジオボタン等、他の装飾要素と
+     色調を揃えるため、アクセントカラーをbodyに指定し全体へ継承させる
+     （.mode-tab / .timeframe-selector のラジオボタンは opacity: 0 で非表示の
+     ため実害はないが、こちらにも一貫して適用される）。 */
+  accent-color: var(--color-accent-primary);
+}
+
+.app-container {
+  max-width: var(--container-max-width);
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.app-header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.app-header h1 {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--color-accent-primary);
+}
+
+.card {
+  background: var(--color-bg-card);
+  padding: var(--card-padding);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  margin-bottom: 20px;
+  transition: box-shadow var(--transition-base);
+}
+
+.card:hover {
+  box-shadow: var(--shadow-card-hover);
+}
+
+.card h2 {
+  margin-top: 0;
+  margin-bottom: 16px;
+  font-size: 20px;
+  font-weight: 700;
+  font-family: var(--font-serif);
+  color: var(--color-accent-primary);
+}
+
+/* ============================================================
+   結果セクション ヘッダ行
+   ============================================================ */
+.result-section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.result-section-header h2 {
+  margin: 0;          /* .card h2 の margin-bottom をリセット */
+}
+
+.csv-download-btn {
+  margin-left: auto;  /* 右端へ押し出す */
+  padding: 4px 6px;
+  color: var(--color-text-secondary);
+  border-radius: var(--radius-csv-btn);
+  line-height: 0;     /* SVG の余白を詰める */
+  transition: color 0.15s, background 0.15s;
+}
+
+.csv-download-btn:not(:disabled):hover {
+  color: var(--color-accent-primary);
+  background: var(--color-accent-primary-bg);
+}
+
+.csv-download-btn:disabled {
+  color: var(--color-text-disabled);
+}
+
+/* ============================================================
+   条件設定：モード切替タブ ＋ 条件パネル
+   ============================================================ */
+
+/* ---- モード切替タブ ---- */
+.mode-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding-left: 16px;
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: 16px;
+}
+
+.mode-tab {
+  position: relative;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  border-bottom: 2px solid transparent;
+  border-radius: var(--radius-input) var(--radius-input) 0 0;
+  margin-bottom: -1px; /* .mode-tabs の border-bottom に重ねて表示する */
+  cursor: pointer;
+  user-select: none;
+  transition: color var(--transition-base), border-color var(--transition-base), background var(--transition-base);
+}
+
+/* ネイティブのラジオボタンは非表示にし、label 全体をタップ領域にする */
+.mode-tab input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.mode-tab:hover {
+  color: var(--color-text-secondary);
+}
+
+.mode-tab:has(input:checked) {
+  color: var(--color-accent-primary-hover);
+  border-bottom-color: var(--color-accent-primary);
+  background: var(--color-accent-primary-bg);
+  box-shadow: var(--shadow-neumo-inset-tab);
+}
+
+.mode-tab:has(input:focus-visible) {
+  outline: 2px solid var(--color-accent-primary);
+  outline-offset: 2px;
+}
+
+/* ---- 条件パネル（選択中のモードのみ表示） ---- */
+.mode-panels {
+  padding-left: 16px;
+  margin-bottom: 12px;
+}
+
+.mode-panel {
+  display: none;
+}
+
+.mode-tabs:has(input[value="ratio"]:checked) ~ .mode-panels .mode-panel[data-mode="ratio"],
+.mode-tabs:has(input[value="date"]:checked) ~ .mode-panels .mode-panel[data-mode="date"],
+.mode-tabs:has(input[value="compare"]:checked) ~ .mode-panels .mode-panel[data-mode="compare"],
+.mode-tabs:has(input[value="heuristics"]:checked) ~ .mode-panels .mode-panel[data-mode="heuristics"],
+.mode-tabs:has(input[value="block"]:checked) ~ .mode-panels .mode-panel[data-mode="block"] {
+  display: block;
+}
+
+.mode-conditions {
+  display: flex;
+  gap: 16px;
+}
+
+/* CSV・証券コード比較：入力方法／比較期間の高さが異なる場合に
+   片方が引き伸ばされて上部に余白が生まれるのを防ぐ */
+#compareConditions {
+  align-items: flex-start;
+}
+
+/* ============================================================
+   ratio：除外市場・商品区分（volumeRatio 等と同じ行に詰め込まず、
+   フィールドセットのみ折り返して次行に表示する）
+   ============================================================ */
+#ratioConditions {
+  flex-wrap: wrap;
+}
+
+#ratioConditions [data-exclude-markets-slot] {
+  flex: 1 1 100%;
+}
+
+.mode-conditions label {
+  display: flex;
+  flex-direction: column;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.mode-conditions input:not([type="radio"]),
+.mode-conditions select {
+  margin-top: 4px;
+  padding: 6px 10px;
+  font-size: 14px;
+  border: none;
+  border-radius: var(--radius-input);
+  background: var(--color-bg-input);
+  box-shadow: var(--shadow-neumo-inset);
+  width: fit-content;
+}
+
+/* <select> はモバイルブラウザ（特にiOS Safari）がOS標準の見た目を強く保持し、
+   appearance:none を明示しない限りカスタムのbox-shadow/backgroundが
+   実質的に無視されてしまう（<input>は同じCSSで問題なく表示されるため
+   <select>固有の挙動）。2026-07 修正：appearance:none で解除した上で、
+   標準の▼アイコンが消える代わりにCSSのみで矢印を描画し、
+   ドロップダウンであることが分かるようにする。 */
+.mode-conditions select {
+  -webkit-appearance: none;
+  appearance: none;
+  color: var(--color-text-primary);
+  padding-right: 26px;
+  background-image: linear-gradient(45deg, transparent 50%, var(--color-accent-primary) 50%),
+                     linear-gradient(135deg, var(--color-accent-primary) 50%, transparent 50%);
+  background-position: right 12px center, right 8px center;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+}
+
+.mode-conditions input:disabled:not([type="radio"]),
+.mode-conditions select:disabled,
+.mode-conditions fieldset:disabled {
+  background: var(--color-bg-disabled);
+  cursor: not-allowed;
+}
+
+/* ============================================================
+   CSV・証券コード比較：入力方法グループ
+   ============================================================ */
+.compare-source-fieldset {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border: none;
+  border-radius: var(--radius-fieldset);
+  padding: 10px 12px;
+  margin: 0;
+  background-color: var(--color-bg-input);
+  box-shadow: var(--shadow-neumo-inset);
+}
+
+.compare-source-fieldset legend {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  padding: 0 4px;
+}
+
+.compare-source-fieldset:disabled {
+  background: var(--color-bg-disabled);
+  cursor: not-allowed;
+}
+
+.compare-source-fieldset .compare-source-option {
+  display: grid;
+  grid-template-columns: auto 120px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: normal;
+  color: var(--color-text-secondary);
+}
+
+.compare-source-label {
+  white-space: nowrap;
+}
+
+.compare-source-option input[type="text"],
+.compare-source-option input[type="file"] {
+  margin-top: 0;
+  min-width: 0;
+  width: 100%;
+  /* .mode-conditions input は box-sizing 未指定（content-box）のため、
+     width:100% が padding/border 分だけはみ出してしまう。
+     border-box にして track 幅にぴったり収める */
+  box-sizing: border-box;
+}
+
+/* ============================================================
+   CSV・証券コード比較：比較元/比較先 日付グループ
+   ============================================================ */
+.compare-date-fieldset {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-end;
+  gap: 10px;
+  border: none;
+  border-radius: var(--radius-fieldset);
+  padding: 10px 12px;
+  margin: 0;
+  background-color: var(--color-bg-input);
+  box-shadow: var(--shadow-neumo-inset);
+}
+
+.compare-date-fieldset legend {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  padding: 0 4px;
+}
+
+.compare-date-fieldset:disabled {
+  background: var(--color-bg-disabled);
+  cursor: not-allowed;
+}
+
+.compare-date-fieldset label {
+  display: flex;
+  flex-direction: column;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.compare-date-arrow {
+  padding-bottom: 8px;
+  font-size: 16px;
+  color: var(--color-text-secondary);
+}
+
+/* CSV・証券コード比較：全営業日比較トグル —　比較元日付・比較先日付と同じ flex 行内に並べる */
+.compare-all-market-days-option {
+  display: flex;
+  flex-direction: row; /* .mode-conditions label の flex-direction: column（全ラベル共通）を
+                           上書きし、チェックボックス→文言を横並びにする。
+                           .compare-all-market-days-option（クラス1つ）は
+                           .mode-conditions label（クラス1＋要素1）より詳細度が低く、
+                           flex-direction を明示しない限り column 側が優先されてしまうため、
+                           2026-07 に明示指定を追加した */
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  padding-bottom: 8px; /* 他の label 直下の select と下端を揃える */
+}
+
+/* ============================================================
+   heuristics：証券コード入力欄
+   ============================================================ */
+#heuristicsConditions label:has(#heuristicsCodes) {
+  flex: 0 0 auto;
+  min-width: 200px;
+}
+
+#heuristicsCodes {
+  width: 180px;
+}
+
+/* ratioConditions と同様、除外市場・商品区分は日付・証券コードと同じ行に
+   詰め込まず、専用の行として折り返す（2026-07 修正。従来は flex-wrap を
+   指定しておらず既定の nowrap のままだったため、日付・証券コード・除外市場の
+   3要素が横並びで1行に押し込まれ、除外市場スロットが狭く圧縮された結果、
+   ラベルテキスト（white-space: nowrapのため折り返されない）が
+   欄外へはみ出していた。600px以下のポートレート表示では
+   .mode-conditionsがflex-direction:columnになるため問題が顕在化せず、
+   横向き（600px超）でのみ発生していた） */
+#heuristicsConditions {
+  flex-wrap: wrap;
+}
+
+#heuristicsConditions [data-exclude-markets-slot] {
+  flex: 1 1 100%;
+  min-width: 0;
+}
+
+/* ============================================================
+   除外市場・商品区分
+   ============================================================ */
+.exclude-markets-fieldset {
+  border: none;
+  border-radius: var(--radius-fieldset);
+  padding: 6px 12px 10px;
+  margin: 4px 0 0;
+  box-sizing: border-box;
+  background-color: var(--color-bg-input);
+  box-shadow: var(--shadow-neumo-inset);
+  width: 100%;
+  /* <fieldset> は中身（チェックボックス群）を1行に並べた場合の幅を
+     自身の最小幅として持とうとする性質があり、親の flex アイテムに
+     min-width: 0 を指定しても fieldset 自身がそれを上書きしてしまう。
+     display: flex; flex-wrap: wrap を明示することでこの性質を解除し、
+     横向きスマホ（600px超）やウィンドウ幅を狭めたデスクトップブラウザでも
+     右側にはみ出さないようにする（従来はモバイル専用メディアクエリ内でのみ
+     指定しており、600px以下でしか効かなかった）。 */
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 0;
+  min-width: 0;
+}
+
+/* チェックボックスを横並び・折り返し */
+.exclude-markets-fieldset label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: normal;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  margin-right: 20px;
+  margin-top: 6px;
+  flex-direction: row;
+}
+
+.exclude-markets-fieldset input[type="checkbox"] {
+  margin: 0;
+  flex-shrink: 0;
+}
+
+.exclude-markets-fieldset input[type="checkbox"]:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.exclude-markets-fieldset legend {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  padding: 0 4px;
+}
+
+/* ============================================================
+   ボタン
+   ============================================================ */
+.buttons-row {
+  margin-top: 28px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+button:not(:disabled) {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.btn {
+  padding: 10px 16px;
+  border-radius: var(--radius-btn);
+  border: none;
+  font-size: 15px;
+  font-weight: 600;
+  transition: transform var(--transition-base), box-shadow var(--transition-base), opacity var(--transition-base);
+}
+
+.btn.small {
+  padding: 4px 8px;
+  font-size: 12px;
+}
+
+.btn.primary {
+  background: linear-gradient(135deg, var(--color-accent-secondary) 0%, var(--color-accent-secondary-hover) 100%);
+  color: var(--color-text-white);
+  box-shadow: 0 2px 6px rgba(181, 101, 44, 0.3), var(--shadow-neumo-outset);
+}
+
+.btn.primary:not(:disabled):hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(181, 101, 44, 0.35), var(--shadow-neumo-outset);
+}
+
+.btn.primary:not(:disabled):active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(181, 101, 44, 0.3), var(--shadow-neumo-inset);
+}
+
+.btn.secondary {
+  background: var(--color-bg-disabled);
+  box-shadow: var(--shadow-neumo-outset);
+}
+
+.btn.secondary:not(:disabled):hover {
+  box-shadow: var(--shadow-neumo-outset), 0 0 0 1px rgba(122, 46, 58, 0.06);
+}
+
+.btn.secondary:not(:disabled):active {
+  box-shadow: var(--shadow-neumo-inset);
+}
+
+.btn.ghost {
+  background: transparent;
+  border: none;
+  font-size: 20px;
+}
+
+/* ============================================================
+   経過時間
+   ============================================================ */
+.elapsed-time {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-accent-elapsed);
+  white-space: nowrap;
+}
+
+/* ============================================================
+   テーブル（固定ヘッダ方式）
+   ============================================================ */
+.table-card,
+.controls-card {
+  position: relative;   /* ローディングオーバーレイの基準位置 */
+}
+
+.result-table {
+  width: max-content;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.result-table th,
+.result-table td {
+  box-sizing: border-box;
+  padding: 8px 6px;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 14px;
+  font-family: var(--font-numeric);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.result-table th, .result-table td {
+  border-right: 1px solid var(--color-border);
+}
+
+/* ============================================================
+   結果テーブルのセル文字寄せ（可読性向上。2026-07追加）
+   既定（.result-table td）は中央寄せのままとし、以下の列種別のみ
+   個別に上書きする：
+   ・.cell-num  ：時価総額・終値・出来高・売買代金・騰落率など「大小を
+     比較する数値」列。右寄せにすることで tabular-nums（桁揃え）と合わせ、
+     桁の位置が揃い数値の大小比較がしやすくなる。
+   ・.cell-text ：銘柄名など可変長の文字列列。左寄せにすることで文字の
+     開始位置が揃い、行を上下に見比べたときに読み始めやすくなる。
+   コード・トレンド記号（↗/↘）・検出時刻・タイプ区分などの短い識別子や
+   記号は、既定の中央寄せのままの方が視認性が高いため対象外（スコアは
+   数値のため .cell-num を適用し右寄せにする）。
+   2026-07修正：ヘッダー（th）は列の種類によらず常に中央寄せとする方針に
+   変更したため、.cell-num/.cell-text は td（データ行）にのみ適用する
+   （th側のセレクタは削除。JS側もヘッダー生成時にはこれらのクラスを
+   付与しなくなったが、CSS側もtd限定にしておくことで、仮に付与漏れ・
+   付与し過ぎがあってもヘッダーの見た目は中央寄せのまま保たれる）。
+   class はスタイル調整のみに用い、JS側の要素特定には使用しない
+   （要素特定は id・name・data-* 属性で行う。conventions.domHookAttributes
+   準拠）。
+   ============================================================ */
+.result-table td.cell-num {
+  text-align: right;
+}
+
+.result-table td.cell-text {
+  text-align: left;
+}
+
+/* ============================================================
+   compareモード：日付グループの区切り強調（2026-07追加）
+   「比較先日付までの全営業日と比較する」チェックON時、終値・増減（円）・
+   増減（％）の3列ひと組（日付グループ）が横に複数並ぶ。グループの左右の
+   境界だけ通常（1px）より太いborderにすることで、どこまでが同じ日付の
+   データかを視認しやすくする。
+   ・.date-group-start：グループ先頭セルの左端（前のグループとの区切り）
+   ・.date-group-end  ：グループ末尾セルの右端（次のグループとの区切り）
+   1行目ヘッダー（3列分のcolspanセル）は1セルでグループ全体を表すため、
+   両方のクラスを同じセルに付与する。
+   ============================================================ */
+.result-table th.date-group-start,
+.result-table td.date-group-start {
+  border-left: 2px solid var(--color-border-input);
+}
+
+.result-table th.date-group-end,
+.result-table td.date-group-end {
+  border-right: 2px solid var(--color-border-input);
+}
+
+/* 左固定カラム */
+.fixed-col {
+  position: sticky;
+  z-index: var(--z-fixed-col);
+  background-color: inherit;
+}
+
+/* ============================================================
+   固定ヘッダテーブル
+   ============================================================ */
+/* ============================================================
+   固定ヘッダ＋本体テーブルの共通ラッパー（トレイ表現）
+   overflow: hidden は使わない。table-header-sticky の
+   position: sticky の基準祖先を変えてしまうと固定位置がずれる
+   おそれがあるため、padding のみで凹み背景を見せる
+   ============================================================ */
+.table-well {
+  background: var(--color-bg-mode-block);
+  border-radius: var(--radius-input);
+  box-shadow: var(--shadow-neumo-inset);
+  padding: 6px;
+}
+
+.table-header-sticky {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-table-header);
+  overflow-x: auto;
+  overflow-y: hidden;   /* border-radius によるクリップを効かせるため明示（.table-scroll-outer と同様） */
+  border-radius: var(--radius-input) var(--radius-input) 0 0;
+}
+
+.th-bg-trend-either {
+   background: linear-gradient(to bottom right, var(--color-trend-up-bg) 45%, var(--color-trend-down-bg) 55%) !important;
+}
+.th-bg-trend-up {
+   background-color: var(--color-trend-up-bg) !important;
+}
+.th-bg-trend-down {
+   background-color: var(--color-trend-down-bg) !important;
+}
+
+/* 2段ヘッダ */
+.result-table thead tr th {
+  text-align: center;
+  vertical-align: middle;
+  font-family: var(--font-serif);
+  color: var(--color-accent-primary);
+}
+
+/* トレンドヘッダの改行制御（2026-07 修正）：
+   table-layout: auto かつテーブル自体の幅が制約されていない（横スクロール
+   前提で .table-scroll-outer が overflow-x: auto のため、テーブルは
+   好きなだけ広がれる）状況では、そもそも各列は「コンテンツが必要とする幅
+   （preferred width）」で描画され、CSSのmax-widthは実質的に無視される
+   （overflow: hiddenを追加しても、箱自体が縮められていないため無効だった）。
+   そのため、CSSのmax-width頼みではなく、見出しテキスト自体に <br> を
+   仕込んで「必要とする幅」自体を物理的に短くする方式に変更した。
+   スマホ（600px以下）でのみ改行を有効にし、PC幅では1行表示のままにする。 */
+.mobile-line-break {
+  display: none;
+}
+
+/* 2段ヘッダ：上段 */
+.result-table thead tr:first-child th {
+  background: var(--color-bg-table-header1);
+  font-weight: 700;
+  border-bottom: 2px double var(--color-accent-primary);
+}
+
+/* 2段ヘッダ：下段（2026-07 修正：border-bottomが未指定のため、
+   共通ルール .result-table th, .result-table td の
+   border-bottom: 1px solid var(--color-border) にフォールバックし、
+   上段の装飾border（2px double）との見た目の不統一があったため、
+   上段と同じ装飾を適用して統一した） */
+.result-table thead tr:nth-child(2) th {
+  background: var(--color-bg-table-header2);
+  font-weight: 600;
+  border-bottom: 2px double var(--color-accent-primary);
+}
+
+/* 固定列 */
+.table-header-sticky .fixed-col {
+  background: var(--color-bg-table-fixed) !important;
+  z-index: var(--z-table-header-fixed);
+}
+
+/* ============================================================
+   本体テーブル
+   ============================================================ */
+.tr-error {
+  background: var(--color-bg-table-error) !important;
+  color: var(--color-text-error-row);
+}
+
+.tr-trend-up .fixed-col,
+.tr-trend-up .td-heuristics-applied {
+    background-color: var(--color-trend-up-bg) !important;
+}
+
+.tr-trend-down .fixed-col,
+.tr-trend-down .td-heuristics-applied {
+    background-color: var(--color-trend-down-bg) !important;
+}
+
+/* 色だけに頼らない視認性強化：行の左端にトレンド方向のアクセント線を追加
+   （:first-child による構造的な指定のみで、JS 側の状態管理は変更していない） */
+.tr-trend-up td:first-child {
+    box-shadow: inset 3px 0 0 var(--color-trend-up-border);
+}
+
+.tr-trend-down td:first-child {
+    box-shadow: inset 3px 0 0 var(--color-trend-down-border);
+}
+
+/* heuristics：固定列群（コード/銘柄名/トレンド/スコア）の末尾＝スコア列の右端に
+   トレンド方向のアクセント線を追加する。スコア列は position: sticky の fixed-col
+   のため、box-shadow: inset はスコア td 自身のボックス内に描画され、
+   横スクロールで本体テーブルがどれだけ動いてもスコア列は左側に固定表示され続ける
+   ＝アクセント線も常に視認できる。data-fixed-col-last は screening.js が
+   固定列群の末尾セル（heuristics モードのスコア th/td）にのみ付与する
+   値なしフラグ属性（conventions.domHookAttributes の data-fixed-col と同種のパターン） */
+.tr-trend-up [data-fixed-col-last] {
+    box-shadow: inset -3px 0 0 var(--color-trend-up-border);
+}
+
+.tr-trend-down [data-fixed-col-last] {
+    box-shadow: inset -3px 0 0 var(--color-trend-down-border);
+}
+
+/* compare モード（全営業日比較）：比較先日付の列グループ（終値・増減（円）・増減（％））
+   ごとの背景色。行単位の tr-trend-up/down（予測ベース）とは独立に、
+   日付ごとの実際の上昇/下降（比較元終値との比較）を個別のセルへ適用する。
+   inline style ではなく class を用いるのは、下記の #resultTable tr:hover による
+   上書き（ホバー優先）を成立させるため（inline style は :hover の !important クラスより
+   常に優先されてしまい上書きできない）。2026-07 追加 */
+.td-trend-up-bg {
+  background-color: var(--color-trend-up-bg) !important;
+}
+
+.td-trend-down-bg {
+  background-color: var(--color-trend-down-bg) !important;
+}
+
+.table-scroll-outer {
+  overflow-x: auto;
+  overflow-y: hidden;
+  position: relative;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  border-radius: 0 0 var(--radius-input) var(--radius-input);
+}
+
+.table-scroll-outer::-webkit-scrollbar {
+  display: none;             /* Chrome / Safari */
+}
+
+/* 本体側 thead は完全非表示 */
+#resultHeaderBody {
+  visibility: collapse;   /* 幅計算には参加 */
+  overflow: hidden;     /* 内容を隠す */
+}
+
+#resultHeaderBody th {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+#resultTable tr {
+  background-color: var(--color-bg-table-row);
+  transition: background-color var(--transition-base);
+}
+
+/* tr-trend-up/down（.fixed-col）・td-heuristics-applied・td-trend-up-bg/td-trend-down-bg
+   （compare モードの日付別セル）のいずれよりもホバー背景を優先させるため、
+   同じ !important の詳細度勝負を、CSSの記述順（本ルールを後方に置く）で決着させる
+   （後発の同詳細度ルールが有効になるカスケードの原則を利用している） */
+#resultTable tr:hover,
+#resultTable tr:hover .fixed-col,
+#resultTable tr:hover .td-heuristics-applied,
+#resultTable tr:hover .td-trend-up-bg,
+#resultTable tr:hover .td-trend-down-bg {
+  background: var(--color-bg-table-hover) !important;
+  cursor: pointer;
+}
+
+/* ============================================================
+   ○ / × の視認性向上
+   ============================================================ */
+.tech-true {
+  color: var(--color-tech-true);
+  font-weight: bold;
+}
+
+/* ============================================================
+   スクリーニング結果件数
+   ============================================================ */
+.result-count {
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+  margin-left: 10px;
+  vertical-align: middle;
+}
+
+.compare-match-rate {
+  border-left: 1px solid var(--color-border);
+  padding-left: 10px;
+}
+
+/* ============================================================
+   ローディングオーバーレイ
+   ============================================================ */
+.loading-overlay {
+  position: absolute;
+  inset: 0;
+  background: var(--color-bg-overlay);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: var(--z-loading-overlay);
+  color: var(--color-text-white);
+  font-size: 1.2rem;
+  border-radius: inherit;
+}
+
+.hidden {
+  display: none;
+}
+
+/* ============================================================
+   モーダル
+   ============================================================ */
+.modal {
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--z-modal);
+}
+
+.modal .modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: var(--color-bg-overlay);
+  backdrop-filter: blur(3px);
+}
+
+.modal .modal-content {
+  position: relative;
+  background: var(--color-bg-card);
+  border-radius: var(--radius-modal);
+  box-shadow: var(--shadow-card-hover);
+  padding: 12px;
+  height: calc(var(--vh, 1vh) * 90);
+  width: 95vw;
+  display: flex;
+  flex-direction: column;
+  z-index: var(--z-modal-content);
+  animation: modal-in 0.2s ease-out;
+}
+
+@keyframes modal-in {
+  from { opacity: 0; transform: scale(0.98); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* モーダルヘッダー */
+.modal .modal-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+
+.modal #chartHeaderLeft {
+  font-size: 16px;
+  font-weight: bold;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.modal #chartHeaderNav {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 8px;
+}
+
+.modal #closeChartBtn {
+  flex: 0 0 auto;
+  margin-left: 8px;
+}
+
+/* ============================================================
+   足種切替
+   ============================================================ */
+.timeframe-selector {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 6px;
+  background: var(--color-bg-timeframe);
+  border-radius: var(--radius-input);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.timeframe-selector label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
+.timeframe-selector input[type="radio"] {
+  transform: scale(1.1);
+  cursor: pointer;
+}
+
+/* ============================================================
+   モーダル本体
+   ============================================================ */
+.modal .modal-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  gap: 6px;
+}
+
+.modal #chartContainer {
+  width: 100%;
+  flex: 1 1 auto;
+  min-height: 180px;
+}
+
+#rciContainer,
+#macdContainer {
+  width: 100%;
+  height: var(--rci-macd-height);
+}
+
+/* ============================================================
+   チャート設定
+   ============================================================ */
+.chart-settings-btn {
+  position: absolute;
+  right: 10px;
+  bottom: -5px;
+  font-size: 22px;
+  cursor: pointer;
+  z-index: var(--z-chart-settings-btn);
+}
+
+.chart-settings-modal {
+  position: absolute;
+  right: 10px;
+  bottom: 45px;
+  background: var(--color-bg-settings);
+  border-radius: var(--radius-settings);
+  padding: 12px;
+  box-shadow: var(--shadow-settings);
+  z-index: var(--z-chart-settings-modal);
+}
+
+.chart-settings-modal.hidden {
+  display: none;
+}
+
+.settings-content {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.settings-content label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+/* ============================================================
+   チャートローディング
+   ============================================================ */
+.modal #chartLoadingOverlay {
+  position: absolute;
+  inset: 0;
+  background: var(--color-bg-chart-loading);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: var(--z-chart-loading);
+  color: var(--color-text-white);
+  font-size: 1.2rem;
+  flex-direction: column;
+  border-radius: inherit;
+}
+
+.spinner {
+  width: 48px;
+  height: 48px;
+  border: 6px solid var(--color-text-white);
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-bottom: 12px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ============================================================
+   motion 抑制設定を尊重する（アクセシビリティ）
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ============================================================
+   チャート凡例
+   ============================================================ */
+.chart-legend {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  background: var(--color-bg-legend);
+  padding: 6px 10px;
+  border-radius: var(--radius-legend);
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--color-text-legend);
+  z-index: var(--z-chart-legend);
+  pointer-events: none;
+  box-shadow: var(--shadow-legend);
+  white-space: nowrap;
+}
+
+#chartContainer,
+#rciContainer,
+#macdContainer {
+  position: relative;
+}
+
+/* ============================================================
+   スマホ対応（--bp-mobile: 600px）
+   ・PC 表示への影響ゼロを保証するため、変更はすべてこのブロックに集約する
+   ・値の変更時は :root のコメント（--bp-mobile）と同時に修正すること
+   ============================================================ */
+@media (max-width: 600px) {
+
+  /* ----------------------------------------
+     条件設定：モード切替タブ・条件パネル
+  ---------------------------------------- */
+  .mode-tabs {
+    padding-left: 8px;
+    flex-wrap: nowrap;
+    overflow-x: auto;         /* タブ数が多い場合は横スクロールで対応 */
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* タブを縮小させず等倍のまま横スクロールさせる。
+     flex-shrink の既定値（1）のままだと、コンテナ幅に収めようとして
+     各タブが縮小し、内部の日本語ラベルが折り返されて縦長になっていたため追加。 */
+  .mode-tab {
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+
+  .mode-panels {
+    padding-left: 8px;
+  }
+
+  .mode-conditions {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* ----------------------------------------
+     条件設定：除外市場チェックボックス
+  ---------------------------------------- */
+  .exclude-markets-fieldset {
+    /* 横スクロールではなく折り返し表示 */
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 0;
+    padding: 6px 8px 10px;
+  }
+
+  .exclude-markets-fieldset label {
+    /* PC の white-space: nowrap を解除して折り返し許可 */
+    white-space: normal;
+    margin-right: 10px;
+    font-size: 12px;
+  }
+
+  /* ----------------------------------------
+     条件設定：heuristics 証券コード入力欄
+  ---------------------------------------- */
+  #heuristicsConditions label:has(#heuristicsCodes) {
+    min-width: 0;
+    width: 100%;
+  }
+
+  #heuristicsCodes {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* ----------------------------------------
+     条件設定：CSV・証券コード比較
+  ---------------------------------------- */
+  .compare-source-fieldset .compare-source-option {
+    grid-template-columns: auto 1fr;
+    row-gap: 4px;
+  }
+
+  .compare-source-option input[type="text"],
+  .compare-source-option input[type="file"] {
+    grid-column: 1 / -1;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .compare-date-fieldset {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .compare-date-arrow {
+    align-self: center;
+    padding-bottom: 0;
+    /* 比較期間が縦積みレイアウトになるため、矢印も縦向きに回転させる */
+    display: inline-block;
+    transform: rotate(90deg);
+  }
+
+  #compareFromDate,
+  #compareToDateSelect {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* ----------------------------------------
+     ボタン行・経過時間
+  ---------------------------------------- */
+  .buttons-row {
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .elapsed-time {
+    flex-basis: 100%;
+    margin-left: 0;
+    margin-top: 4px;
+  }
+
+  /* ----------------------------------------
+     結果セクションヘッダ
+  ---------------------------------------- */
+  .result-section-header {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .result-count {
+    font-size: 0.8rem;
+  }
+
+  /* ----------------------------------------
+     テーブル：固定ヘッダ
+  ---------------------------------------- */
+  .table-header-sticky th {
+    font-size: 10px;
+    padding: 4px 3px;
+  }
+
+  .table-header-sticky thead tr:nth-child(2) th {
+    font-size: 9px;
+    padding: 3px 2px;
+  }
+
+  /* ----------------------------------------
+     テーブル：本体・固定列
+  ---------------------------------------- */
+  .fixed-col {
+    background: var(--color-bg-table-fixed-mobile) !important;
+    font-weight: 600;
+    font-size: 11px;
+  }
+
+  #resultTable th:nth-child(2),
+  #resultTable td:nth-child(2) {
+    /* 110px→76px：固定列（銘柄名）の専有幅を抑え、横スクロール領域を広げる */
+    min-width: 76px;
+    max-width: 76px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  #resultTable td {
+    font-size: 10px;
+    padding: 4px 3px;
+  }
+
+  /* ----------------------------------------
+     テーブル：compare（CSV・証券コード比較）/ heuristics（経験則判定）モードのみ、
+     スマホ縦持ちでさらにフォントサイズを縮小する（2026-07追加、2026-07再修正で
+     フォントサイズを追加縮小しpaddingも縮小したが、効果が薄かったため同修正分は
+     取り消し、本コミットで元の値に戻した）
+     この2モードは固定列（コード・銘柄名・時価総額 等）の列数が多く、
+     固定列だけでビューポート幅の大部分を占めてしまい、可動列（スクロール側）
+     のボディ部分が見づらいという指摘への対応。可読性を保ちつつ横スクロール
+     領域を広げるため、他モードより一段階小さいフォントサイズ・paddingにする
+     （小さすぎて読めない場合はユーザー側のピンチズームでの閲覧を想定）。
+     現在のモードは body[data-search-mode] （updateMode() が切替時に設定）で判定する。
+     なお、本ルールは @media (max-width: 600px) のポートレート用ブレークポイント内のため、
+     iPhone 12 Pro 横持ち（幅約844px）には適用されない。横持ち時の調整は
+     本ファイル末尾の @media (orientation: landscape) ブロックを参照。
+  ---------------------------------------- */
+  body[data-search-mode="compare"] .table-header-sticky th,
+  body[data-search-mode="heuristics"] .table-header-sticky th {
+    font-size: 7px;
+    padding: 2px 2px;
+  }
+
+  body[data-search-mode="compare"] .table-header-sticky thead tr:nth-child(2) th,
+  body[data-search-mode="heuristics"] .table-header-sticky thead tr:nth-child(2) th {
+    font-size: 6px;
+    padding: 2px 1px;
+  }
+
+  body[data-search-mode="compare"] .fixed-col,
+  body[data-search-mode="heuristics"] .fixed-col {
+    font-size: 8px;
+  }
+
+  body[data-search-mode="compare"] #resultTable td,
+  body[data-search-mode="heuristics"] #resultTable td {
+    font-size: 7px;
+    padding: 2px 2px;
+  }
+
+  #resultTable tbody tr {
+    /* 2026-07 修正：#resultTable tr（tbody/theadを問わず全tr）のままだと、
+       heuristicsモードのヘッダ（rowspan=2、2行折り返しあり）にもこの高さが
+       適用されてしまい、折り返した2行目の文字が見切れる原因になっていたため、
+       データ行（tbody）のみに限定した */
+    height: 22px;
+  }
+
+  #resultTable th:not(.fixed-col),
+  #resultTable td:not(.fixed-col),
+  .table-header-sticky th:not(.fixed-col) {
+    /* 60px→48px：固定列縮小とあわせてスクロール可能な列の視認数を増やす。
+       2026-07 修正：#resultTable th（非表示ヘッダ #resultHeaderBody、
+       JSの幅計測元）にはこの min-width が適用されておらず、
+       #resultTable td（データ行）・.table-header-sticky th（表示ヘッダ）
+       にのみ適用されていた。この非対称により、JSが非表示ヘッダから
+       48px未満の実測値（例：30px）を計測してsticky側へコピーしようとしても、
+       sticky側は自身の min-width: 48px によって強制的に48pxへ張り付けられ、
+       コピーされた小さい値が事実上無視されるという食い違いが生じていた
+       （実機のDevToolsでの実測により特定）。#resultTable th にも同じ
+       min-width を適用し、3箇所を対称にすることで解消する。 */
+    min-width: 48px;
+  }
+
+  /* heuristicsモードのトレンド・スコア列。
+     2026-07、時価総額列の追加により nth-child の位置がずれ、さらに compare
+     モードの固定列数も増えたことで nth-child(3)/(4) が他モードの列と衝突する
+     ようになったため、nth-child による位置指定から、heuristics 専用の
+     data-heuristics-trend-col / data-heuristics-score-col 属性による指定へ変更した。
+     データはトレンド＝矢印1文字（↗/↘）、スコア＝数値のみで、
+     ヘッダ文言（「トレンド」4文字／「スコア」3文字）の方が横幅を要求していたため、
+     ヘッダをrowspan=2の高さを使って2行折り返しさせる前提で列幅を絞る。 */
+  #resultTable th[data-heuristics-trend-col],
+  #resultTable td[data-heuristics-trend-col] {
+    /* 2026-07 再修正：min-width/max-widthはtable-layout: autoでは
+       「弱い目安」に過ぎず単独では効かないため、<br class="mobile-line-break">
+       による強制改行（本ファイル内 .mobile-line-break を参照）と併用する。
+       このmin-width/max-widthはあくまで最終的な描画幅の目安・下限として残す。 */
+    min-width: 30px;
+    max-width: 30px;
+  }
+
+  /* トレンドヘッダの強制改行はスマホ幅でのみ有効にする（PC幅では1行表示のまま） */
+  .mobile-line-break {
+    display: inline;
+  }
+
+  #resultTable th[data-heuristics-score-col],
+  #resultTable td[data-heuristics-score-col] {
+    /* 2026-07 修正：ヘッダ「スコア」を縦書き化した分、列幅の必要量が
+       文字数（3文字）ではなく1文字分の幅で済むようになったため、
+       40px→26pxへ再縮小し、横スクロール領域をさらに広げた。
+       データ（数値）側は max-width を指定していないため、
+       桁数が多い場合は自然に広がる余地を残している。 */
+    min-width: 26px;
+  }
+
+  /* スコアヘッダのみ縦書き化する（データ側のtdは対象外。数値は横書きのまま
+     読みやすさを優先する）。table-layout: auto では、横書きの「スコア」
+     （3文字）がヘッダの必要幅を押し上げていたため、rowspan="2" で
+     確保されている縦方向の余裕を活かして縦書きに変更し、
+     横方向の必要幅を1文字分まで縮小した。
+     2026-07 修正：#resultTable th.fixed-col:nth-child(4) のみに指定して
+     いたが、これは列幅計算専用の非表示ヘッダ（#resultHeaderBody、
+     aria-hidden="true"）にしか適用されず、実際に画面へ表示される
+     sticky側ヘッダ（#resultTableSticky／.table-header-sticky）には
+     適用されていなかった。width/left はJS（syncColumnWidths等）が
+     computed値をコピーするが、writing-mode等の見た目のプロパティは
+     コピーされないため、両テーブルに個別の指定が必要。
+     表示側が横書きのまま・非表示側の幅計算だけが縦書き前提で縮小されて
+     いたことで、ヘッダとボディの幅の不整合が発生していたため、
+     .table-header-sticky th[data-heuristics-score-col] を追加して統一した。 */
+  #resultTable th[data-heuristics-score-col],
+  .table-header-sticky th[data-heuristics-score-col] {
+    writing-mode: vertical-rl;
+    text-orientation: upright;
+    font-size: 9px;
+    letter-spacing: 1px;
+    padding: 4px 2px;
+  }
+
+  /* heuristicsモードの技術指標セル（○/×/空欄のみ。data-rule-key属性は
+     heuristicsモードの技術指標セルにのみ付与されるため、他モードの
+     数値列（出来高・終値・増減額等、実際に48px程度必要な列）を
+     巻き込まずに縮小できる）。2026-07 追加。 */
+  #resultTable td[data-rule-key] {
+    min-width: 30px;
+  }
+
+  /* ----------------------------------------
+     チャートモーダル：全体
+  ---------------------------------------- */
+  .modal .modal-content {
+    width: 100vw;                          /* 横余白をなくす */
+    height: calc(var(--vh, 1vh) * 100);    /* 全高を活用 */
+    border-radius: 0;                      /* 角丸を解除して画面端にフィット */
+    padding: 8px;
+  }
+
+  /* ----------------------------------------
+     チャートモーダル：ヘッダ
+  ---------------------------------------- */
+  .modal .modal-header {
+    flex-wrap: wrap;        /* 銘柄名・ナビを2行に折り返し可能にする */
+    gap: 6px;
+    align-items: flex-start;
+  }
+
+  /* 銘柄名エリアは1行目・フル幅 */
+  .modal #chartHeaderLeft {
+    flex: 1 1 100%;
+    font-size: 14px;
+    white-space: normal;    /* 長い銘柄名は折り返す */
+  }
+
+  /* ナビゲーション（足種＋前へ次へ）は2行目・右寄せ */
+  .modal #chartHeaderNav {
+    flex: 1 1 auto;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: flex-end;
+  }
+
+  /* 足種セレクタ：コンパクト化 */
+  .timeframe-selector {
+    gap: 6px;
+    font-size: 12px;
+    padding: 0 4px;
+  }
+
+  /* ✕ボタン：タップしやすいサイズに縮小 */
+  .modal #closeChartBtn {
+    font-size: 16px;
+    padding: 4px 8px;
+    flex: 0 0 auto;
+  }
+
+  /* ----------------------------------------
+     チャートモーダル：本体・サブチャート
+  ---------------------------------------- */
+  #rciContainer,
+  #macdContainer {
+    /* PC の 160px より縮小して縦スペースを確保する */
+    height: var(--rci-macd-height-mobile);
+  }
+
+  /* ----------------------------------------
+     チャート凡例：スマホでは非表示
+     （チャート領域が狭くデータが隠れるため）
+  ---------------------------------------- */
+  .chart-legend {
+    display: none;
+  }
+
+  /* ----------------------------------------
+     歯車（設定）ボタン：タップしやすいサイズに
+  ---------------------------------------- */
+  .chart-settings-btn {
+    font-size: 24px;
+    bottom: 12px;
+    right: 12px;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-bg-settings);
+    border-radius: 50%;
+    box-shadow: var(--shadow-settings);
+  }
+}
+
+/* ============================================================
+   iPhone 12 Pro 横持ち（landscape）専用調整（2026-07追加）
+   対象デバイスはPC・iPhone 12 Pro（縦持ち・横持ち）を想定する。
+   横持ち時の実効ビューポートはおよそ 844×390（CSS px）で、幅が
+   @media (max-width: 600px) のポートレート用ブレークポイントを
+   超えるため該当せず、デフォルト（PC向け）のレイアウトが適用されて
+   しまう。そのため高さを基準にした専用メディアクエリを設け、
+   横持ちのiPhone 12 Proのみを対象にする（値の根拠は冒頭
+   :root のブレークポイント定義コメントを参照。高さ768px以上ある
+   iPadなどのタブレット横持ちは対象外）。
+   ============================================================ */
+@media (orientation: landscape) and (max-height: 500px) {
+
+  /* ----------------------------------------
+     超大口検出：検索条件を縦持ち時と同じ縦積みレイアウトにする
+     （横幅は確保できるが、フィールド数が多く1行に並べると窮屈なため）
+  ---------------------------------------- */
+  #blockConditions {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* ----------------------------------------
+     CSV・証券コード比較：全営業日比較チェックボックスを
+     比較元日付・比較先日付の下（新しい行）に表示する。
+     比較元日付・矢印・比較先日付の3要素は横幅に余裕があるため
+     そのまま1行に収め、チェックボックスだけ折り返して次行へ送る。
+  ---------------------------------------- */
+  .compare-date-fieldset {
+    flex-wrap: wrap;
+  }
+
+  .compare-all-market-days-option {
+    flex-basis: 100%;
+  }
+
+  /* ----------------------------------------
+     CSV・証券コード比較：CSVアップロード欄のはみ出し対策
+     input[type="file"] はブラウザ既定の内部レイアウト（「ファイルを選択」
+     ボタン＋ファイル名表示）が幅指定に完全には追従せず、指定した
+     グリッド幅からはみ出すことがある（ブラウザのデフォルト挙動）。
+     ポートレート版（@media (max-width: 600px)）と同じ対策を適用し、
+     ラジオボタン・見出しテキストとは別の行に、幅いっぱいで表示する。
+  ---------------------------------------- */
+  .compare-source-fieldset .compare-source-option {
+    grid-template-columns: auto 1fr;
+    row-gap: 4px;
+  }
+
+  .compare-source-option input[type="text"],
+  .compare-source-option input[type="file"] {
+    grid-column: 1 / -1;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* ----------------------------------------
+     CSV・証券コード比較：結果グリッドのフォントサイズを10pxにする。
+     heuristics（および他モード）は本メディアクエリでは変更しない
+     （＝縦持ち用の縮小ルールも適用されないため、PCと同じ既定の
+     フォントサイズ・paddingのまま表示される。ご要望どおり）。
+     padding は特に指定がないため既定のままとする。
+  ---------------------------------------- */
+  body[data-search-mode="compare"] .table-header-sticky th,
+  body[data-search-mode="compare"] .fixed-col,
+  body[data-search-mode="compare"] #resultTable td {
+    font-size: 10px;
+  }
+}
+
+/* ============================================================
+   復習ページへの導線（2026-09 追加）
+   学びの棚（review.html）へのリンクを app-header 内に追加した際のスタイル。
+   .app-header 自体の既存ルールは変更していない（追加のみ）。
+   ============================================================ */
+.app-header-nav {
+  margin-top: 8px;
+}
+
+.app-header-nav a {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  border-bottom: 1px dotted var(--color-border-input);
+}
+
+.app-header-nav a:hover {
+  color: var(--color-accent-primary);
+}
